@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 export const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
@@ -15,6 +14,6 @@ export const CardContent: React.FC<{ children: React.ReactNode; className?: stri
   <div className={`p-6 pt-0 ${className}`}>{children}</div>
 );
 
-export const CardTitle: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
-  <h2 className={`text-base font-semibold text-zinc-100 ${className}`}>{children}</h2>
+export const CardTitle: React.FC<React.HTMLAttributes<HTMLHeadingElement>> = ({ children, className = '', ...props }) => (
+  <h2 {...props} className={`text-base font-semibold text-zinc-100 ${className}`}>{children}</h2>
 );
