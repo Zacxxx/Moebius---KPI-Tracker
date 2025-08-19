@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState, forwardRef } from 'react';
 import { Card, CardHeader, CardContent, CardTitle } from './ui/Card';
 import { Button } from './ui/Button';
@@ -113,21 +112,6 @@ export const PerpetualDiscussionToast: React.FC<PerpetualDiscussionToastProps> =
         setIsClosing(true);
         setTimeout(onClose, 200); // Wait for animation
     };
-
-    if (isMinimized) {
-        return (
-            <div className="fixed bottom-6 right-6 z-40">
-                <button
-                    onClick={() => setIsMinimized(false)}
-                    className="flex items-center gap-3 p-3 rounded-full bg-violet-600 hover:bg-violet-700 text-white shadow-2xl shadow-black/30 transition-all duration-200 hover:scale-105"
-                >
-                    <SparklesIcon className="h-6 w-6" />
-                    <span className="text-sm font-medium">AI Assistant</span>
-                    <ChevronUpIcon className="h-5 w-5" />
-                </button>
-            </div>
-        )
-    }
 
     return (
         <div className={`fixed bottom-6 right-6 z-40 w-[26rem] max-w-[calc(100vw-3rem)] transition-all duration-200 ease-in-out ${isClosing ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>

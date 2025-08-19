@@ -1,20 +1,18 @@
-
 import React, { useState, useMemo } from 'react';
-import { PlusCircleIcon, MegaphoneIcon, TrendingUpIcon, SearchIcon, UsersIcon } from './components/Icons';
-import type { ActivityItem, ShowcaseKpi, SelectableKpi } from './types';
-import { KpiWidget } from './components/KpiWidget';
-import ActivityFeed from './components/ActivityFeed';
-import AddKpiModal from './components/AddKpiModal';
+import { MegaphoneIcon, TrendingUpIcon, SearchIcon, UsersIcon } from './components/Icons';
+import type { ShowcaseKpi, SelectableKpi, WidgetType } from './types';
 import {
-    initialExternalActivityFeed,
     initialProductMetrics,
     initialMarketingMetrics,
     initialContentMetrics,
     initialSeoMetrics,
     initialPartnerMetrics,
     initialPrMetrics,
-    initialBrandingMetrics
+    initialBrandingMetrics,
+    initialExternalActivityFeed
 } from './data';
+import { Dashboard } from './components/Dashboard';
+import { ALL_WIDGETS } from './data-widgets';
 
 // A specific icon map for external metrics
 const iconMap: { [key: string]: React.FC<{ className?: string }> } = {
@@ -29,8 +27,7 @@ const iconMap: { [key: string]: React.FC<{ className?: string }> } = {
 };
 
 export default function ExternalDashboard() {
-  const [isAddKpiModalOpen, setIsAddKpiModalOpen] = useState(false);
-  const [activityFeed] = useState<ActivityItem[]>(initialExternalActivityFeed);
+  const [visibleWidgetIds, setVisibleWidgetIds] = useState<WidgetType[]>(['TRAFFIC_SOURCES', 'CAMPAIGN_PERFORMANCE']);
 
   const [productMetrics] = useState(initialProductMetrics);
   const [marketingMetrics] = useState(initialMarketingMetrics);
@@ -40,14 +37,14 @@ export default function ExternalDashboard() {
   const [prMetrics] = useState(initialPrMetrics);
   const [brandingMetrics] = useState(initialBrandingMetrics);
 
-  const [showcaseKpis, setShowcaseKpis] = useState<ShowcaseKpi[]>(() => {
+  const showcaseKpis = useMemo<ShowcaseKpi[]>(() => {
     const organicTraffic = initialSeoMetrics.find(k => k.metric === 'Organic Traffic');
     const leads = initialMarketingMetrics.find(k => k.metric === 'Leads');
     const socialReach = initialBrandingMetrics.find(k => k.metric === 'Social Media Reach');
     const mediaMentions = initialPrMetrics.find(k => k.metric === 'Media Mentions');
     const kpis: (ShowcaseKpi | undefined)[] = [organicTraffic, leads, socialReach, mediaMentions];
     return kpis.filter((kpi): kpi is ShowcaseKpi => !!kpi);
-  });
+  }, [seoMetrics, marketingMetrics, brandingMetrics, prMetrics]);
 
   const allKpis = useMemo<SelectableKpi[]>(() => [
     ...productMetrics.map(k => ({ ...k, source: 'Product Analytics' })),
@@ -59,57 +56,28 @@ export default function ExternalDashboard() {
     ...brandingMetrics.map(k => ({ ...k, source: 'Branding' })),
   ], [productMetrics, marketingMetrics, contentMetrics, seoMetrics, partnerMetrics, prMetrics, brandingMetrics]);
 
-  const handleAddKpi = (kpi: ShowcaseKpi) => {
-    if (!showcaseKpis.some(existingKpi => existingKpi.metric === kpi.metric)) {
-      setShowcaseKpis(prev => [...prev, kpi]);
-    }
-    setIsAddKpiModalOpen(false);
-  };
+  const availableWidgets = useMemo(() => {
+    const activityFeedWidget = { ...ALL_WIDGETS.find(w => w.id === 'ACTIVITY_FEED')!, defaultProps: { activities: initialExternalActivityFeed }};
+    return [
+      ...ALL_WIDGETS.filter(w => 
+        w.id === 'TRAFFIC_SOURCES' || 
+        w.id === 'CAMPAIGN_PERFORMANCE' ||
+        w.id === 'SALES_FUNNEL'
+      ),
+      activityFeedWidget,
+    ]
+  }, []);
 
   return (
-    <>
-      <div className="space-y-8">
-        <header>
-          <h1 className="text-2xl font-bold tracking-tight text-white">External Dashboard</h1>
-          <p className="text-zinc-400 mt-1">An overview of your marketing, content, SEO, and branding efforts.</p>
-        </header>
-
-        <section>
-          <h2 className="text-xl font-semibold text-zinc-200 mb-4">Key Performance Indicators</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {showcaseKpis.map(metric => (
-                  <KpiWidget
-                      key={`${metric.id}-${metric.metric}`}
-                      title={metric.metric}
-                      value={metric.value}
-                      change={'change' in metric ? metric.change : undefined}
-                      icon={iconMap[metric.metric] || TrendingUpIcon}
-                  />
-              ))}
-
-            <button onClick={() => setIsAddKpiModalOpen(true)} className="flex items-center justify-center rounded-3xl border-2 border-dashed border-zinc-700 text-zinc-500 hover:bg-zinc-800/50 hover:border-zinc-600 transition-colors duration-200" aria-label="Add new widget">
-              <div className="text-center">
-                <PlusCircleIcon className="mx-auto h-10 w-10" />
-                <p className="mt-2 text-base font-semibold">Add KPI Widget</p>
-              </div>
-            </button>
-          </div>
-        </section>
-
-        <section>
-          <ActivityFeed activities={activityFeed} />
-        </section>
-      </div>
-
-      {isAddKpiModalOpen && (
-        <AddKpiModal
-          isOpen={isAddKpiModalOpen}
-          onClose={() => setIsAddKpiModalOpen(false)}
-          allKpis={allKpis}
-          showcaseKpis={showcaseKpis}
-          onAddKpi={handleAddKpi}
-        />
-      )}
-    </>
+    <Dashboard
+        title="External Dashboard"
+        description="An overview of your marketing, content, SEO, and branding efforts."
+        initialShowcaseKpis={showcaseKpis}
+        allKpisForModal={allKpis}
+        iconMap={iconMap}
+        availableWidgets={availableWidgets}
+        visibleWidgetIds={visibleWidgetIds}
+        setVisibleWidgetIds={setVisibleWidgetIds}
+    />
   );
 }

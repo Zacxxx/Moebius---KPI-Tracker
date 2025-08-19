@@ -1,5 +1,3 @@
-
-
 import type { 
     RevenueStream,
     ExpenseItem,
@@ -19,7 +17,9 @@ import type {
     PromotionItem,
     ActivityItem,
     Campaign,
+    Team,
     TeamMember,
+    TeamActivity,
     ContentMetric,
     ContentItem,
     SeoMetric,
@@ -32,9 +32,14 @@ import type {
     BrandingMetric,
     BrandMentionData,
     Competitor,
-    FeatureComparison
+    FeatureComparison,
+    ConversationUser,
+    ConversationChannel,
+    ConversationMessage,
+    NotificationItem,
+    CoordinationMetric,
 } from './types';
-import { MegaphoneIcon, SearchIcon, TrendingUpIcon, UsersIcon } from './components/Icons';
+import { FileTextIcon, MegaphoneIcon, MessageSquareIcon, SearchIcon, TrendingUpIcon, UsersIcon } from './components/Icons';
 
 
 // Initial Data
@@ -115,12 +120,30 @@ export const initialCapTableMetrics: CapTableMetric[] = [
     { id: 3, metric: 'Investor Ownership %', value: '30%' },
     { id: 4, metric: 'ESOP Pool %', value: '10%' },
 ];
+export const initialCoordinationMetrics: CoordinationMetric[] = [
+    { id: 1, metric: 'Active Contractors', value: '12', change: '+2 this month' },
+    { id: 2, metric: 'Avg. Project Completion Time', value: '28 days', change: '-3 days vs last quarter' },
+    { id: 3, metric: 'Services Uptime', value: '99.95%', change: 'Last 30 days' },
+    { id: 4, metric: 'Open Service Tickets', value: '5', change: '-1 from yesterday' },
+];
+export const initialTeams: Team[] = [
+    { id: 'eng', name: 'Engineering', channelId: 'eng-channel' },
+    { id: 'prod', name: 'Product', channelId: 'prod-channel' },
+    { id: 'sales', name: 'Sales', channelId: 'sales-channel' },
+];
 export const initialTeamMembers: TeamMember[] = [
-    { id: 1, name: 'John Doe', role: 'CEO, Founder', status: 'online', avatarUrl: undefined },
-    { id: 2, name: 'Alice Johnson', role: 'Lead Engineer', status: 'online', avatarUrl: undefined },
-    { id: 3, name: 'Bob Smith', role: 'Product Manager', status: 'away', avatarUrl: undefined },
-    { id: 4, name: 'Charlie Brown', role: 'UX/UI Designer', status: 'offline', avatarUrl: undefined },
-    { id: 5, name: 'Diana Prince', role: 'Head of Sales', status: 'online', avatarUrl: undefined },
+    { id: 1, name: 'John Doe', role: 'CEO, Founder', status: 'online', avatarUrl: undefined, lastActive: 'Online', timezone: 'PST', activityData: [5, 6, 8, 7, 9, 7, 8], teamIds: ['eng', 'prod', 'sales'] },
+    { id: 2, name: 'Alice Johnson', role: 'Lead Engineer', status: 'online', avatarUrl: undefined, lastActive: 'Online', timezone: 'GMT', activityData: [9, 8, 10, 9, 11, 10, 9], teamIds: ['eng'] },
+    { id: 3, name: 'Bob Smith', role: 'Product Manager', status: 'away', avatarUrl: undefined, lastActive: '15m ago', timezone: 'EST', activityData: [4, 5, 3, 5, 4, 6, 5], teamIds: ['prod'] },
+    { id: 4, name: 'Charlie Brown', role: 'UX/UI Designer', status: 'offline', avatarUrl: undefined, lastActive: '8h ago', timezone: 'PST', activityData: [2, 3, 2, 1, 4, 3, 2], teamIds: ['prod'] },
+    { id: 5, name: 'Diana Prince', role: 'Head of Sales', status: 'online', avatarUrl: undefined, lastActive: '3m ago', timezone: 'GMT', activityData: [7, 8, 6, 9, 8, 7, 9], teamIds: ['sales'] },
+    { id: 6, name: 'Frank Castle', role: 'Backend Engineer', status: 'offline', avatarUrl: undefined, lastActive: '2h ago', timezone: 'EST', activityData: [8, 9, 7, 8, 6, 7, 8], teamIds: ['eng'] },
+];
+export const initialTeamActivity: TeamActivity[] = [
+    { id: 1, memberId: 2, memberName: 'Alice Johnson', action: 'Deployed version 2.1.0 to production.', timestamp: '15m ago' },
+    { id: 2, memberId: 5, memberName: 'Diana Prince', action: 'Closed a $50,000 deal with Future Tech.', timestamp: '1h ago' },
+    { id: 3, memberId: 3, memberName: 'Bob Smith', action: 'Updated the Q4 product roadmap.', timestamp: '3h ago' },
+    { id: 4, memberId: 2, memberName: 'Alice Johnson', action: 'Resolved 5 critical bugs.', timestamp: '5h ago' },
 ];
 export const initialActivityFeed: ActivityItem[] = [
     {
@@ -168,6 +191,13 @@ export const initialCampaigns: Campaign[] = [
     { id: 2, name: 'Q3 Lead Generation', channel: 'Facebook', status: 'Active', budget: 7500, cpa: 110, roas: '4.1:1' },
     { id: 3, name: 'B2B Outreach', channel: 'LinkedIn', status: 'Paused', budget: 4000, cpa: 250, roas: 'N/A' },
     { id: 4, name: 'Spring Launch', channel: 'Google Ads', status: 'Completed', budget: 6000, cpa: 95, roas: '6.3:1' },
+];
+
+export const initialNotifications: NotificationItem[] = [
+    { id: 1, type: 'new_users', title: '5 new users signed up', detail: 'Your user base grew by 0.5% today.', time: '10m ago', unread: true, icon: UsersIcon, iconColor: 'text-violet-400' },
+    { id: 2, type: 'report_ready', title: 'Q2 Financial Report is ready', detail: 'The quarterly report has been generated.', time: '1h ago', unread: true, icon: FileTextIcon, iconColor: 'text-emerald-400' },
+    { id: 3, type: 'comment', title: 'Alice commented on your post', detail: '"Great insights on the new ARR projection!"', time: '3h ago', unread: false, icon: MessageSquareIcon, iconColor: 'text-blue-400' },
+    { id: 4, type: 'new_users', title: '1 new user signed up', detail: 'Welcome your newest customer.', time: 'yesterday', unread: false, icon: UsersIcon, iconColor: 'text-violet-400' },
 ];
 
 // E-commerce mock data
@@ -293,3 +323,53 @@ export const initialFeatureComparison: FeatureComparison[] = [
     { feature: "Mobile App", "Moebius": true, "Competitor A": false, "Competitor B": true, "Competitor C": false },
     { feature: "API Access", "Moebius": true, "Competitor A": true, "Competitor B": true, "Competitor C": true },
 ];
+
+// Conversations Data
+export const initialConversationUsers: ConversationUser[] = [
+    { id: 1, name: 'John Doe', status: 'online' },
+    { id: 2, name: 'Alice Johnson', status: 'online' },
+    { id: 3, name: 'Bob Smith', status: 'away' },
+    { id: 4, name: 'Charlie Brown', status: 'offline' },
+    { id: 5, name: 'Diana Prince', status: 'online' },
+    { id: 6, name: 'Frank Castle', status: 'offline' },
+];
+
+export const initialConversationChannels: ConversationChannel[] = [
+    { id: '1', name: 'general', type: 'public', unreadCount: 2, lastMessage: 'Just a reminder about the all-hands meeting tomorrow!', lastMessageTimestamp: '2:45 PM' },
+    { id: 'eng-channel', name: 'team-engineering', type: 'private', unreadCount: 1, lastMessage: 'Staging is ready for testing.', lastMessageTimestamp: '1:10 PM' },
+    { id: 'prod-channel', name: 'team-product', type: 'private', unreadCount: 5, lastMessage: 'I\'ve uploaded the new mockups to Figma.', lastMessageTimestamp: '3:02 PM' },
+    { id: 'sales-channel', name: 'team-sales', type: 'private', unreadCount: 0, lastMessage: 'Q3 targets have been updated.', lastMessageTimestamp: '10:00 AM' },
+    { id: '4', name: 'q4-planning', type: 'private', unreadCount: 0, lastMessage: 'Let\'s sync up on the final numbers.', lastMessageTimestamp: '11:20 AM' },
+    { id: 'dm-john', name: 'John Doe', type: 'dm', unreadCount: 0, members: [1], lastMessage: 'Can we sync up later?', lastMessageTimestamp: 'Yesterday' },
+    { id: 'dm-alice', name: 'Alice Johnson', type: 'dm', unreadCount: 1, members: [2], lastMessage: 'Hey! Do you have a moment to review my PR?', lastMessageTimestamp: '2:50 PM' },
+    { id: 'dm-bob', name: 'Bob Smith', type: 'dm', unreadCount: 0, members: [3], lastMessage: 'Sounds good, thanks!', lastMessageTimestamp: 'Yesterday' },
+    { id: 'dm-charlie', name: 'Charlie Brown', type: 'dm', unreadCount: 0, members: [4], lastMessage: 'Figma link sent.', lastMessageTimestamp: 'Monday' },
+    { id: 'dm-diana', name: 'Diana Prince', type: 'dm', unreadCount: 2, members: [5], lastMessage: 'Just closed the deal!', lastMessageTimestamp: '1:30 PM' },
+    { id: 'dm-frank', name: 'Frank Castle', type: 'dm', unreadCount: 0, members: [6], lastMessage: 'DB migration is complete.', lastMessageTimestamp: '9:00 AM' },
+];
+
+export const initialConversationMessages: Record<string, ConversationMessage[]> = {
+    '1': [
+        { id: 'm1-1', text: 'Hey team, what\'s the status on the Q3 report?', userId: 1, userName: 'John Doe', timestamp: '2:30 PM' },
+        { id: 'm1-2', text: 'Almost done! Just waiting for the final numbers from sales.', userId: 3, userName: 'Bob Smith', timestamp: '2:31 PM' },
+        { id: 'm1-3', text: 'I\'ve pushed the latest deployment fixes, so the staging environment is ready for testing.', userId: 2, userName: 'Alice Johnson', timestamp: '2:40 PM' },
+        { id: 'm1-4', text: 'Great, thanks Alice! Diana, any update on those numbers?', userId: 1, userName: 'John Doe', timestamp: '2:41 PM' },
+        { id: 'm1-5', text: 'Just sent them over to Bob. Should be all set.', userId: 5, userName: 'Diana Prince', timestamp: '2:44 PM' },
+        { id: 'm1-6', text: 'Just a reminder about the all-hands meeting tomorrow!', userId: 1, userName: 'John Doe', timestamp: '2:45 PM' },
+    ],
+    '3': [
+        { id: 'm3-1', text: 'I\'ve uploaded the new mockups to Figma.', userId: 4, userName: 'Charlie Brown', timestamp: '3:02 PM' },
+        { id: 'm3-2', text: 'They look amazing! 🔥', userId: 2, userName: 'Alice Johnson', timestamp: '3:05 PM' },
+    ],
+    'dm-alice': [
+        { id: 'dm1-1', text: 'Hey! Do you have a moment to review my PR?', userId: 2, userName: 'Alice Johnson', timestamp: '2:50 PM' },
+    ],
+    'dm-diana': [
+        { id: 'dm2-1', text: 'The contract is signed!', userId: 5, userName: 'Diana Prince', timestamp: '1:29 PM' },
+        { id: 'dm2-2', text: 'Just closed the deal!', userId: 5, userName: 'Diana Prince', timestamp: '1:30 PM' },
+    ],
+    'dm-john': [],
+    'dm-bob': [],
+    'dm-charlie': [],
+    'dm-frank': [],
+};

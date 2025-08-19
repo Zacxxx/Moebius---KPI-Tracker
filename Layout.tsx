@@ -1,5 +1,3 @@
-
-
 import React, { useState, useRef, useEffect } from 'react';
 import type { Page, ChatSession } from './types';
 import { MenuIcon, BellIcon, UserIcon, UsersIcon, SearchIcon, MoebiusIcon, ChevronLeftIcon, ChevronDownIcon, DatabaseIcon, MessageSquareIcon, EditIcon, FolderIcon, FolderPlusIcon, Trash2Icon, SparklesIcon, LaptopIcon, ShoppingCartIcon, ShapesIcon } from './components/Icons';
@@ -406,6 +404,11 @@ interface LayoutProps {
   activeContentSection: ContentSection;
   setActiveContentSection: (section: ContentSection) => void;
   onSearchClick: () => void;
+  activeTeamId: string;
+  setActiveTeamId: (id: string) => void;
+  setViewedProfileId: (id: number | null) => void;
+  onStartDm: (memberId: number) => void;
+  onOpenConversationToast: (channelId: string) => void;
 }
 
 export default function Layout({ 
@@ -421,6 +424,11 @@ export default function Layout({
   activeContentSection,
   setActiveContentSection,
   onSearchClick,
+  activeTeamId,
+  setActiveTeamId,
+  setViewedProfileId,
+  onStartDm,
+  onOpenConversationToast,
 }: LayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isUserPanelOpen, setIsUserPanelOpen] = useState(false);
@@ -465,6 +473,22 @@ export default function Layout({
       setIsNotificationsPanelOpen(false);
       setIsTeamPanelOpen(false);
   }
+  
+  const handleGoToConversations = () => {
+      setPage('conversations');
+      setIsConversationsPanelOpen(false);
+  };
+
+  const handleOpenToastAndClosePanel = (channelId: string) => {
+    onOpenConversationToast(channelId);
+    setIsConversationsPanelOpen(false);
+  };
+
+  const handleViewProfile = (memberId: number) => {
+    setViewedProfileId(memberId);
+    setPage('profile');
+    setIsTeamPanelOpen(false);
+  };
 
   return (
     <div className="flex h-screen bg-zinc-900">
@@ -499,10 +523,18 @@ export default function Layout({
                 onToggleChatToast={onToggleChatToast}
                 onSearchClick={onSearchClick}
             />
-            {isUserPanelOpen && <UserPanel ref={userPanelRef} />}
-            {isNotificationsPanelOpen && <NotificationsPanel ref={notificationsPanelRef} />}
-            {isTeamPanelOpen && <TeamPanel ref={teamPanelRef} />}
-            {isConversationsPanelOpen && <ConversationsPanel ref={conversationsPanelRef} />}
+            {isUserPanelOpen && <UserPanel ref={userPanelRef} onGoToFullscreen={() => { setViewedProfileId(null); setPage('profile'); setIsUserPanelOpen(false); }} />}
+            {isNotificationsPanelOpen && <NotificationsPanel ref={notificationsPanelRef} onGoToFullscreen={() => { setPage('notifications'); setIsNotificationsPanelOpen(false); }} />}
+            {isTeamPanelOpen && <TeamPanel 
+                ref={teamPanelRef} 
+                activeTeamId={activeTeamId}
+                setActiveTeamId={setActiveTeamId}
+                onGoToFullscreen={() => { setPage('team-management'); setIsTeamPanelOpen(false); }}
+                setPage={setPage}
+                onViewProfile={handleViewProfile}
+                onStartDm={onStartDm}
+             />}
+            {isConversationsPanelOpen && <ConversationsPanel ref={conversationsPanelRef} onGoToFullscreen={handleGoToConversations} onOpenConversationToast={handleOpenToastAndClosePanel} />}
         </div>
         
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">

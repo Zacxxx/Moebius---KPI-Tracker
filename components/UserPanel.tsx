@@ -1,8 +1,6 @@
-
-
 import React, { useState, forwardRef } from 'react';
 import { HeaderPanel } from './ui/HeaderPanel';
-import { UserIcon, SettingsIcon, CreditCardIcon, PaletteIcon, LogOutIcon, SunIcon, MoonIcon, LaptopIcon } from './Icons';
+import { UserIcon, SettingsIcon, CreditCardIcon, PaletteIcon, LogOutIcon, SunIcon, MoonIcon, LaptopIcon, Maximize2Icon } from './Icons';
 import { Button } from './ui/Button';
 
 type Tab = 'profile' | 'settings' | 'billing' | 'theme';
@@ -41,7 +39,11 @@ const ThemeSelector: React.FC = () => {
     )
 }
 
-const UserPanel = forwardRef<HTMLDivElement>((props, ref) => {
+interface UserPanelProps {
+    onGoToFullscreen: () => void;
+}
+
+const UserPanel = forwardRef<HTMLDivElement, UserPanelProps>(({ onGoToFullscreen }, ref) => {
     const [activeTab, setActiveTab] = useState<Tab>('profile');
 
     const renderContent = () => {
@@ -61,39 +63,46 @@ const UserPanel = forwardRef<HTMLDivElement>((props, ref) => {
     
     return (
         <HeaderPanel ref={ref} className="right-6 w-[26rem] max-w-md">
-            <div className="flex">
-                {/* Left Menu */}
-                <nav className="w-1/3 border-r border-zinc-700/50 bg-zinc-900/30 p-2">
-                    <div className="text-zinc-100 p-2 mb-2">
-                        <p className="font-semibold text-sm">John Doe</p>
+            <div className="flex flex-col">
+                <div className="p-3 flex items-center justify-between border-b border-zinc-700/50">
+                    <div>
+                        <p className="font-semibold text-sm text-zinc-100">John Doe</p>
                         <p className="text-xs text-zinc-400 truncate">john.doe@example.com</p>
                     </div>
-                    {menuItems.map(({ id, label, icon: Icon }) => (
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onGoToFullscreen} aria-label="Manage account in fullscreen">
+                        <Maximize2Icon className="h-4 w-4" />
+                    </Button>
+                </div>
+                <div className="flex">
+                    {/* Left Menu */}
+                    <nav className="w-1/3 border-r border-zinc-700/50 bg-zinc-900/30 p-2">
+                        {menuItems.map(({ id, label, icon: Icon }) => (
+                             <button
+                                key={id}
+                                onClick={() => setActiveTab(id)}
+                                className={`flex items-center w-full gap-3 px-3 py-2.5 text-sm rounded-md text-left transition-colors ${
+                                    activeTab === id
+                                    ? 'bg-violet-500/10 text-violet-300'
+                                    : 'text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200'
+                                }`}
+                            >
+                                <Icon className="h-5 w-5 flex-shrink-0" />
+                                <span>{label}</span>
+                            </button>
+                        ))}
+                        <div className="border-t border-zinc-700/50 my-2"></div>
                          <button
-                            key={id}
-                            onClick={() => setActiveTab(id)}
-                            className={`flex items-center w-full gap-3 px-3 py-2.5 text-sm rounded-md text-left transition-colors ${
-                                activeTab === id
-                                ? 'bg-violet-500/10 text-violet-300'
-                                : 'text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200'
-                            }`}
+                            className="flex items-center w-full gap-3 px-3 py-2.5 text-sm rounded-md text-left transition-colors text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200"
                         >
-                            <Icon className="h-5 w-5 flex-shrink-0" />
-                            <span>{label}</span>
+                            <LogOutIcon className="h-5 w-5 flex-shrink-0" />
+                            <span>Log Out</span>
                         </button>
-                    ))}
-                    <div className="border-t border-zinc-700/50 my-2"></div>
-                     <button
-                        className="flex items-center w-full gap-3 px-3 py-2.5 text-sm rounded-md text-left transition-colors text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200"
-                    >
-                        <LogOutIcon className="h-5 w-5 flex-shrink-0" />
-                        <span>Log Out</span>
-                    </button>
-                </nav>
+                    </nav>
 
-                {/* Right Content */}
-                <div className="w-2/3 p-4 flex flex-col">
-                    {renderContent()}
+                    {/* Right Content */}
+                    <div className="w-2/3 p-4 flex flex-col">
+                        {renderContent()}
+                    </div>
                 </div>
             </div>
         </HeaderPanel>

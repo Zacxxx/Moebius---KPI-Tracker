@@ -1,25 +1,20 @@
-
-
 import React, { useState, forwardRef } from 'react';
 import { CardHeader, CardTitle, CardContent } from './ui/Card';
-import { BellIcon, UsersIcon, FileTextIcon, MessageSquareIcon } from './Icons';
+import { BellIcon } from './Icons';
 import { Button } from './ui/Button';
 import { HeaderPanel } from './ui/HeaderPanel';
+import { initialNotifications } from '../data';
 
 type Tab = 'All' | 'Unread';
 
-const mockNotifications = [
-    { id: 1, type: 'new_users', title: '5 new users signed up', detail: 'Your user base grew by 0.5% today.', time: '10m ago', unread: true, icon: UsersIcon, iconColor: 'text-violet-400' },
-    { id: 2, type: 'report_ready', title: 'Q2 Financial Report is ready', detail: 'The quarterly report has been generated.', time: '1h ago', unread: true, icon: FileTextIcon, iconColor: 'text-emerald-400' },
-    { id: 3, type: 'comment', title: 'Alice commented on your post', detail: '"Great insights on the new ARR projection!"', time: '3h ago', unread: false, icon: MessageSquareIcon, iconColor: 'text-blue-400' },
-    { id: 4, type: 'new_users', title: '1 new user signed up', detail: 'Welcome your newest customer.', time: 'yesterday', unread: false, icon: UsersIcon, iconColor: 'text-violet-400' },
-];
+interface NotificationsPanelProps {
+    onGoToFullscreen: () => void;
+}
 
-
-const NotificationsPanel = forwardRef<HTMLDivElement>((props, ref) => {
+const NotificationsPanel = forwardRef<HTMLDivElement, NotificationsPanelProps>(({ onGoToFullscreen }, ref) => {
     const [activeTab, setActiveTab] = useState<Tab>('All');
 
-    const filteredNotifications = mockNotifications.filter(n => 
+    const filteredNotifications = initialNotifications.filter(n => 
         activeTab === 'All' || (activeTab === 'Unread' && n.unread)
     );
     
@@ -81,6 +76,11 @@ const NotificationsPanel = forwardRef<HTMLDivElement>((props, ref) => {
                     </div>
                 </div>
             </CardContent>
+            <div className="p-2 border-t border-zinc-700/50 text-center">
+                <button onClick={onGoToFullscreen} className="text-sm font-medium text-violet-400 hover:text-violet-300 w-full p-1 rounded-md transition-colors duration-200">
+                    View All Notifications
+                </button>
+            </div>
         </HeaderPanel>
     )
 });

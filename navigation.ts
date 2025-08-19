@@ -24,8 +24,9 @@ export const platformNavItems: NavItemData[] = [
   { 
     icon: LineChartIcon, 
     label: "Simulation", 
-    page: "simulation-revenue",
+    page: "simulation-dashboard",
     subItems: [
+        { label: "Dashboard", page: "simulation-dashboard"},
         { label: "Revenue & Valuation", page: "simulation-revenue"},
         { label: "P&L Statement", page: "simulation-pnl"},
         { label: "Balance Sheet", page: "simulation-balance-sheet"},
@@ -56,8 +57,9 @@ export const platformNavItems: NavItemData[] = [
   { 
     icon: BriefcaseIcon, 
     label: "Internal", 
-    page: "internal-people",
+    page: "internal-dashboard",
     subItems: [
+        { label: "Dashboard", page: "internal-dashboard"},
         { label: "People", page: "internal-people"},
         { label: "Culture", page: "internal-culture"},
         { label: "Cap Table", page: "internal-cap-table"},
@@ -82,8 +84,9 @@ export const platformNavItems: NavItemData[] = [
   { 
     icon: SlidersIcon, 
     label: "Operational", 
-    page: "operational-efficiency",
+    page: "operational-dashboard",
     subItems: [
+        { label: "Dashboard", page: "operational-dashboard"},
         { label: "Efficiency", page: "operational-efficiency"},
         { label: "System Status", page: "operational-status"},
         { label: "Cost Analysis", page: "operational-costs"},
@@ -92,8 +95,9 @@ export const platformNavItems: NavItemData[] = [
   {
     icon: ShapesIcon,
     label: "Coordination",
-    page: "coordination-contractors",
+    page: "coordination-dashboard",
     subItems: [
+        { label: "Dashboard", page: "coordination-dashboard"},
         { label: "Contractors", page: "coordination-contractors"},
         { label: "Agents", page: "coordination-agents"},
         { label: "Services", page: "coordination-services"},

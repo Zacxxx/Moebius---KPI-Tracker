@@ -1,9 +1,9 @@
-
-
 import type { Chat } from '@google/genai';
+import React from 'react';
 
 export type Page = 
   'dashboard' | 
+  'simulation-dashboard' |
   'simulation-revenue' |
   'simulation-pnl' |
   'simulation-balance-sheet' |
@@ -16,9 +16,11 @@ export type Page =
   'customer-feedback' |
   'product-analytics' |
   'marketing' |
+  'operational-dashboard' |
   'operational-efficiency' |
   'operational-status' |
   'operational-costs' |
+  'internal-dashboard' |
   'internal-people' |
   'internal-culture' |
   'internal-cap-table' |
@@ -27,6 +29,7 @@ export type Page =
   'sales-orders' |
   'sales-inventory' |
   'sales-promotions' |
+  'coordination-dashboard' |
   'coordination-contractors' |
   'coordination-agents' |
   'coordination-services' |
@@ -48,6 +51,10 @@ export type Page =
   'external-pr' |
   'external-branding' |
   'external-competition' |
+  'conversations' |
+  'team-management' |
+  'profile' |
+  'notifications' |
   'chat';
 
 export interface Message {
@@ -84,6 +91,7 @@ export interface CustomerMetric { id: number; metric: string; value: string; cha
 export interface FeedbackItem { id: number; score: number; comment: string; user: string; type: 'promoter' | 'passive' | 'detractor'; }
 export interface ProductMetric { id: number; metric: string; value: string; change: string; }
 export interface CapTableMetric { id: number; metric: string; value: string; }
+export interface CoordinationMetric { id: number; metric: string; value: string; change: string; }
 export interface ActivityTextPart { text: string; strong?: boolean; }
 export interface ActivityItem {
   id: number;
@@ -101,12 +109,66 @@ export interface Campaign {
   cpa: number;
   roas: string;
 }
+export interface Team {
+  id: string;
+  name: string;
+  channelId: string;
+}
 export interface TeamMember {
   id: number;
   name: string;
   role: string;
   status: 'online' | 'offline' | 'away';
   avatarUrl?: string; // Optional avatar URL
+  lastActive: string;
+  timezone: string;
+  activityData: number[];
+  teamIds: string[];
+}
+export interface TeamActivity {
+  id: number;
+  memberId: number;
+  memberName: string;
+  action: string;
+  timestamp: string;
+}
+export interface ConversationUser {
+  id: number;
+  name: string;
+  avatarUrl?: string;
+  status: 'online' | 'offline' | 'away';
+}
+export interface ConversationMessage {
+  id: string;
+  text: string;
+  timestamp: string;
+  userId: number;
+  userName: string;
+  userAvatarUrl?: string;
+}
+export interface ConversationChannel {
+  id: string;
+  name: string;
+  type: 'public' | 'private' | 'dm';
+  unreadCount: number;
+  lastMessage?: string;
+  lastMessageTimestamp?: string;
+  members?: number[]; // user ids for DMs
+}
+export interface NotificationItem {
+  id: number;
+  type: string;
+  title: string;
+  detail: string;
+  time: string;
+  unread: boolean;
+  icon: React.FC<{ className?: string }>;
+  iconColor: string;
+}
+
+export interface DmToastState {
+  channelId: string;
+  isMinimized: boolean;
 }
 
 // E-commerce types
@@ -116,7 +178,7 @@ export interface ProductItem { id: number; name: string; sku: string; stock: num
 export interface PromotionItem { id: number; code: string; type: 'Percentage' | 'Fixed Amount'; value: number; status: 'Active' | 'Expired'; usageCount: number; }
 
 // New types for dynamic dashboard
-export type ShowcaseKpi = KpiMetric | CustomerMetric | OperationalMetric | ProductMetric | MarketingMetric | CapTableMetric;
+export type ShowcaseKpi = KpiMetric | CustomerMetric | OperationalMetric | ProductMetric | MarketingMetric | CapTableMetric | CoordinationMetric;
 export type SelectableKpi = ShowcaseKpi & {
   source: string;
 };
@@ -140,3 +202,24 @@ export interface BrandMentionData { name: string; Twitter: number; LinkedIn: num
 
 export interface Competitor { id: number; name: string; funding: string; employees: string; founded: number; logoUrl: string; }
 export interface FeatureComparison { feature: string; [competitorName: string]: boolean | string; }
+
+// Widget Types
+export type WidgetType = 
+  'PROJECTION_GRAPHIC' | 
+  'SALES_TREND' | 
+  'TOP_PRODUCTS' | 
+  'TOP_SOURCES' | 
+  'SALES_FUNNEL' | 
+  'TRAFFIC_SOURCES' | 
+  'HIRING_PIPELINE' | 
+  'CAMPAIGN_PERFORMANCE' |
+  'ACTIVITY_FEED';
+
+export interface Widget {
+  id: WidgetType;
+  title: string;
+  description: string;
+  component: React.FC<any>;
+  defaultProps?: any;
+  gridWidth?: number; // e.g., 1, 2, or 3 for column span
+}
