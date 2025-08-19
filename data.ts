@@ -1,4 +1,5 @@
 
+
 import type { 
     RevenueStream,
     ExpenseItem,
@@ -18,6 +19,7 @@ import type {
     PromotionItem,
     ActivityItem,
     Campaign,
+    TeamMember,
     ContentMetric,
     ContentItem,
     SeoMetric,
@@ -112,6 +114,13 @@ export const initialCapTableMetrics: CapTableMetric[] = [
     { id: 2, metric: 'Founder Ownership %', value: '60%' },
     { id: 3, metric: 'Investor Ownership %', value: '30%' },
     { id: 4, metric: 'ESOP Pool %', value: '10%' },
+];
+export const initialTeamMembers: TeamMember[] = [
+    { id: 1, name: 'John Doe', role: 'CEO, Founder', status: 'online', avatarUrl: undefined },
+    { id: 2, name: 'Alice Johnson', role: 'Lead Engineer', status: 'online', avatarUrl: undefined },
+    { id: 3, name: 'Bob Smith', role: 'Product Manager', status: 'away', avatarUrl: undefined },
+    { id: 4, name: 'Charlie Brown', role: 'UX/UI Designer', status: 'offline', avatarUrl: undefined },
+    { id: 5, name: 'Diana Prince', role: 'Head of Sales', status: 'online', avatarUrl: undefined },
 ];
 export const initialActivityFeed: ActivityItem[] = [
     {

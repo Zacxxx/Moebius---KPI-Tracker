@@ -1,6 +1,6 @@
 
 import type { Page } from './types';
-import { HomeIcon, LineChartIcon, MegaphoneIcon, SlidersIcon, UsersIcon, BriefcaseIcon, ShapesIcon, RocketIcon, ShoppingCartIcon } from './components/Icons';
+import { HomeIcon, LineChartIcon, MegaphoneIcon, SlidersIcon, UsersIcon, BriefcaseIcon, ShapesIcon, RocketIcon, ShoppingCartIcon, SparklesIcon, TagIcon } from './components/Icons';
 
 export type NavItemData = {
   icon: React.FC<{className?: string}>;
@@ -54,6 +54,16 @@ export const platformNavItems: NavItemData[] = [
     ]
   },
   { 
+    icon: BriefcaseIcon, 
+    label: "Internal", 
+    page: "internal-people",
+    subItems: [
+        { label: "People", page: "internal-people"},
+        { label: "Culture", page: "internal-culture"},
+        { label: "Cap Table", page: "internal-cap-table"},
+    ]
+  },
+  { 
     icon: MegaphoneIcon, 
     label: "External", 
     page: "external-dashboard",
@@ -69,6 +79,16 @@ export const platformNavItems: NavItemData[] = [
         { label: "Competition", page: "external-competition"},
     ]
   },
+  { 
+    icon: SlidersIcon, 
+    label: "Operational", 
+    page: "operational-efficiency",
+    subItems: [
+        { label: "Efficiency", page: "operational-efficiency"},
+        { label: "System Status", page: "operational-status"},
+        { label: "Cost Analysis", page: "operational-costs"},
+    ]
+  },
   {
     icon: ShapesIcon,
     label: "Coordination",
@@ -79,24 +99,29 @@ export const platformNavItems: NavItemData[] = [
         { label: "Services", page: "coordination-services"},
     ]
   },
-   { 
-    icon: SlidersIcon, 
-    label: "Operational", 
-    page: "operational-efficiency",
+  { 
+    icon: SparklesIcon, 
+    label: "Studio", 
+    page: "studio-dashboard",
     subItems: [
-        { label: "Efficiency", page: "operational-efficiency"},
-        { label: "System Status", page: "operational-status"},
-        { label: "Cost Analysis", page: "operational-costs"},
+        { label: "Dashboard", page: "studio-dashboard"},
+        { label: "Projects", page: "studio-projects"},
+        { label: "Tasks", page: "studio-tasks"},
+        { label: "Entities", page: "studio-entities"},
+        { label: "Systems", page: "studio-systems"},
+        { label: "Essences", page: "studio-essences"},
     ]
   },
-  { 
-    icon: BriefcaseIcon, 
-    label: "Internal", 
-    page: "internal-people",
+  {
+    icon: TagIcon,
+    label: "Marketplace",
+    page: "marketplace-dashboard",
     subItems: [
-        { label: "People", page: "internal-people"},
-        { label: "Culture", page: "internal-culture"},
-        { label: "Cap Table", page: "internal-cap-table"},
+        { label: "Dashboard", page: "marketplace-dashboard"},
+        { label: "Performances", page: "marketplace-performances"},
+        { label: "Requests", page: "marketplace-requests"},
+        { label: "Contracts", page: "marketplace-contracts"},
+        { label: "Prospection", page: "marketplace-prospection"},
     ]
   },
 ];

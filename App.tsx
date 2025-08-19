@@ -434,6 +434,28 @@ export default function App() {
         return <PlaceholderPage title="Agents" description="Manage and coordinate with your organization's agents." />;
       case 'coordination-services':
         return <PlaceholderPage title="Services" description="Manage and coordinate with external services." />;
+      case 'studio-dashboard':
+        return <PlaceholderPage title="Studio Dashboard" description="An overview of your studio activities." />;
+      case 'studio-projects':
+        return <PlaceholderPage title="Studio Projects" description="Manage all your studio projects." />;
+      case 'studio-tasks':
+        return <PlaceholderPage title="Studio Tasks" description="Track tasks related to studio projects." />;
+      case 'studio-entities':
+        return <PlaceholderPage title="Studio Entities" description="Manage entities within your studio." />;
+      case 'studio-systems':
+        return <PlaceholderPage title="Studio Systems" description="Manage studio systems and workflows." />;
+      case 'studio-essences':
+        return <PlaceholderPage title="Studio Essences" description="Manage essences for your studio." />;
+      case 'marketplace-dashboard':
+        return <PlaceholderPage title="Marketplace Dashboard" description="An overview of your marketplace performance." />;
+      case 'marketplace-performances':
+        return <PlaceholderPage title="Marketplace Performances" description="Analyze marketplace performance metrics." />;
+      case 'marketplace-requests':
+        return <PlaceholderPage title="Marketplace Requests" description="Handle requests from the marketplace." />;
+      case 'marketplace-contracts':
+        return <PlaceholderPage title="Marketplace Contracts" description="Manage marketplace contracts." />;
+      case 'marketplace-prospection':
+        return <PlaceholderPage title="Marketplace Prospection" description="Tools for marketplace prospection." />;
       case 'internal-culture':
         return <PlaceholderPage title="Culture" description="Monitor and foster company culture." />;
       case 'external-dashboard':

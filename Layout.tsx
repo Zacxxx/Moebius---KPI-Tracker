@@ -1,9 +1,12 @@
 
+
 import React, { useState, useRef, useEffect } from 'react';
 import type { Page, ChatSession } from './types';
-import { MenuIcon, BellIcon, UserIcon, SearchIcon, MoebiusIcon, ChevronLeftIcon, ChevronDownIcon, DatabaseIcon, MessageSquareIcon, EditIcon, FolderIcon, FolderPlusIcon, Trash2Icon, SparklesIcon, LaptopIcon, ShoppingCartIcon, ShapesIcon } from './components/Icons';
+import { MenuIcon, BellIcon, UserIcon, UsersIcon, SearchIcon, MoebiusIcon, ChevronLeftIcon, ChevronDownIcon, DatabaseIcon, MessageSquareIcon, EditIcon, FolderIcon, FolderPlusIcon, Trash2Icon, SparklesIcon, LaptopIcon, ShoppingCartIcon, ShapesIcon } from './components/Icons';
 import UserPanel from './components/UserPanel';
 import NotificationsPanel from './components/NotificationsPanel';
+import TeamPanel from './components/TeamPanel';
+import ConversationsPanel from './components/ConversationsPanel';
 import { NavItemData, platformNavItems } from './navigation';
 
 const NavItem: React.FC<{
@@ -329,7 +332,15 @@ const Sidebar: React.FC<SidebarProps> = ({
   );
 }
 
-const Header: React.FC<{ onToggleSidebar: () => void; onToggleUserPanel: () => void; onToggleNotificationsPanel: () => void; onToggleChatToast: () => void; onSearchClick: () => void; }> = ({ onToggleSidebar, onToggleUserPanel, onToggleNotificationsPanel, onToggleChatToast, onSearchClick }) => {
+const Header: React.FC<{ 
+  onToggleSidebar: () => void; 
+  onToggleUserPanel: () => void; 
+  onToggleNotificationsPanel: () => void; 
+  onToggleChatToast: () => void; 
+  onSearchClick: () => void;
+  onToggleTeamPanel: () => void;
+  onToggleConversationsPanel: () => void;
+}> = ({ onToggleSidebar, onToggleUserPanel, onToggleNotificationsPanel, onToggleChatToast, onSearchClick, onToggleTeamPanel, onToggleConversationsPanel }) => {
   return (
     <header className="flex items-center justify-between h-16 px-4 md:px-6 bg-zinc-900/50 backdrop-blur-lg border-b border-zinc-700/50 sticky top-0 z-20">
       <button onClick={onToggleSidebar} className="p-2 rounded-full hover:bg-zinc-800/60 text-zinc-400 hover:text-zinc-200 lg:hidden" aria-label="Toggle sidebar">
@@ -345,6 +356,12 @@ const Header: React.FC<{ onToggleSidebar: () => void; onToggleUserPanel: () => v
           </button>
       </div>
       <div className="flex items-center gap-2 ml-4">
+        <button onClick={onToggleTeamPanel} className="relative p-2 rounded-full hover:bg-zinc-800/60 text-zinc-400 hover:text-zinc-200" aria-label="Team">
+            <UsersIcon className="h-6 w-6" />
+        </button>
+        <button onClick={onToggleConversationsPanel} className="relative p-2 rounded-full hover:bg-zinc-800/60 text-zinc-400 hover:text-zinc-200" aria-label="Conversations">
+            <MessageSquareIcon className="h-6 w-6" />
+        </button>
         <button onClick={onToggleChatToast} className="relative p-2 rounded-full hover:bg-zinc-800/60 text-zinc-400 hover:text-zinc-200" aria-label="Open AI Assistant">
             <SparklesIcon className="h-6 w-6" />
         </button>
@@ -408,21 +425,45 @@ export default function Layout({
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isUserPanelOpen, setIsUserPanelOpen] = useState(false);
   const [isNotificationsPanelOpen, setIsNotificationsPanelOpen] = useState(false);
+  const [isTeamPanelOpen, setIsTeamPanelOpen] = useState(false);
+  const [isConversationsPanelOpen, setIsConversationsPanelOpen] = useState(false);
   
   const userPanelRef = useRef<HTMLDivElement>(null);
   const notificationsPanelRef = useRef<HTMLDivElement>(null);
+  const teamPanelRef = useRef<HTMLDivElement>(null);
+  const conversationsPanelRef = useRef<HTMLDivElement>(null);
 
   useClickOutside(userPanelRef, () => setIsUserPanelOpen(false));
   useClickOutside(notificationsPanelRef, () => setIsNotificationsPanelOpen(false));
+  useClickOutside(teamPanelRef, () => setIsTeamPanelOpen(false));
+  useClickOutside(conversationsPanelRef, () => setIsConversationsPanelOpen(false));
   
   const handleToggleUserPanel = () => {
-      setIsUserPanelOpen(prev => !prev);
-      setIsNotificationsPanelOpen(false);
+    setIsUserPanelOpen(prev => !prev);
+    setIsNotificationsPanelOpen(false);
+    setIsTeamPanelOpen(false);
+    setIsConversationsPanelOpen(false);
   }
 
   const handleToggleNotificationsPanel = () => {
-      setIsNotificationsPanelOpen(prev => !prev);
+    setIsNotificationsPanelOpen(prev => !prev);
+    setIsUserPanelOpen(false);
+    setIsTeamPanelOpen(false);
+    setIsConversationsPanelOpen(false);
+  }
+
+  const handleToggleTeamPanel = () => {
+    setIsTeamPanelOpen(prev => !prev);
+    setIsUserPanelOpen(false);
+    setIsNotificationsPanelOpen(false);
+    setIsConversationsPanelOpen(false);
+  }
+
+  const handleToggleConversationsPanel = () => {
+      setIsConversationsPanelOpen(prev => !prev);
       setIsUserPanelOpen(false);
+      setIsNotificationsPanelOpen(false);
+      setIsTeamPanelOpen(false);
   }
 
   return (
@@ -453,11 +494,15 @@ export default function Layout({
                 onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} 
                 onToggleUserPanel={handleToggleUserPanel}
                 onToggleNotificationsPanel={handleToggleNotificationsPanel}
+                onToggleTeamPanel={handleToggleTeamPanel}
+                onToggleConversationsPanel={handleToggleConversationsPanel}
                 onToggleChatToast={onToggleChatToast}
                 onSearchClick={onSearchClick}
             />
             {isUserPanelOpen && <UserPanel ref={userPanelRef} />}
             {isNotificationsPanelOpen && <NotificationsPanel ref={notificationsPanelRef} />}
+            {isTeamPanelOpen && <TeamPanel ref={teamPanelRef} />}
+            {isConversationsPanelOpen && <ConversationsPanel ref={conversationsPanelRef} />}
         </div>
         
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">

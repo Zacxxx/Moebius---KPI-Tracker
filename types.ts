@@ -1,4 +1,5 @@
 
+
 import type { Chat } from '@google/genai';
 
 export type Page = 
@@ -29,6 +30,17 @@ export type Page =
   'coordination-contractors' |
   'coordination-agents' |
   'coordination-services' |
+  'studio-dashboard' |
+  'studio-projects' |
+  'studio-tasks' |
+  'studio-entities' |
+  'studio-systems' |
+  'studio-essences' |
+  'marketplace-dashboard' |
+  'marketplace-performances' |
+  'marketplace-requests' |
+  'marketplace-contracts' |
+  'marketplace-prospection' |
   'external-dashboard' |
   'external-content' |
   'external-seo' |
@@ -88,6 +100,13 @@ export interface Campaign {
   budget: number;
   cpa: number;
   roas: string;
+}
+export interface TeamMember {
+  id: number;
+  name: string;
+  role: string;
+  status: 'online' | 'offline' | 'away';
+  avatarUrl?: string; // Optional avatar URL
 }
 
 // E-commerce types
