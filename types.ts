@@ -14,7 +14,7 @@ export type Page =
   'customer-requests' |
   'customer-feedback' |
   'product-analytics' |
-  'marketing-funnel' |
+  'marketing' |
   'operational-efficiency' |
   'operational-status' |
   'operational-costs' |
@@ -22,13 +22,19 @@ export type Page =
   'internal-culture' |
   'internal-cap-table' |
   'data-sources' |
-  'ecommerce-dashboard' |
-  'ecommerce-orders' |
-  'ecommerce-inventory' |
-  'ecommerce-promotions' |
+  'sales-dashboard' |
+  'sales-orders' |
+  'sales-inventory' |
+  'sales-promotions' |
   'coordination-contractors' |
   'coordination-agents' |
   'coordination-services' |
+  'external-content' |
+  'external-seo' |
+  'external-partners' |
+  'external-pr' |
+  'external-branding' |
+  'external-competition' |
   'chat';
 
 export interface Message {
@@ -73,6 +79,15 @@ export interface ActivityItem {
   descriptionParts: ActivityTextPart[];
   timestamp: string;
 }
+export interface Campaign {
+  id: number;
+  name: string;
+  channel: 'Google Ads' | 'Facebook' | 'LinkedIn';
+  status: 'Active' | 'Paused' | 'Completed';
+  budget: number;
+  cpa: number;
+  roas: string;
+}
 
 // E-commerce types
 export interface EcommerceMetric { id: number; metric: string; value: string; change: string; }
@@ -85,3 +100,23 @@ export type ShowcaseKpi = KpiMetric | CustomerMetric | OperationalMetric | Produ
 export type SelectableKpi = ShowcaseKpi & {
   source: string;
 };
+
+// New types for External section pages
+export interface ContentMetric { id: number; metric: string; value: string; change: string; }
+export interface ContentItem { id: number; title: string; type: 'Blog Post' | 'Whitepaper' | 'Case Study'; date: string; views: number; engagement: string; }
+
+export interface SeoMetric { id: number; metric: string; value: string; change: string; }
+export interface KeywordItem { id: number; keyword: string; position: number; change: number; volume: string; }
+export interface BacklinkItem { id: number; domain: string; authority: number; date: string; }
+
+export interface PartnerMetric { id: number; metric: string; value: string; change: string; }
+export interface PartnerItem { id: number; name: string; tier: 'Gold' | 'Silver' | 'Bronze'; leads: number; revenue: number; commission: number; }
+
+export interface PrMetric { id: number; metric: string; value: string; change: string; }
+export interface MediaMentionItem { id: number; publication: string; title: string; date: string; url: string; }
+
+export interface BrandingMetric { id: number; metric: string; value: string; change: string; }
+export interface BrandMentionData { name: string; Twitter: number; LinkedIn: number; News: number; }
+
+export interface Competitor { id: number; name: string; funding: string; employees: string; founded: number; logoUrl: string; }
+export interface FeatureComparison { feature: string; [competitorName: string]: boolean | string; }

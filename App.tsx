@@ -20,7 +20,7 @@ import Expenses from './Expenses';
 import SystemStatus from './SystemStatus';
 import CostAnalysis from './CostAnalysis';
 import DataSources from './DataSources';
-import EcommerceDashboard from './EcommerceDashboard';
+import SalesDashboard from './EcommerceDashboard';
 import OrderFulfillment from './OrderFulfillment';
 import InventoryManagement from './InventoryManagement';
 import Promotions from './Promotions';
@@ -32,6 +32,13 @@ import { PerpetualDiscussionToast } from './components/PerpetualDiscussionToast'
 import { Command, CommandPalette } from './components/CommandPalette';
 import { platformNavItems } from './navigation';
 import { DatabaseIcon, MessageSquareIcon } from './components/Icons';
+import Content from './Content';
+import Seo from './Seo';
+import Partners from './Partners';
+import PublicRelations from './PublicRelations';
+import Branding from './Branding';
+import Competition from './Competition';
+
 
 // Helper hook to get the previous value of a state or prop
 function usePrevious<T>(value: T): T | undefined {
@@ -383,7 +390,7 @@ export default function App() {
         return <CustomerFeedback />;
       case 'product-analytics':
         return <ProductAnalytics />;
-      case 'marketing-funnel':
+      case 'marketing':
         return <Marketing />;
       case 'operational-efficiency':
         return <Operational />;
@@ -395,13 +402,13 @@ export default function App() {
         return <Internal />;
       case 'internal-cap-table':
         return <CapTable />;
-      case 'ecommerce-dashboard':
-        return <EcommerceDashboard />;
-      case 'ecommerce-orders':
+      case 'sales-dashboard':
+        return <SalesDashboard />;
+      case 'sales-orders':
         return <OrderFulfillment />;
-      case 'ecommerce-inventory':
+      case 'sales-inventory':
         return <InventoryManagement />;
-      case 'ecommerce-promotions':
+      case 'sales-promotions':
         return <Promotions />;
       case 'data-sources':
         return <DataSources />;
@@ -428,6 +435,18 @@ export default function App() {
         return <PlaceholderPage title="Services" description="Manage and coordinate with external services." />;
       case 'internal-culture':
         return <PlaceholderPage title="Culture" description="Monitor and foster company culture." />;
+      case 'external-content':
+        return <Content />;
+      case 'external-seo':
+        return <Seo />;
+      case 'external-partners':
+        return <Partners />;
+      case 'external-pr':
+        return <PublicRelations />;
+      case 'external-branding':
+        return <Branding />;
+      case 'external-competition':
+        return <Competition />;
       default:
         return <FinancialPlanning />;
     }

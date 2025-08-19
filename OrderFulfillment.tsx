@@ -62,8 +62,8 @@ export default function OrderFulfillment() {
                 <div className="flex items-center gap-3">
                      <PackageIcon className="h-8 w-8 text-violet-400" />
                      <div>
-                        <h1 className="text-2xl font-bold tracking-tight text-white">Order Fulfillment</h1>
-                        <p className="text-zinc-400 mt-1">Manage the entire order lifecycle from placement to delivery.</p>
+                        <h1 className="text-2xl font-bold tracking-tight text-white">Orders</h1>
+                        <p className="text-zinc-400 mt-1">Track and manage all customer orders from placement to delivery.</p>
                      </div>
                 </div>
             </header>

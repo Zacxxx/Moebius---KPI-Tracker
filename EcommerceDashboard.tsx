@@ -34,7 +34,7 @@ const salesTrendData = [
   { name: 'Jul', Sales: 5490, Orders: 4300 },
 ];
 
-export default function EcommerceDashboard() {
+export default function SalesDashboard() {
     const [ecommerceMetrics] = useState<EcommerceMetric[]>(initialEcommerceMetrics);
 
     const topProducts = useMemo(() => [

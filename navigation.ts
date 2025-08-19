@@ -33,13 +33,13 @@ export const platformNavItems: NavItemData[] = [
   },
    { 
     icon: ShoppingCartIcon, 
-    label: "E-commerce",
-    page: "ecommerce-dashboard",
+    label: "Sales",
+    page: "sales-dashboard",
     subItems: [
-        { label: "Sales Dashboard", page: "ecommerce-dashboard"},
-        { label: "Order Fulfillment", page: "ecommerce-orders"},
-        { label: "Inventory", page: "ecommerce-inventory"},
-        { label: "Promotions", page: "ecommerce-promotions"},
+        { label: "Dashboard", page: "sales-dashboard"},
+        { label: "Orders", page: "sales-orders"},
+        { label: "Inventory", page: "sales-inventory"},
+        { label: "Promotions", page: "sales-promotions"},
     ]
   },
   { 
@@ -59,7 +59,13 @@ export const platformNavItems: NavItemData[] = [
     page: "product-analytics",
     subItems: [
         { label: "Product Analytics", page: "product-analytics"},
-        { label: "Marketing Funnel", page: "marketing-funnel"},
+        { label: "Marketing", page: "marketing"},
+        { label: "Content", page: "external-content"},
+        { label: "SEO", page: "external-seo"},
+        { label: "Partners", page: "external-partners"},
+        { label: "PR", page: "external-pr"},
+        { label: "Branding", page: "external-branding"},
+        { label: "Competition", page: "external-competition"},
     ]
   },
   {

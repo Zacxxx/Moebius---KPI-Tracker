@@ -16,7 +16,21 @@ import type {
     OrderItem,
     ProductItem,
     PromotionItem,
-    ActivityItem 
+    ActivityItem,
+    Campaign,
+    ContentMetric,
+    ContentItem,
+    SeoMetric,
+    KeywordItem,
+    BacklinkItem,
+    PartnerMetric,
+    PartnerItem,
+    PrMetric,
+    MediaMentionItem,
+    BrandingMetric,
+    BrandMentionData,
+    Competitor,
+    FeatureComparison
 } from './types';
 
 
@@ -58,12 +72,15 @@ export const initialRequestData: RequestDataItem[] = [
 export const initialKpiMetrics: KpiMetric[] = [
     { id: 1, metric: 'Annual Recurring Revenue', value: '€1.2M', change: '+20.1% from last month' },
     { id: 2, metric: 'Active Users', value: '11,600', change: '+180 since last week' },
-    { id: 3, metric: 'Marketing ROI', value: '+320%', change: '+5% from last campaign' },
 ];
 export const initialMarketingMetrics: MarketingMetric[] = [
     { id: 1, metric: 'Leads', value: '3,450', change: '+15% this month' },
     { id: 2, metric: 'Conversion Rate', value: '4.2%', change: '-0.2% this month' },
     { id: 3, metric: 'Customer Acquisition Cost (CAC)', value: '€120', change: '+€5 from last month' },
+    { id: 4, metric: 'Website Traffic', value: '125,340', change: '+8.2% this month' },
+    { id: 5, metric: 'Return on Ad Spend (ROAS)', value: '4.5:1', change: 'Exceeds target' },
+    { id: 6, metric: 'Click-Through Rate (CTR)', value: '2.8%', change: 'Avg. across all campaigns' },
+    { id: 7, metric: 'Cost Per Click (CPC)', value: '€1.25', change: 'Avg. across all campaigns' },
 ];
 export const initialOperationalMetrics: OperationalMetric[] = [
     { id: 1, metric: 'System Uptime', value: '99.98%', change: 'Last 30 days' },
@@ -97,6 +114,13 @@ export const initialCapTableMetrics: CapTableMetric[] = [
 ];
 export const initialActivityFeed: ActivityItem[] = [];
 
+export const initialCampaigns: Campaign[] = [
+    { id: 1, name: 'Summer Sale 2024', channel: 'Google Ads', status: 'Active', budget: 5000, cpa: 85, roas: '5.2:1' },
+    { id: 2, name: 'Q3 Lead Generation', channel: 'Facebook', status: 'Active', budget: 7500, cpa: 110, roas: '4.1:1' },
+    { id: 3, name: 'B2B Outreach', channel: 'LinkedIn', status: 'Paused', budget: 4000, cpa: 250, roas: 'N/A' },
+    { id: 4, name: 'Spring Launch', channel: 'Google Ads', status: 'Completed', budget: 6000, cpa: 95, roas: '6.3:1' },
+];
+
 // E-commerce mock data
 export const initialEcommerceMetrics: EcommerceMetric[] = [
     { id: 1, metric: 'Gross Merchandise Volume', value: '€212,450', change: '+12.5% this month' },
@@ -123,4 +147,100 @@ export const initialPromotions: PromotionItem[] = [
     { id: 1, code: 'SUMMER20', type: 'Percentage', value: 20, status: 'Active', usageCount: 142 },
     { id: 2, code: 'FREESHIP', type: 'Fixed Amount', value: 10, status: 'Active', usageCount: 310 },
     { id: 3, code: 'SPRING15', type: 'Percentage', value: 15, status: 'Expired', usageCount: 88 },
+];
+
+// Content Page Data
+export const initialContentMetrics: ContentMetric[] = [
+    { id: 1, metric: 'Total Content Pieces', value: '128', change: '+12 this quarter' },
+    { id: 2, metric: 'Avg. Engagement Rate', value: '4.8%', change: '+0.3% vs last month' },
+    { id: 3, metric: 'Content-Sourced Leads', value: '89', change: '+22 this month' },
+    { id: 4, metric: 'Avg. Time on Page', value: '2m 45s', change: '+15s vs last month' },
+];
+export const initialContentItems: ContentItem[] = [
+    { id: 1, title: "The Ultimate Guide to SaaS Metrics", type: "Blog Post", date: "2024-07-15", views: 12500, engagement: "8.2%" },
+    { id: 2, title: "State of AI in Business Report", type: "Whitepaper", date: "2024-07-01", views: 8200, engagement: "15.3%" },
+    { id: 3, title: "How InnovateCorp Increased ROI by 300%", type: "Case Study", date: "2024-06-20", views: 9800, engagement: "11.1%" },
+    { id: 4, title: "5 Common Financial Planning Mistakes", type: "Blog Post", date: "2024-06-10", views: 7600, engagement: "6.5%" },
+];
+
+// SEO Page Data
+export const initialSeoMetrics: SeoMetric[] = [
+    { id: 1, metric: 'Organic Traffic', value: '82.1k', change: '+15% MoM' },
+    { id: 2, metric: 'Avg. Keyword Position', value: '8.2', change: '-0.5 this month' },
+    { id: 3, metric: 'Referring Domains', value: '1,204', change: '+58 new domains' },
+    { id: 4, metric: 'Domain Authority', value: '72', change: '+2 from last check' },
+];
+export const initialKeywordItems: KeywordItem[] = [
+    { id: 1, keyword: "saas dashboard", position: 3, change: 1, volume: "12.1k" },
+    { id: 2, keyword: "financial simulation tool", position: 5, change: -1, volume: "8.5k" },
+    { id: 3, keyword: "arr calculator", position: 2, change: 0, volume: "15.3k" },
+    { id: 4, keyword: "business kpi tracking", position: 11, change: 2, volume: "9.8k" },
+    { id: 5, keyword: "what is ltv", position: 7, change: -2, volume: "22.5k" },
+];
+export const initialBacklinkItems: BacklinkItem[] = [
+    { id: 1, domain: "techcrunch.com", authority: 94, date: "2024-07-18" },
+    { id: 2, domain: "forbes.com", authority: 95, date: "2024-07-15" },
+    { id: 3, domain: "saastr.com", authority: 78, date: "2024-07-12" },
+    { id: 4, domain: "producthunt.com", authority: 91, date: "2024-07-10" },
+];
+
+// Partners Page Data
+export const initialPartnerMetrics: PartnerMetric[] = [
+    { id: 1, metric: 'Total Active Partners', value: '42', change: '+3 this quarter' },
+    { id: 2, metric: 'Partner-Sourced Leads', value: '158', change: 'Current Month' },
+    { id: 3, metric: 'Partner-Driven Revenue', value: '€48,200', change: 'Current Month' },
+    { id: 4, metric: 'Avg. Lead Conversion', value: '18.5%', change: 'All partners' },
+];
+export const initialPartnerItems: PartnerItem[] = [
+    { id: 1, name: "SaaSy Solutions", tier: "Gold", leads: 45, revenue: 18500, commission: 4625 },
+    { id: 2, name: "Growth Gurus", tier: "Gold", leads: 38, revenue: 15200, commission: 3800 },
+    { id: 3, name: "The Agency Co.", tier: "Silver", leads: 22, revenue: 8800, commission: 1760 },
+    { id: 4, name: "Cloud Catalysts", tier: "Silver", leads: 18, revenue: 7200, commission: 1440 },
+    { id: 5, name: "ReferralRockstars", tier: "Bronze", leads: 12, revenue: 4800, commission: 720 },
+];
+
+// PR Page Data
+export const initialPrMetrics: PrMetric[] = [
+    { id: 1, metric: 'Media Mentions', value: '28', change: 'Last 30 days' },
+    { id: 2, metric: 'Share of Voice', value: '18%', change: '+2% vs last month' },
+    { id: 3, metric: 'Sentiment Score', value: '92%', change: 'Mostly Positive' },
+    { id: 4, metric: 'Estimated Reach', value: '1.5M', change: 'Across all mentions' },
+];
+export const initialMediaMentionItems: MediaMentionItem[] = [
+    { id: 1, publication: "TechCrunch", title: "Moebius secures $10M in Series A funding to revolutionize business analytics.", date: "2024-07-18", url: "#" },
+    { id: 2, publication: "Forbes", title: "The Founder of Moebius on Building a Data-Driven Culture.", date: "2024-07-15", url: "#" },
+    { id: 3, publication: "SaaS Mag", title: "10 SaaS Companies to Watch in 2024.", date: "2024-07-11", url: "#" },
+    { id: 4, publication: "Business Insider", title: "How Moebius is using AI to give businesses a competitive edge.", date: "2024-07-05", url: "#" },
+];
+
+// Branding Page Data
+export const initialBrandingMetrics: BrandingMetric[] = [
+    { id: 1, metric: 'Social Media Reach', value: '4.2M', change: '+18% MoM' },
+    { id: 2, metric: 'Social Engagement', value: '12.3k', change: '+5% MoM' },
+    { id: 3, metric: 'Branded Search Volume', value: '22.1k', change: '+12% MoM' },
+    { id: 4, metric: 'Brand Mentions', value: '1,800', change: '+250 this month' },
+];
+export const initialBrandMentionData: BrandMentionData[] = [
+    { name: 'Jan', Twitter: 400, LinkedIn: 240, News: 100 },
+    { name: 'Feb', Twitter: 300, LinkedIn: 139, News: 80 },
+    { name: 'Mar', Twitter: 500, LinkedIn: 480, News: 120 },
+    { name: 'Apr', Twitter: 478, LinkedIn: 390, News: 110 },
+    { name: 'May', Twitter: 589, LinkedIn: 480, News: 150 },
+    { name: 'Jun', Twitter: 439, LinkedIn: 380, News: 130 },
+    { name: 'Jul', Twitter: 549, LinkedIn: 430, News: 180 },
+];
+
+// Competition Page Data
+export const initialCompetitors: Competitor[] = [
+    { id: 1, name: "Competitor A", funding: "$50M", employees: "250", founded: 2018, logoUrl: "https://tailwindui.com/img/logos/48x48/transistor.svg" },
+    { id: 2, name: "Competitor B", funding: "$25M", employees: "150", founded: 2019, logoUrl: "https://tailwindui.com/img/logos/48x48/reform.svg" },
+    { id: 3, name: "Competitor C", funding: "$80M", employees: "400", founded: 2017, logoUrl: "https://tailwindui.com/img/logos/48x48/tuple.svg" },
+];
+export const initialFeatureComparison: FeatureComparison[] = [
+    { feature: "AI-Powered Insights", "Moebius": true, "Competitor A": true, "Competitor B": false, "Competitor C": true },
+    { feature: "Real-time Dashboards", "Moebius": true, "Competitor A": true, "Competitor B": true, "Competitor C": true },
+    { feature: "Financial Simulations", "Moebius": true, "Competitor A": false, "Competitor B": false, "Competitor C": true },
+    { feature: "CRM Integration", "Moebius": true, "Competitor A": true, "Competitor B": true, "Competitor C": false },
+    { feature: "Mobile App", "Moebius": true, "Competitor A": false, "Competitor B": true, "Competitor C": false },
+    { feature: "API Access", "Moebius": true, "Competitor A": true, "Competitor B": true, "Competitor C": true },
 ];
