@@ -29,6 +29,7 @@ export type Page =
   'coordination-contractors' |
   'coordination-agents' |
   'coordination-services' |
+  'external-dashboard' |
   'external-content' |
   'external-seo' |
   'external-partners' |

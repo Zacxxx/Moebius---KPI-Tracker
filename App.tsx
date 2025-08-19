@@ -38,6 +38,7 @@ import Partners from './Partners';
 import PublicRelations from './PublicRelations';
 import Branding from './Branding';
 import Competition from './Competition';
+import ExternalDashboard from './ExternalDashboard';
 
 
 // Helper hook to get the previous value of a state or prop
@@ -435,6 +436,8 @@ export default function App() {
         return <PlaceholderPage title="Services" description="Manage and coordinate with external services." />;
       case 'internal-culture':
         return <PlaceholderPage title="Culture" description="Monitor and foster company culture." />;
+      case 'external-dashboard':
+        return <ExternalDashboard />;
       case 'external-content':
         return <Content />;
       case 'external-seo':

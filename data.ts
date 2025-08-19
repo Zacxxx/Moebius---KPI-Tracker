@@ -32,6 +32,7 @@ import type {
     Competitor,
     FeatureComparison
 } from './types';
+import { MegaphoneIcon, SearchIcon, TrendingUpIcon, UsersIcon } from './components/Icons';
 
 
 // Initial Data
@@ -112,7 +113,46 @@ export const initialCapTableMetrics: CapTableMetric[] = [
     { id: 3, metric: 'Investor Ownership %', value: '30%' },
     { id: 4, metric: 'ESOP Pool %', value: '10%' },
 ];
-export const initialActivityFeed: ActivityItem[] = [];
+export const initialActivityFeed: ActivityItem[] = [
+    {
+        id: 1,
+        icon: TrendingUpIcon,
+        iconColor: 'text-emerald-400',
+        descriptionParts: [{ text: "Annual Recurring Revenue", strong: true }, { text: " increased by " }, { text: "€15,000", strong: true }, { text: "." }],
+        timestamp: "2 hours ago"
+    },
+    {
+        id: 2,
+        icon: UsersIcon,
+        iconColor: 'text-violet-400',
+        descriptionParts: [{ text: "New user ", strong: true }, { text: "John Doe" }, { text: " signed up." }],
+        timestamp: "1 day ago"
+    }
+];
+
+export const initialExternalActivityFeed: ActivityItem[] = [
+    {
+        id: 1,
+        icon: MegaphoneIcon,
+        iconColor: 'text-blue-400',
+        descriptionParts: [{ text: "New media mention in ", strong: true }, { text: "TechCrunch", strong: false }, { text: "." }],
+        timestamp: "45 minutes ago"
+    },
+    {
+        id: 2,
+        icon: SearchIcon,
+        iconColor: 'text-emerald-400',
+        descriptionParts: [{ text: "Organic traffic increased by ", strong: false }, { text: "15%", strong: true }, { text: " this month." }],
+        timestamp: "3 hours ago"
+    },
+    {
+        id: 3,
+        icon: TrendingUpIcon,
+        iconColor: 'text-violet-400',
+        descriptionParts: [{ text: "Summer Sale 2024", strong: true }, { text: " campaign went live." }],
+        timestamp: "1 day ago"
+    }
+];
 
 export const initialCampaigns: Campaign[] = [
     { id: 1, name: 'Summer Sale 2024', channel: 'Google Ads', status: 'Active', budget: 5000, cpa: 85, roas: '5.2:1' },

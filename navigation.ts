@@ -56,8 +56,9 @@ export const platformNavItems: NavItemData[] = [
   { 
     icon: MegaphoneIcon, 
     label: "External", 
-    page: "product-analytics",
+    page: "external-dashboard",
     subItems: [
+        { label: "Dashboard", page: "external-dashboard"},
         { label: "Product Analytics", page: "product-analytics"},
         { label: "Marketing", page: "marketing"},
         { label: "Content", page: "external-content"},
