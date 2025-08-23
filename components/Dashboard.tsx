@@ -1,140 +1,221 @@
+
 import React, { useState, useMemo } from 'react';
-import { PlusCircleIcon, TrendingUpIcon, UsersIcon, TrendingDownIcon, SmileIcon, EditIcon } from './Icons';
-import type { ShowcaseKpi, SelectableKpi, Widget, WidgetType } from '../types';
-import { KpiWidget } from './KpiWidget';
-import AddKpiModal from './AddKpiModal';
+import { EditIcon } from './Icons';
+import type { SelectableKpi, WidgetInstance, DashboardSection, ShowcaseKpi, TimeConfig, Page } from '../types';
 import { Button } from './ui/Button';
 import { WidgetSelectionPanel } from './WidgetSelectionPanel';
-import { ALL_WIDGETS } from '../data-widgets';
-
-// This is a generic icon map. Specific dashboards can provide their own.
-const defaultIconMap: { [key: string]: React.FC<{ className?: string }> } = {
-    'Annual Recurring Revenue': TrendingUpIcon,
-    'Customer Lifetime Value (LTV)': TrendingUpIcon,
-    'Burn Rate': TrendingDownIcon,
-    'Net Promoter Score (NPS)': SmileIcon,
-    'Active Users': UsersIcon,
-    'Leads': UsersIcon,
-    'Conversion Rate': TrendingUpIcon,
-    'Customer Acquisition Cost (CAC)': TrendingDownIcon,
-    'System Uptime': TrendingUpIcon,
-    'Avg. Ticket Resolution Time': TrendingUpIcon,
-    'Customer Churn Rate': TrendingDownIcon,
-    'LTV to CAC Ratio': TrendingUpIcon,
-    'Active Subscribers': UsersIcon,
-    'DAU / MAU Ratio': TrendingUpIcon,
-    'Key Feature Adoption Rate': TrendingUpIcon,
-    'Avg. Session Duration': TrendingUpIcon,
-    'Total Shares Outstanding': TrendingUpIcon,
-    'Founder Ownership %': UsersIcon,
-    'Investor Ownership %': UsersIcon,
-    'ESOP Pool %': UsersIcon,
-};
+import { WIDGET_COMPONENT_MAP, ALL_DATA_SOURCES } from '../data-widgets';
+import { WidgetConfigModal } from './WidgetConfigModal';
+import { KpiWidgetConfigForm } from './forms/KpiWidgetConfigForm';
+import { BaseWidgetConfigForm } from './forms/BaseWidgetConfigForm';
+import { VersionSelector } from './ui/VersionSelector';
+import { TimeRangeControl } from './ui/TimeRangeControl';
+import { DashboardBreadcrumb } from './ui/DashboardBreadcrumb';
+import { platformNavItems } from '../navigation';
+import { KpiChartModal } from './KpiChartModal';
 
 interface DashboardProps {
     title: string;
     description: string;
-    initialShowcaseKpis: ShowcaseKpi[];
     allKpisForModal: SelectableKpi[];
-    iconMap?: { [key: string]: React.FC<{ className?: string }> };
+    iconMap: { [key: string]: React.FC<{ className?: string }> };
     iconColorMap?: { [key: string]: string };
-    availableWidgets: Widget[];
-    visibleWidgetIds: WidgetType[];
-    setVisibleWidgetIds: (ids: WidgetType[]) => void;
+    widgets: WidgetInstance[];
+    setWidgets: React.Dispatch<React.SetStateAction<WidgetInstance[]>>;
+    sections: DashboardSection[];
+    setSections: React.Dispatch<React.SetStateAction<DashboardSection[]>>;
+    globalTimeConfig: TimeConfig;
+    setGlobalTimeConfig: (config: TimeConfig) => void;
+    page: Page;
+    setPage: (page: Page) => void;
 }
+
+const versions = [
+    { id: 'live', label: 'Live Version' },
+    { id: 'staging', label: 'Staging Environment' },
+    { id: 'q2-forecast', label: 'Q2 Forecast Scenario' },
+];
 
 export const Dashboard: React.FC<DashboardProps> = ({
     title,
     description,
-    initialShowcaseKpis,
     allKpisForModal,
-    iconMap = defaultIconMap,
+    iconMap,
     iconColorMap = {},
-    availableWidgets,
-    visibleWidgetIds,
-    setVisibleWidgetIds,
+    widgets,
+    setWidgets,
+    sections,
+    setSections,
+    globalTimeConfig,
+    setGlobalTimeConfig,
+    page,
+    setPage,
 }) => {
-    const [isAddKpiModalOpen, setIsAddKpiModalOpen] = useState(false);
-    const [showcaseKpis, setShowcaseKpis] = useState<ShowcaseKpi[]>(initialShowcaseKpis);
     const [isEditing, setIsEditing] = useState(false);
+    const [configuringWidget, setConfiguringWidget] = useState<WidgetInstance | null>(null);
+    const [activeVersion, setActiveVersion] = useState('live');
+    const [viewingChartKpi, setViewingChartKpi] = useState<SelectableKpi | null>(null);
 
-    const handleAddKpi = (kpi: ShowcaseKpi) => {
-        if (!showcaseKpis.some(existingKpi => existingKpi.metric === kpi.metric)) {
-            setShowcaseKpis(prev => [...prev, kpi]);
+    const breadcrumbItems = useMemo(() => {
+        if (page === 'dashboard') { // Home Dashboard
+            return platformNavItems
+                .filter(item => item.page.endsWith('-dashboard') && item.page !== 'dashboard')
+                .map(item => ({ label: item.label, page: item.page }));
+        } else { // Individual Dashboard
+            const navItem = platformNavItems.find(item => item.page === page || (item.subItems || []).some(sub => sub.page === page));
+            if (navItem?.page === page) { // It's a top-level dashboard page
+                 return navItem?.subItems || [];
+            }
+            // It's a sub-page, find the parent
+            const parentItem = platformNavItems.find(item => (item.subItems || []).some(sub => sub.page === page));
+            return parentItem?.subItems || [];
         }
-        setIsAddKpiModalOpen(false);
+    }, [page]);
+    
+    const activeDashboardTitle = useMemo(() => {
+       if (page === 'dashboard') return title;
+
+       const parentItem = platformNavItems.find(item => item.page === page || (item.subItems || []).some(sub => sub.page === page));
+       return parentItem?.label || title;
+    }, [page, title]);
+
+
+    const handleUpdateWidget = (updatedWidget: WidgetInstance) => {
+        setWidgets(prev => prev.map(w => w.id === updatedWidget.id ? updatedWidget : w));
+        setConfiguringWidget(null);
+    };
+
+    const handleDeleteWidget = (widgetId: string) => {
+        setWidgets(prev => prev.filter(w => w.id !== widgetId));
+        setConfiguringWidget(null);
     };
     
-    const visibleWidgets = useMemo(() => {
-        return availableWidgets.filter(widget => visibleWidgetIds.includes(widget.id));
-    }, [availableWidgets, visibleWidgetIds]);
+    const handleWidgetConfigChange = (widgetId: string, newConfig: Partial<WidgetInstance['config']>) => {
+      setWidgets(prev => 
+        prev.map(w => 
+          w.id === widgetId ? { ...w, config: { ...w.config, ...newConfig } } : w
+        )
+      );
+    };
+
+    const renderConfigForm = (props: { config: WidgetInstance['config'], onConfigChange: (newConfig: Partial<WidgetInstance['config']>) => void }) => {
+        if (!configuringWidget) return null;
+
+        switch (configuringWidget.widgetType) {
+            case 'KPI_VIEW':
+                return <KpiWidgetConfigForm {...props} allKpis={allKpisForModal} />;
+            case 'PROJECTION_GRAPHIC':
+            case 'STATIC_QUICK_ACTIONS':
+            case 'ACTIVITY_FEED':
+            default:
+                return <BaseWidgetConfigForm {...props} widgetType={configuringWidget.widgetType} />;
+        }
+    };
 
     return (
         <>
             <div className="space-y-8">
                 <header className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight text-white">{title}</h1>
+                         <DashboardBreadcrumb 
+                            title={activeDashboardTitle}
+                            items={breadcrumbItems}
+                            activePage={page}
+                            onSelect={setPage}
+                        />
                         <p className="text-zinc-400 mt-1">{description}</p>
                     </div>
-                    <Button variant="secondary" onClick={() => setIsEditing(true)}>
-                        <EditIcon className="h-4 w-4 mr-2" />
-                        Edit Dashboard
-                    </Button>
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <TimeRangeControl timeConfig={globalTimeConfig} setTimeConfig={setGlobalTimeConfig} />
+                        <VersionSelector 
+                            versions={versions}
+                            activeVersion={activeVersion}
+                            onVersionChange={setActiveVersion}
+                        />
+                        <Button variant="secondary" onClick={() => setIsEditing(true)}>
+                            <EditIcon className="h-4 w-4 mr-2" />
+                            Edit Dashboard
+                        </Button>
+                    </div>
                 </header>
                 
-                <section>
-                    <h2 className="text-xl font-semibold text-zinc-200 mb-4">Key Performance Indicators</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {showcaseKpis.map(metric => (
-                            <KpiWidget 
-                                key={`${metric.id}-${metric.metric}`}
-                                title={metric.metric} 
-                                value={metric.value} 
-                                change={'change' in metric ? metric.change : undefined}
-                                icon={iconMap[metric.metric] || TrendingUpIcon} 
-                                iconColor={iconColorMap[metric.metric]} 
-                            />
-                        ))}
-                        
-                        <button onClick={() => setIsAddKpiModalOpen(true)} className="flex items-center justify-center rounded-3xl border-2 border-dashed border-zinc-700 text-zinc-500 hover:bg-zinc-800/50 hover:border-zinc-600 transition-colors duration-200" aria-label="Add new widget">
-                            <div className="text-center">
-                                <PlusCircleIcon className="mx-auto h-10 w-10" />
-                                <p className="mt-2 text-base font-semibold">Add KPI Widget</p>
-                            </div>
-                        </button>
-                    </div>
-                </section>
+                {sections.map(section => {
+                    const sectionWidgets = widgets.filter(w => w.sectionId === section.id);
+                    if (sectionWidgets.length === 0 && !isEditing) return null;
 
-                <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {visibleWidgets.map(widget => {
-                        const WidgetComponent = widget.component;
-                        const gridSpan = `lg:col-span-${widget.gridWidth || 1}`;
-                        return (
-                            <div key={widget.id} className={gridSpan}>
-                                <WidgetComponent {...widget.defaultProps} />
+                    const gridCols = 'lg:grid-cols-4';
+
+                    return (
+                        <section key={section.id}>
+                            <h2 className="text-xl font-semibold text-zinc-200 mb-4">{section.title}</h2>
+                            <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${gridCols} auto-rows-[minmax(104px,auto)]`}>
+                                {sectionWidgets.map(widgetInstance => {
+                                    const WidgetComponent = WIDGET_COMPONENT_MAP[widgetInstance.widgetType];
+                                    if (!WidgetComponent) {
+                                        console.warn(`Widget component for type ${widgetInstance.widgetType} not found.`);
+                                        return null;
+                                    }
+                                    
+                                    const colSpanClass = `lg:col-span-${widgetInstance.config.gridWidth || 1}`;
+                                    const rowSpanClass = `row-span-${widgetInstance.config.gridHeight || 1}`;
+                                    const gridSpan = `${colSpanClass} ${rowSpanClass}`.trim();
+                                    
+                                    const dataSourceKey = widgetInstance.config.dataSourceKey;
+                                    const data = dataSourceKey ? ALL_DATA_SOURCES[dataSourceKey]?.data : undefined;
+                                    
+                                    const componentProps: any = {
+                                        instance: widgetInstance,
+                                        data: data,
+                                        onConfigure: () => setConfiguringWidget(widgetInstance),
+                                        onConfigChange: (newConfig: Partial<WidgetInstance['config']>) => handleWidgetConfigChange(widgetInstance.id, newConfig),
+                                        allKpis: allKpisForModal,
+                                        iconMap: iconMap,
+                                        iconColorMap: iconColorMap,
+                                        globalTimeConfig: globalTimeConfig,
+                                        onOpenChart: setViewingChartKpi,
+                                    };
+
+                                    return (
+                                        <div key={widgetInstance.id} className={gridSpan}>
+                                            <WidgetComponent {...componentProps} />
+                                        </div>
+                                    )
+                                })}
                             </div>
-                        )
-                    })}
-                </section>
+                        </section>
+                    )
+                })}
             </div>
 
-            {isAddKpiModalOpen && (
-                <AddKpiModal
-                    isOpen={isAddKpiModalOpen}
-                    onClose={() => setIsAddKpiModalOpen(false)}
-                    allKpis={allKpisForModal}
-                    showcaseKpis={showcaseKpis}
-                    onAddKpi={handleAddKpi}
+            {configuringWidget && (
+                 <WidgetConfigModal
+                    isOpen={!!configuringWidget}
+                    onClose={() => setConfiguringWidget(null)}
+                    onSave={handleUpdateWidget}
+                    onDelete={handleDeleteWidget}
+                    widgetInstance={configuringWidget}
+                >
+                    {(props) => renderConfigForm(props)}
+                </WidgetConfigModal>
+            )}
+            
+            {viewingChartKpi && (
+                <KpiChartModal
+                    kpi={viewingChartKpi}
+                    onClose={() => setViewingChartKpi(null)}
+                    globalTimeConfig={globalTimeConfig}
                 />
             )}
 
             <WidgetSelectionPanel
                 isOpen={isEditing}
                 onClose={() => setIsEditing(false)}
-                availableWidgets={availableWidgets}
-                visibleWidgetIds={visibleWidgetIds}
-                setVisibleWidgetIds={setVisibleWidgetIds}
+                widgets={widgets}
+                setWidgets={setWidgets}
+                sections={sections}
+                setSections={setSections}
+                onConfigureWidget={(widget) => setConfiguringWidget(widget)}
+                allKpis={allKpisForModal}
             />
         </>
     );

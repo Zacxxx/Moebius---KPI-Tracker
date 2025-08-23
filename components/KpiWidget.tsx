@@ -11,7 +11,7 @@ export interface KpiWidgetProps {
 }
 
 export const KpiWidget: React.FC<KpiWidgetProps> = ({ title, value, change, icon: Icon, iconColor = 'text-violet-400' }) => (
-    <Card className="flex flex-col">
+    <Card className="flex flex-col h-full">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-zinc-400">{title}</CardTitle>
             <Icon className={`h-5 w-5 ${iconColor}`} />

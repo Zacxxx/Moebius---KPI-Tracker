@@ -1,8 +1,9 @@
 
+
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from './components/ui/Card';
-import { DataTable, ColumnDef } from './components/DataTable';
-import type { RevenueStream, ExpenseItem, HiringPipelineItem, CrmDataItem, RequestDataItem, KpiMetric, MarketingMetric, OperationalMetric, CustomerMetric, FeedbackItem, ProductMetric, CapTableMetric, OrderItem, ProductItem, PromotionItem } from './types';
+import { DataTable } from './components/DataTable';
+import type { RevenueStream, ExpenseItem, HiringPipelineItem, CrmDataItem, RequestDataItem, KpiMetric, MarketingMetric, OperationalMetric, CustomerMetric, FeedbackItem, ProductMetric, CapTableMetric, OrderItem, ProductItem, PromotionItem, ColumnDef } from './types';
 import { Input } from './components/ui/Input';
 import { Button } from './components/ui/Button';
 import { CodeIcon, ChevronDownIcon } from './components/Icons';
@@ -27,6 +28,7 @@ import {
     initialRequestData,
     initialRevenueStreams
 } from './data';
+import { VersionSelector } from './components/ui/VersionSelector';
 
 
 type DataSet = 'kpis' | 'revenue' | 'expenses' | 'hiring' | 'crm' | 'requests' | 'customer_kpis' | 'feedback' | 'marketing_kpis' | 'product_kpis' | 'operational_kpis' | 'cap_table' | 'orders' | 'products' | 'promotions';
@@ -172,12 +174,17 @@ const newRowDataMap: Record<DataSet, Omit<any, 'id'>> = {
     marketing_kpis: { metric: '', value: '', change: '' },
     product_kpis: { metric: '', value: '', change: '' },
     operational_kpis: { metric: '', value: '', change: '' },
-    cap_table: { metric: '', value: '' },
+    cap_table: { metric: '', value: '', change: '' },
     orders: { customer: '', date: new Date().toISOString().split('T')[0], total: 0, items: 1, status: 'New' },
     products: { name: '', sku: '', price: 0, stock: 0, status: 'In Stock' },
     promotions: { code: '', type: 'Percentage', value: 0, usageCount: 0, status: 'Active' },
 };
 
+const versions = [
+    { id: 'live', label: 'Live Data' },
+    { id: 'snapshot-q2', label: 'Q2 Snapshot' },
+    { id: 'sandbox', label: 'Sandbox Data' },
+];
 
 export default function DataSources() {
     const [openSection, setOpenSection] = useState('Financials');
@@ -187,6 +194,7 @@ export default function DataSources() {
     const [generatedSchema, setGeneratedSchema] = useState('');
     const [syncStatus, setSyncStatus] = useState<{ loading: boolean; error: string | null }>({ loading: false, error: null });
     const [syncAllStatus, setSyncAllStatus] = useState<{ loading: boolean; message: string | null; type: 'success' | 'error' | 'info' }>({ loading: false, message: null, type: 'info' });
+    const [activeVersion, setActiveVersion] = useState('live');
 
     const [revenueStreams, setRevenueStreams] = useState<RevenueStream[]>(initialRevenueStreams);
     const [expenses, setExpenses] = useState<ExpenseItem[]>(initialExpenses);
@@ -302,7 +310,14 @@ export default function DataSources() {
                     <h1 className="text-2xl font-bold tracking-tight text-white">Data Sources</h1>
                     <p className="text-zinc-400 mt-1">Manage, edit, and automate your application's data from a central hub.</p>
                 </div>
-                <Button onClick={handleSyncAllData} disabled={syncAllStatus.loading}>{syncAllStatus.loading ? 'Syncing All...' : 'Sync All Sources'}</Button>
+                <div className="flex items-center gap-2">
+                    <VersionSelector
+                        versions={versions}
+                        activeVersion={activeVersion}
+                        onVersionChange={setActiveVersion}
+                    />
+                    <Button onClick={handleSyncAllData} disabled={syncAllStatus.loading}>{syncAllStatus.loading ? 'Syncing All...' : 'Sync All Sources'}</Button>
+                </div>
             </header>
 
             {syncAllStatus.message && <p className={`text-sm ${syncAllMessageColor}`}>{syncAllStatus.message}</p>}

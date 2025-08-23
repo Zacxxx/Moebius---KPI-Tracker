@@ -1,17 +1,12 @@
 
+
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Badge } from './ui/Badge';
 import { Button } from './ui/Button';
 import { PlusCircleIcon, Trash2Icon, ArrowUpDownIcon, ChevronUpIcon, ChevronDownIcon } from './Icons';
 import { Input } from './ui/Input';
 import { EURO } from '../utils';
-
-export interface ColumnDef<T> {
-  accessorKey: keyof T;
-  header: string;
-  cellType?: 'text' | 'number' | 'badge' | 'currency';
-  badgeOptions?: { [key: string]: 'default' | 'violet' | 'blue' | 'emerald' | 'red' };
-}
+import type { ColumnDef } from '../types';
 
 interface DataTableProps<T extends { id: number }> {
   columns: ColumnDef<T>[];

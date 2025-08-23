@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Layout from './Layout';
 import HomeDashboard from './Dashboard';
@@ -32,7 +33,7 @@ import Conversations from './Conversations';
 import TeamManagement from './TeamManagement';
 import Profile from './Profile';
 import Notifications from './Notifications';
-import type { Page, ChatSession, Message, Bookmark, ConversationMessage, ConversationChannel, DmToastState } from './types';
+import type { Page, ChatSession, Message, Bookmark, ConversationMessage, ConversationChannel, DmToastState, TimeConfig } from './types';
 import { GoogleGenAI } from '@google/genai';
 import PlaceholderPage from './PlaceholderPage';
 import { PerpetualDiscussionToast } from './components/PerpetualDiscussionToast';
@@ -81,6 +82,12 @@ export default function App() {
   const [conversationMessages, setConversationMessages] = useState(initialConversationMessages);
   const [openDmToasts, setOpenDmToasts] = useState<DmToastState[]>([]);
   const [activeConversationChannelId, setActiveConversationChannelId] = useState<string>('1');
+  const [globalTimeConfig, setGlobalTimeConfig] = useState<TimeConfig>({
+    type: 'preset',
+    preset: '1y',
+    granularity: 'monthly',
+    offset: 0,
+  });
 
   const prevPage = usePrevious(page);
 
@@ -457,9 +464,9 @@ export default function App() {
   const renderPage = () => {
     switch (page) {
       case 'dashboard':
-        return <HomeDashboard />;
+        return <HomeDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} />;
       case 'simulation-dashboard':
-        return <SimulationDashboard />;
+        return <SimulationDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} />;
       case 'simulation-revenue':
         return <FinancialSimulations />;
       case 'simulation-pnl':
@@ -467,7 +474,7 @@ export default function App() {
       case 'simulation-balance-sheet':
         return <BalanceSheet />;
       case 'financial-dashboard':
-        return <FinancialPlanning />;
+        return <FinancialPlanning page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} />;
       case 'financial-revenue':
         return <Revenue />;
       case 'financial-expenses':
@@ -483,9 +490,9 @@ export default function App() {
       case 'product-analytics':
         return <ProductAnalytics />;
       case 'marketing':
-        return <Marketing />;
+        return <Marketing page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} />;
       case 'operational-dashboard':
-        return <OperationalDashboard />;
+        return <OperationalDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} />;
       case 'operational-efficiency':
         return <Operational />;
       case 'operational-status':
@@ -493,13 +500,13 @@ export default function App() {
       case 'operational-costs':
         return <CostAnalysis />;
       case 'internal-dashboard':
-        return <InternalDashboard />;
+        return <InternalDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} />;
       case 'internal-people':
-        return <Internal />;
+        return <Internal page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} />;
       case 'internal-cap-table':
         return <CapTable />;
       case 'sales-dashboard':
-        return <SalesDashboard />;
+        return <SalesDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} />;
       case 'sales-orders':
         return <OrderFulfillment />;
       case 'sales-inventory':
@@ -543,7 +550,7 @@ export default function App() {
           />
         );
       case 'coordination-dashboard':
-        return <CoordinationDashboard />;
+        return <CoordinationDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} />;
       case 'coordination-contractors':
         return <PlaceholderPage title="Contractors" description="Manage and coordinate with your organization's contractors." />;
       case 'coordination-agents':
@@ -575,7 +582,7 @@ export default function App() {
       case 'internal-culture':
         return <PlaceholderPage title="Culture" description="Monitor and foster company culture." />;
       case 'external-dashboard':
-        return <ExternalDashboard />;
+        return <ExternalDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} />;
       case 'external-content':
         return <Content />;
       case 'external-seo':
@@ -589,7 +596,7 @@ export default function App() {
       case 'external-competition':
         return <Competition />;
       default:
-        return <FinancialPlanning />;
+        return <FinancialPlanning page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} />;
     }
   };
 

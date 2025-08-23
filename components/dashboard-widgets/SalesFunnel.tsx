@@ -1,6 +1,8 @@
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
+import { Card, CardHeader, CardContent } from '../ui/Card';
 import { ChevronDownIcon } from '../Icons';
+import { GenericWidgetProps } from '../../types';
+import { WidgetHeader } from './ProductStockWidget';
 
 const FunnelStage: React.FC<{ title: string; value: number; conversion?: number; color: string; isFirst?: boolean; isLast?: boolean; }> = ({ title, value, conversion, color, isFirst = false, isLast = false }) => (
     <div className="relative flex flex-col items-center">
@@ -19,15 +21,39 @@ const FunnelStage: React.FC<{ title: string; value: number; conversion?: number;
 );
 
 
-export const SalesFunnel: React.FC = () => {
+export const FunnelGraphicWidget: React.FC<GenericWidgetProps> = ({ instance, onConfigure, data = [] }) => {
+    const { title, dataSourceKey } = instance.config;
+
+    if (!dataSourceKey) {
+        return (
+             <Card className="h-full">
+                <CardHeader>
+                    <WidgetHeader title={title} onConfigure={onConfigure} />
+                </CardHeader>
+                <CardContent className="flex items-center justify-center h-48 text-zinc-500">
+                    Click the settings icon to configure this widget.
+                </CardContent>
+            </Card>
+        )
+    }
+    
     return (
-        <Card>
-            <CardHeader><CardTitle>Sales Funnel</CardTitle></CardHeader>
+        <Card className="h-full">
+            <CardHeader>
+                <WidgetHeader title={title} onConfigure={onConfigure} />
+            </CardHeader>
             <CardContent className="space-y-2">
-                <FunnelStage title="Visitors" value={125340} conversion={11.2} color="border-violet-500" isFirst />
-                <FunnelStage title="Leads" value={14038} conversion={24.6} color="border-violet-600" />
-                <FunnelStage title="Qualified Leads" value={3450} conversion={12.8} color="border-emerald-500" />
-                <FunnelStage title="Customers" value={442} color="border-emerald-600" isLast />
+                {data.map((stage: any, index: number) => (
+                    <FunnelStage
+                        key={stage.title}
+                        title={stage.title}
+                        value={stage.value}
+                        conversion={stage.conversion}
+                        color={stage.color}
+                        isFirst={index === 0}
+                        isLast={index === data.length - 1}
+                    />
+                ))}
             </CardContent>
         </Card>
     );

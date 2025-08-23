@@ -5,16 +5,21 @@ import { Input } from '../ui/Input';
 import { fmtEuro, EURO } from '../../utils';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceLine } from 'recharts';
 import { PALETTE } from '../../constants';
+import { GenericWidgetProps } from '../../types';
+import { WidgetHeader } from './ProductStockWidget';
+import { initialRevenueStreams, initialExpenses } from '../../data';
 
-interface ProjectionGraphicProps {
-    monthlyRevenue: number;
-    monthlyExpenses: number;
-    initialCashBalance: number;
-}
+export const ProjectionGraphic: React.FC<GenericWidgetProps> = ({ instance, onConfigure }) => {
+    const { title } = instance.config;
 
-export const ProjectionGraphic: React.FC<ProjectionGraphicProps> = ({ monthlyRevenue, monthlyExpenses, initialCashBalance }) => {
+    // Note: In a real app, this data would come from the configured dataSourceKey
+    // For this demo, we'll keep using the initial static data.
+    const monthlyRevenue = initialRevenueStreams.reduce((sum, item) => sum + (item.mrr || 0), 0);
+    const monthlyExpenses = initialExpenses.reduce((sum, item) => sum + (item.cost || 0), 0);
+    const initialCashBalance = 1200000;
+
+
     const [cashBalance, setCashBalance] = useState(initialCashBalance);
-
     const monthlyBurn = monthlyExpenses - monthlyRevenue;
     const cashRunway = (monthlyBurn > 0 && cashBalance > 0) ? cashBalance / monthlyBurn : Infinity;
 
@@ -43,10 +48,12 @@ export const ProjectionGraphic: React.FC<ProjectionGraphicProps> = ({ monthlyRev
     const formatCurrency = (value: number) => EURO.format(value);
 
     return (
-        <Card>
-            <CardHeader><CardTitle>Cash Runway Projection</CardTitle></CardHeader>
-            <CardContent>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <Card className="h-full flex flex-col">
+            <CardHeader>
+                 <WidgetHeader title={title} onConfigure={onConfigure} />
+            </CardHeader>
+            <CardContent className="flex-1">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full">
                     {/* Controls */}
                     <div className="lg:col-span-1 space-y-6">
                         <div className="space-y-2">
@@ -79,7 +86,7 @@ export const ProjectionGraphic: React.FC<ProjectionGraphicProps> = ({ monthlyRev
                         </div>
                     </div>
                     {/* Chart */}
-                    <div className="lg:col-span-2 h-[350px]">
+                    <div className="lg:col-span-2 h-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={projectionData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                                 <defs>

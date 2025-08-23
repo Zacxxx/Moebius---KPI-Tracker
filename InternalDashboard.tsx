@@ -1,9 +1,10 @@
+
 import React, { useMemo, useState } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { UsersIcon, SmileIcon, PieChartIcon } from './components/Icons';
 import { initialCapTableMetrics } from './data';
-import type { SelectableKpi, ShowcaseKpi, WidgetType } from './types';
-import { ALL_WIDGETS } from './data-widgets';
+import type { SelectableKpi, ShowcaseKpi, WidgetInstance, DashboardSection, TimeConfig, Page } from './types';
+import { PREMADE_WIDGETS } from './data-widgets';
 
 // Let's create some static KPIs for the internal dashboard.
 const internalKpis = [
@@ -18,10 +19,38 @@ const iconMap: { [key: string]: React.FC<{ className?: string }> } = {
     'Founder Ownership %': UsersIcon,
 };
 
-export default function InternalDashboard() {
-  const [visibleWidgetIds, setVisibleWidgetIds] = useState<WidgetType[]>(['HIRING_PIPELINE']);
-  
-  const initialShowcaseKpis = useMemo<ShowcaseKpi[]>(() => {
+const createInitialWidgets = (premadeIds: string[], sectionId: string): WidgetInstance[] => {
+    return premadeIds.map(id => {
+        const premade = PREMADE_WIDGETS.find(p => p.id === id);
+        if (!premade) return null;
+        return {
+            id: premade.id,
+            widgetType: premade.instance.widgetType,
+            config: premade.instance.config,
+            sectionId: sectionId,
+        };
+    }).filter((w): w is WidgetInstance => w !== null);
+};
+
+interface InternalDashboardProps {
+    globalTimeConfig: TimeConfig;
+    setGlobalTimeConfig: (config: TimeConfig) => void;
+    page: Page;
+    setPage: (page: Page) => void;
+}
+
+export default function InternalDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage }: InternalDashboardProps) {
+  const [sections, setSections] = useState<DashboardSection[]>([
+      { id: 'kpis', title: 'Key Metrics' },
+      { id: 'main', title: 'Dashboard Widgets' },
+  ]);
+
+  const allKpisForModal = useMemo<SelectableKpi[]>(() => [
+    ...internalKpis.map(k => ({...k, source: 'People'})),
+    ...initialCapTableMetrics.map(k => ({...k, source: 'Cap Table'})),
+  ], []);
+
+  const showcaseKpis = useMemo<ShowcaseKpi[]>(() => {
     const headcount = internalKpis.find(k => k.metric === 'Headcount');
     const enps = internalKpis.find(k => k.metric === 'eNPS');
     const shares = initialCapTableMetrics.find(k => k.metric === 'Total Shares Outstanding');
@@ -29,23 +58,40 @@ export default function InternalDashboard() {
     return [headcount, enps, shares, founderOwn].filter((k): k is ShowcaseKpi => !!k);
   }, []);
 
-  const allKpisForModal = useMemo<SelectableKpi[]>(() => [
-    ...internalKpis.map(k => ({...k, source: 'People'})),
-    ...initialCapTableMetrics.map(k => ({...k, source: 'Cap Table'})),
-  ], []);
+  const [widgets, setWidgets] = useState<WidgetInstance[]>(() => {
+      const kpiWidgets = showcaseKpis.map(kpi => {
+          const sourceKpi = allKpisForModal.find(ak => ak.id === kpi.id && ak.metric === kpi.metric);
+          return {
+              id: `kpi-internal-dash-${kpi.id}`,
+              widgetType: 'KPI_VIEW' as const,
+              sectionId: 'kpis',
+              config: {
+                  title: kpi.metric,
+                  selectedKpiId: kpi.id,
+                  selectedKpiSource: sourceKpi?.source || '',
+                  gridWidth: 1,
+              }
+          };
+      });
+      const otherWidgets = createInitialWidgets(['premade_hiring_pipeline'], 'main');
+      return [...kpiWidgets, ...otherWidgets];
+  });
   
-  const availableWidgets = useMemo(() => ALL_WIDGETS.filter(w => w.id === 'HIRING_PIPELINE'), []);
 
   return (
     <Dashboard
         title="Internal Dashboard"
         description="Monitor team growth, hiring, ownership, and key HR metrics."
-        initialShowcaseKpis={initialShowcaseKpis}
         allKpisForModal={allKpisForModal}
         iconMap={iconMap}
-        availableWidgets={availableWidgets}
-        visibleWidgetIds={visibleWidgetIds}
-        setVisibleWidgetIds={setVisibleWidgetIds}
+        widgets={widgets}
+        setWidgets={setWidgets}
+        sections={sections}
+        setSections={setSections}
+        globalTimeConfig={globalTimeConfig}
+        setGlobalTimeConfig={setGlobalTimeConfig}
+        page={page}
+        setPage={setPage}
     />
   );
 }

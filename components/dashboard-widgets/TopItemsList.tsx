@@ -1,29 +1,35 @@
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
+import { Card, CardHeader, CardContent } from '../ui/Card';
+import { GenericWidgetProps } from '../../types';
+import { WidgetHeader } from './ProductStockWidget';
 
-interface Item {
-    id: number;
-    name: string;
-    value: string;
-}
+export const ListViewWidget: React.FC<GenericWidgetProps> = ({ instance, onConfigure, data = [] }) => {
+    const { title, dataSourceKey } = instance.config;
 
-interface TopItemsListProps {
-    title: string;
-    items: Item[];
-}
+    if (!dataSourceKey) {
+        return (
+             <Card className="h-full">
+                <CardHeader>
+                    <WidgetHeader title={title} onConfigure={onConfigure} />
+                </CardHeader>
+                <CardContent className="flex items-center justify-center h-48 text-zinc-500">
+                    Click the settings icon to configure this widget.
+                </CardContent>
+            </Card>
+        )
+    }
 
-export const TopItemsList: React.FC<TopItemsListProps> = ({ title, items }) => {
     return (
-        <Card>
+        <Card className="h-full">
             <CardHeader>
-                <CardTitle>{title}</CardTitle>
+                <WidgetHeader title={title} onConfigure={onConfigure} />
             </CardHeader>
             <CardContent>
                 <ul className="space-y-3">
-                    {items.map(p => (
-                        <li key={p.id} className="flex justify-between items-center text-sm">
-                            <span className="text-zinc-300">{p.name}</span>
-                            <span className="font-semibold text-white">{p.value}</span>
+                    {data.map((item: any) => (
+                        <li key={item.id} className="flex justify-between items-center text-sm">
+                            <span className="text-zinc-300">{item.name}</span>
+                            <span className="font-semibold text-white">{item.value}</span>
                         </li>
                     ))}
                 </ul>

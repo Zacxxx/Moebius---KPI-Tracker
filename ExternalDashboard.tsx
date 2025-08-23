@@ -1,6 +1,7 @@
+
 import React, { useState, useMemo } from 'react';
 import { MegaphoneIcon, TrendingUpIcon, SearchIcon, UsersIcon } from './components/Icons';
-import type { ShowcaseKpi, SelectableKpi, WidgetType } from './types';
+import type { ShowcaseKpi, SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page } from './types';
 import {
     initialProductMetrics,
     initialMarketingMetrics,
@@ -9,10 +10,9 @@ import {
     initialPartnerMetrics,
     initialPrMetrics,
     initialBrandingMetrics,
-    initialExternalActivityFeed
 } from './data';
 import { Dashboard } from './components/Dashboard';
-import { ALL_WIDGETS } from './data-widgets';
+import { PREMADE_WIDGETS } from './data-widgets';
 
 // A specific icon map for external metrics
 const iconMap: { [key: string]: React.FC<{ className?: string }> } = {
@@ -26,58 +26,84 @@ const iconMap: { [key: string]: React.FC<{ className?: string }> } = {
     'Sentiment Score': UsersIcon,
 };
 
-export default function ExternalDashboard() {
-  const [visibleWidgetIds, setVisibleWidgetIds] = useState<WidgetType[]>(['TRAFFIC_SOURCES', 'CAMPAIGN_PERFORMANCE']);
+const createInitialWidgets = (premadeIds: string[], sectionId: string): WidgetInstance[] => {
+    return premadeIds.map(id => {
+        const premade = PREMADE_WIDGETS.find(p => p.id === id);
+        if (!premade) return null;
+        return {
+            id: premade.id,
+            widgetType: premade.instance.widgetType,
+            config: premade.instance.config,
+            sectionId: sectionId,
+        };
+    }).filter((w): w is WidgetInstance => w !== null);
+};
 
-  const [productMetrics] = useState(initialProductMetrics);
-  const [marketingMetrics] = useState(initialMarketingMetrics);
-  const [contentMetrics] = useState(initialContentMetrics);
-  const [seoMetrics] = useState(initialSeoMetrics);
-  const [partnerMetrics] = useState(initialPartnerMetrics);
-  const [prMetrics] = useState(initialPrMetrics);
-  const [brandingMetrics] = useState(initialBrandingMetrics);
+interface ExternalDashboardProps {
+    globalTimeConfig: TimeConfig;
+    setGlobalTimeConfig: (config: TimeConfig) => void;
+    page: Page;
+    setPage: (page: Page) => void;
+}
 
-  const showcaseKpis = useMemo<ShowcaseKpi[]>(() => {
-    const organicTraffic = initialSeoMetrics.find(k => k.metric === 'Organic Traffic');
-    const leads = initialMarketingMetrics.find(k => k.metric === 'Leads');
-    const socialReach = initialBrandingMetrics.find(k => k.metric === 'Social Media Reach');
-    const mediaMentions = initialPrMetrics.find(k => k.metric === 'Media Mentions');
-    const kpis: (ShowcaseKpi | undefined)[] = [organicTraffic, leads, socialReach, mediaMentions];
-    return kpis.filter((kpi): kpi is ShowcaseKpi => !!kpi);
-  }, [seoMetrics, marketingMetrics, brandingMetrics, prMetrics]);
+export default function ExternalDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage }: ExternalDashboardProps) {
+    const [sections, setSections] = useState<DashboardSection[]>([
+        { id: 'kpis', title: 'Key Metrics' },
+        { id: 'main', title: 'Dashboard Widgets' },
+    ]);
 
-  const allKpis = useMemo<SelectableKpi[]>(() => [
-    ...productMetrics.map(k => ({ ...k, source: 'Product Analytics' })),
-    ...marketingMetrics.map(k => ({ ...k, source: 'Marketing' })),
-    ...contentMetrics.map(k => ({ ...k, source: 'Content' })),
-    ...seoMetrics.map(k => ({ ...k, source: 'SEO' })),
-    ...partnerMetrics.map(k => ({ ...k, source: 'Partners' })),
-    ...prMetrics.map(k => ({ ...k, source: 'PR' })),
-    ...brandingMetrics.map(k => ({ ...k, source: 'Branding' })),
-  ], [productMetrics, marketingMetrics, contentMetrics, seoMetrics, partnerMetrics, prMetrics, brandingMetrics]);
+    const allKpis = useMemo<SelectableKpi[]>(() => [
+        ...initialProductMetrics.map(k => ({ ...k, source: 'Product Analytics' })),
+        ...initialMarketingMetrics.map(k => ({ ...k, source: 'Marketing' })),
+        ...initialContentMetrics.map(k => ({ ...k, source: 'Content' })),
+        ...initialSeoMetrics.map(k => ({ ...k, source: 'SEO' })),
+        ...initialPartnerMetrics.map(k => ({ ...k, source: 'Partners' })),
+        ...initialPrMetrics.map(k => ({ ...k, source: 'PR' })),
+        ...initialBrandingMetrics.map(k => ({ ...k, source: 'Branding' })),
+    ], []);
 
-  const availableWidgets = useMemo(() => {
-    const activityFeedWidget = { ...ALL_WIDGETS.find(w => w.id === 'ACTIVITY_FEED')!, defaultProps: { activities: initialExternalActivityFeed }};
-    return [
-      ...ALL_WIDGETS.filter(w => 
-        w.id === 'TRAFFIC_SOURCES' || 
-        w.id === 'CAMPAIGN_PERFORMANCE' ||
-        w.id === 'SALES_FUNNEL'
-      ),
-      activityFeedWidget,
-    ]
-  }, []);
+    const showcaseKpis = useMemo<ShowcaseKpi[]>(() => {
+        const organicTraffic = initialSeoMetrics.find(k => k.metric === 'Organic Traffic');
+        const leads = initialMarketingMetrics.find(k => k.metric === 'Leads');
+        const socialReach = initialBrandingMetrics.find(k => k.metric === 'Social Media Reach');
+        const mediaMentions = initialPrMetrics.find(k => k.metric === 'Media Mentions');
+        const kpis: (ShowcaseKpi | undefined)[] = [organicTraffic, leads, socialReach, mediaMentions];
+        return kpis.filter((kpi): kpi is ShowcaseKpi => !!kpi);
+    }, []);
+
+    const [widgets, setWidgets] = useState<WidgetInstance[]>(() => {
+        const kpiWidgets = showcaseKpis.map(kpi => {
+            const sourceKpi = allKpis.find(ak => ak.id === kpi.id && ak.metric === kpi.metric);
+            return {
+                id: `kpi-external-${kpi.id}-${sourceKpi?.source || ''}`,
+                widgetType: 'KPI_VIEW' as const,
+                sectionId: 'kpis',
+                config: {
+                    title: kpi.metric,
+                    selectedKpiId: kpi.id,
+                    selectedKpiSource: sourceKpi?.source || '',
+                    gridWidth: 1,
+                }
+            };
+        });
+        const otherWidgets = createInitialWidgets(['premade_traffic_sources', 'premade_campaign_performance'], 'main');
+        return [...kpiWidgets, ...otherWidgets];
+    });
 
   return (
     <Dashboard
         title="External Dashboard"
         description="An overview of your marketing, content, SEO, and branding efforts."
-        initialShowcaseKpis={showcaseKpis}
         allKpisForModal={allKpis}
         iconMap={iconMap}
-        availableWidgets={availableWidgets}
-        visibleWidgetIds={visibleWidgetIds}
-        setVisibleWidgetIds={setVisibleWidgetIds}
+        widgets={widgets}
+        setWidgets={setWidgets}
+        sections={sections}
+        setSections={setSections}
+        globalTimeConfig={globalTimeConfig}
+        setGlobalTimeConfig={setGlobalTimeConfig}
+        page={page}
+        setPage={setPage}
     />
   );
 }

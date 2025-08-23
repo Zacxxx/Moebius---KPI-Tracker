@@ -1,7 +1,8 @@
 
+
 import React, { useState } from 'react';
-import type { ProductItem } from './types';
-import { DataTable, ColumnDef } from './components/DataTable';
+import type { ProductItem, ColumnDef } from './types';
+import { DataTable } from './components/DataTable';
 import { initialProducts } from './data';
 
 export default function InventoryManagement() {

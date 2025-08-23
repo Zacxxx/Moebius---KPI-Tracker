@@ -1,7 +1,8 @@
 
+
 import React, { useState } from 'react';
-import type { PromotionItem } from './types';
-import { DataTable, ColumnDef } from './components/DataTable';
+import type { PromotionItem, ColumnDef } from './types';
+import { DataTable } from './components/DataTable';
 import { Button } from './components/ui/Button';
 import { PlusCircleIcon } from './components/Icons';
 import { initialPromotions } from './data';

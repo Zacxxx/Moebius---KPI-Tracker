@@ -1,9 +1,10 @@
+
 import React, { useMemo, useState } from 'react';
-import type { SelectableKpi, WidgetType } from './types';
+import type { SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page } from './types';
 import { initialCapTableMetrics } from './data';
 import { Dashboard } from './components/Dashboard';
 import { UsersIcon, SmileIcon, PieChartIcon } from './components/Icons';
-import { ALL_WIDGETS } from './data-widgets';
+import { PREMADE_WIDGETS } from './data-widgets';
 
 const internalKpis = [
     { id: 201, metric: 'Headcount', value: '42', change: '+2 this month' },
@@ -19,26 +20,67 @@ const iconMap: { [key: string]: React.FC<{ className?: string }> } = {
     'Founder Ownership %': UsersIcon,
 };
 
-export default function Internal() {
-    const [visibleWidgetIds, setVisibleWidgetIds] = useState<WidgetType[]>(['HIRING_PIPELINE']);
+const createInitialWidgets = (premadeIds: string[], sectionId: string): WidgetInstance[] => {
+    return premadeIds.map(id => {
+        const premade = PREMADE_WIDGETS.find(p => p.id === id);
+        if (!premade) return null;
+        return {
+            id: premade.id,
+            widgetType: premade.instance.widgetType,
+            config: premade.instance.config,
+            sectionId: sectionId,
+        };
+    }).filter((w): w is WidgetInstance => w !== null);
+};
+
+interface InternalProps {
+    globalTimeConfig: TimeConfig;
+    setGlobalTimeConfig: (config: TimeConfig) => void;
+    page: Page;
+    setPage: (page: Page) => void;
+}
+
+export default function Internal({ globalTimeConfig, setGlobalTimeConfig, page, setPage }: InternalProps) {
+    const [sections, setSections] = useState<DashboardSection[]>([
+        { id: 'kpis', title: 'Key Metrics' },
+        { id: 'main', title: 'Dashboard Widgets' },
+    ]);
+
+    const [widgets, setWidgets] = useState<WidgetInstance[]>(() => {
+        const kpiWidgets: WidgetInstance[] = internalKpis.map(kpi => ({
+            id: `kpi-internal-${kpi.id}`,
+            widgetType: 'KPI_VIEW',
+            sectionId: 'kpis',
+            config: {
+                title: kpi.metric,
+                selectedKpiId: kpi.id,
+                selectedKpiSource: 'People',
+                gridWidth: 1,
+            }
+        }));
+        const otherWidgets = createInitialWidgets(['premade_hiring_pipeline'], 'main');
+        return [...kpiWidgets, ...otherWidgets];
+    });
     
     const allKpisForModal = useMemo<SelectableKpi[]>(() => [
         ...internalKpis.map(k => ({...k, source: 'People'})),
         ...initialCapTableMetrics.map(k => ({...k, source: 'Cap Table'})),
     ], []);
 
-    const availableWidgets = useMemo(() => ALL_WIDGETS.filter(w => w.id === 'HIRING_PIPELINE'), []);
-
     return (
         <Dashboard
             title="People"
             description="Monitor team growth, hiring, and key HR metrics."
-            initialShowcaseKpis={internalKpis}
             allKpisForModal={allKpisForModal}
             iconMap={iconMap}
-            availableWidgets={availableWidgets}
-            visibleWidgetIds={visibleWidgetIds}
-            setVisibleWidgetIds={setVisibleWidgetIds}
+            widgets={widgets}
+            setWidgets={setWidgets}
+            sections={sections}
+            setSections={setSections}
+            globalTimeConfig={globalTimeConfig}
+            setGlobalTimeConfig={setGlobalTimeConfig}
+            page={page}
+            setPage={setPage}
         />
     );
 }

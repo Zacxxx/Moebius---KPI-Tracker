@@ -1,9 +1,10 @@
+
 import React, { useMemo, useState } from 'react';
-import type { EcommerceMetric, SelectableKpi, WidgetType } from './types';
+import type { EcommerceMetric, SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page } from './types';
 import { BarChartIcon, TrendingDownIcon, TrendingUpIcon, WalletIcon } from './components/Icons';
 import { initialEcommerceMetrics } from './data';
 import { Dashboard } from './components/Dashboard';
-import { ALL_WIDGETS } from './data-widgets';
+import { PREMADE_WIDGETS } from './data-widgets';
 
 const iconMap: { [key: string]: React.FC<{ className?: string }> } = {
     'Gross Merchandise Volume': TrendingUpIcon,
@@ -19,29 +20,66 @@ const iconColorMap: { [key: string]: string } = {
     'Cart Abandonment Rate': 'text-red-400',
 };
 
+const createInitialWidgets = (premadeIds: string[], sectionId: string): WidgetInstance[] => {
+    return premadeIds.map(id => {
+        const premade = PREMADE_WIDGETS.find(p => p.id === id);
+        if (!premade) return null;
+        return {
+            id: premade.id,
+            widgetType: premade.instance.widgetType,
+            config: premade.instance.config,
+            sectionId: sectionId,
+        };
+    }).filter((w): w is WidgetInstance => w !== null);
+};
 
-export default function SalesDashboard() {
-    const [visibleWidgetIds, setVisibleWidgetIds] = useState<WidgetType[]>(['SALES_TREND', 'TOP_PRODUCTS', 'TOP_SOURCES']);
+interface SalesDashboardProps {
+    globalTimeConfig: TimeConfig;
+    setGlobalTimeConfig: (config: TimeConfig) => void;
+    page: Page;
+    setPage: (page: Page) => void;
+}
+
+export default function SalesDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage }: SalesDashboardProps) {
+    const [sections, setSections] = useState<DashboardSection[]>([
+        { id: 'kpis', title: 'Key Metrics' },
+        { id: 'main', title: 'Dashboard Widgets' },
+    ]);
+    const [widgets, setWidgets] = useState<WidgetInstance[]>(() => {
+        const kpiWidgets = initialEcommerceMetrics.map(kpi => ({
+            id: `kpi-ecommerce-${kpi.id}`,
+            widgetType: 'KPI_VIEW' as const,
+            sectionId: 'kpis',
+            config: {
+                title: kpi.metric,
+                selectedKpiId: kpi.id,
+                selectedKpiSource: 'E-commerce',
+                gridWidth: 1,
+            }
+        }));
+        const otherWidgets = createInitialWidgets(['premade_sales_trend', 'premade_top_products', 'premade_top_sources'], 'main');
+        return [...kpiWidgets, ...otherWidgets];
+    });
     
     const allKpisForModal = useMemo<SelectableKpi[]>(() => 
       initialEcommerceMetrics.map(k => ({ ...k, source: 'E-commerce' }))
     , []);
 
-    const availableWidgets = useMemo(() => ALL_WIDGETS.filter(w => 
-        w.id === 'SALES_TREND' || w.id === 'TOP_PRODUCTS' || w.id === 'TOP_SOURCES'
-    ), []);
-
     return (
         <Dashboard
             title="Sales Performance Dashboard"
             description="A real-time command center for your online store."
-            initialShowcaseKpis={initialEcommerceMetrics}
             allKpisForModal={allKpisForModal}
             iconMap={iconMap}
             iconColorMap={iconColorMap}
-            availableWidgets={availableWidgets}
-            visibleWidgetIds={visibleWidgetIds}
-            setVisibleWidgetIds={setVisibleWidgetIds}
+            widgets={widgets}
+            setWidgets={setWidgets}
+            sections={sections}
+            setSections={setSections}
+            globalTimeConfig={globalTimeConfig}
+            setGlobalTimeConfig={setGlobalTimeConfig}
+            page={page}
+            setPage={setPage}
         />
     );
 }

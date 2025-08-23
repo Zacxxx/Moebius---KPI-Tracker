@@ -1,17 +1,16 @@
-
 import React from 'react';
-import type { ActivityItem } from '../types';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
+import type { ActivityItem, GenericWidgetProps } from '../types';
+import { Card, CardContent, CardHeader } from './ui/Card';
+import { WidgetHeader } from './dashboard-widgets/ProductStockWidget';
 
-interface ActivityFeedProps {
-    activities: ActivityItem[];
-}
+const ActivityFeed: React.FC<GenericWidgetProps> = ({ instance, onConfigure, data }) => {
+    const activities = (data as ActivityItem[]) || [];
+    const { title } = instance.config;
 
-const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities }) => {
     return (
-        <Card>
+        <Card className="h-full">
             <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
+                <WidgetHeader title={title} onConfigure={onConfigure} />
             </CardHeader>
             <CardContent>
                 {activities.length > 0 ? (

@@ -1,10 +1,10 @@
+
 import React, { useMemo, useState } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { ClockIcon, TrendingDownIcon, TrendingUpIcon, PieChartIcon } from './components/Icons';
 import { initialRevenueStreams, initialExpenses } from './data';
-import type { KpiMetric, SelectableKpi, WidgetType } from './types';
+import type { KpiMetric, SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page } from './types';
 import { fmtEuro } from './utils';
-import { ALL_WIDGETS } from './data-widgets';
 
 // These KPIs are derived. For the dashboard, we'll create static versions based on the initial data.
 const createSimulationKpis = (): KpiMetric[] => {
@@ -36,26 +36,64 @@ const iconMap: { [key: string]: React.FC<{ className?: string }> } = {
     'Gross Profit Margin': PieChartIcon,
 };
 
-export default function SimulationDashboard() {
-  const [visibleWidgetIds, setVisibleWidgetIds] = useState<WidgetType[]>(['PROJECTION_GRAPHIC']);
+const projectionGraphicWidget: WidgetInstance = {
+    id: 'PROJECTION_GRAPHIC_1',
+    widgetType: 'PROJECTION_GRAPHIC',
+    sectionId: 'main',
+    config: {
+        title: 'Cash Runway Projection',
+        gridWidth: 3,
+        gridHeight: 2,
+    }
+};
+
+interface SimulationDashboardProps {
+    globalTimeConfig: TimeConfig;
+    setGlobalTimeConfig: (config: TimeConfig) => void;
+    page: Page;
+    setPage: (page: Page) => void;
+}
+
+export default function SimulationDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage }: SimulationDashboardProps) {
+  const [sections, setSections] = useState<DashboardSection[]>([
+      { id: 'kpis', title: 'Key Metrics' },
+      { id: 'main', title: 'Dashboard Widgets' },
+  ]);
   const simulationKpis = useMemo(() => createSimulationKpis(), []);
+
+  const [widgets, setWidgets] = useState<WidgetInstance[]>(() => {
+    const kpiWidgets = simulationKpis.map(kpi => ({
+      id: `kpi-sim-${kpi.id}`,
+      widgetType: 'KPI_VIEW' as const,
+      sectionId: 'kpis',
+      config: {
+        title: kpi.metric,
+        selectedKpiId: kpi.id,
+        selectedKpiSource: 'Simulation',
+        gridWidth: 1,
+      }
+    }));
+    return [...kpiWidgets, projectionGraphicWidget];
+  });
   
   const allKpisForModal = useMemo<SelectableKpi[]>(() => 
     simulationKpis.map(k => ({ ...k, source: 'Simulation' }))
   , [simulationKpis]);
 
-  const availableWidgets = useMemo(() => ALL_WIDGETS.filter(w => w.id === 'PROJECTION_GRAPHIC'), []);
-
   return (
     <Dashboard
         title="Simulation Dashboard"
         description="An overview of your business's key financial simulations and projections."
-        initialShowcaseKpis={simulationKpis}
         allKpisForModal={allKpisForModal}
         iconMap={iconMap}
-        availableWidgets={availableWidgets}
-        visibleWidgetIds={visibleWidgetIds}
-        setVisibleWidgetIds={setVisibleWidgetIds}
+        widgets={widgets}
+        setWidgets={setWidgets}
+        sections={sections}
+        setSections={setSections}
+        globalTimeConfig={globalTimeConfig}
+        setGlobalTimeConfig={setGlobalTimeConfig}
+        page={page}
+        setPage={setPage}
     />
   );
 }

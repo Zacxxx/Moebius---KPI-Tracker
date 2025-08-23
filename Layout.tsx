@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import type { Page, ChatSession } from './types';
 import { MenuIcon, BellIcon, UserIcon, UsersIcon, SearchIcon, MoebiusIcon, ChevronLeftIcon, ChevronDownIcon, DatabaseIcon, MessageSquareIcon, EditIcon, FolderIcon, FolderPlusIcon, Trash2Icon, SparklesIcon, LaptopIcon, ShoppingCartIcon, ShapesIcon } from './components/Icons';
@@ -412,7 +413,7 @@ interface LayoutProps {
 }
 
 export default function Layout({ 
-  children, 
+  children,
   activePage, 
   setPage, 
   chatSessions,

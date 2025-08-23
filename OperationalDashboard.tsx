@@ -1,9 +1,9 @@
+
 import React, { useMemo, useState } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { TrendingUpIcon, ClockIcon, TrendingDownIcon } from './components/Icons';
 import { initialOperationalMetrics } from './data';
-import type { SelectableKpi, WidgetType } from './types';
-import { ALL_WIDGETS } from './data-widgets';
+import type { SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page } from './types';
 
 const iconMap: { [key: string]: React.FC<{ className?: string }> } = {
     'System Uptime': TrendingUpIcon,
@@ -17,26 +17,50 @@ const iconColorMap: { [key: string]: string } = {
     'Burn Rate': 'text-red-400',
 };
 
-export default function OperationalDashboard() {
-  const [visibleWidgetIds, setVisibleWidgetIds] = useState<WidgetType[]>([]);
+interface OperationalDashboardProps {
+    globalTimeConfig: TimeConfig;
+    setGlobalTimeConfig: (config: TimeConfig) => void;
+    page: Page;
+    setPage: (page: Page) => void;
+}
+
+export default function OperationalDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage }: OperationalDashboardProps) {
+  const [sections, setSections] = useState<DashboardSection[]>([
+    { id: 'kpis', title: 'Key Metrics' }
+  ]);
+  const [widgets, setWidgets] = useState<WidgetInstance[]>(() => {
+    return initialOperationalMetrics.map(kpi => ({
+        id: `kpi-operational-${kpi.id}`,
+        widgetType: 'KPI_VIEW',
+        sectionId: 'kpis',
+        config: {
+            title: kpi.metric,
+            selectedKpiId: kpi.id,
+            selectedKpiSource: 'Operational',
+            gridWidth: 1,
+        }
+    }));
+  });
 
   const allKpisForModal = useMemo<SelectableKpi[]>(() => 
     initialOperationalMetrics.map(k => ({ ...k, source: 'Operational' }))
   , []);
-  
-  const availableWidgets = useMemo(() => ALL_WIDGETS.filter(w => w.id === 'ACTIVITY_FEED'), []);
 
   return (
     <Dashboard
         title="Operational Dashboard"
         description="Track costs, uptime, and system performance."
-        initialShowcaseKpis={initialOperationalMetrics}
         allKpisForModal={allKpisForModal}
         iconMap={iconMap}
         iconColorMap={iconColorMap}
-        availableWidgets={availableWidgets}
-        visibleWidgetIds={visibleWidgetIds}
-        setVisibleWidgetIds={setVisibleWidgetIds}
+        widgets={widgets}
+        setWidgets={setWidgets}
+        sections={sections}
+        setSections={setSections}
+        globalTimeConfig={globalTimeConfig}
+        setGlobalTimeConfig={setGlobalTimeConfig}
+        page={page}
+        setPage={setPage}
     />
   );
 }

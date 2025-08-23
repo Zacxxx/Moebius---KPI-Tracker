@@ -1,9 +1,10 @@
+
 import React, { useMemo, useState } from 'react';
 import { MegaphoneIcon, TrendingUpIcon, WalletIcon, UsersIcon, BarChartIcon } from './components/Icons';
-import type { MarketingMetric, SelectableKpi, WidgetType } from './types';
+import type { SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page } from './types';
 import { initialMarketingMetrics } from './data';
 import { Dashboard } from './components/Dashboard';
-import { ALL_WIDGETS } from './data-widgets';
+import { PREMADE_WIDGETS } from './data-widgets';
 
 
 const iconMap: { [key: string]: React.FC<{ className?: string }> } = {
@@ -16,27 +17,65 @@ const iconMap: { [key: string]: React.FC<{ className?: string }> } = {
     'Cost Per Click (CPC)': WalletIcon,
 };
 
-export default function Marketing() {
-  const [visibleWidgetIds, setVisibleWidgetIds] = useState<WidgetType[]>(['SALES_FUNNEL', 'TRAFFIC_SOURCES', 'CAMPAIGN_PERFORMANCE']);
+const createInitialWidgets = (premadeIds: string[], sectionId: string): WidgetInstance[] => {
+    return premadeIds.map(id => {
+        const premade = PREMADE_WIDGETS.find(p => p.id === id);
+        if (!premade) return null;
+        return {
+            id: premade.id,
+            widgetType: premade.instance.widgetType,
+            config: premade.instance.config,
+            sectionId: sectionId,
+        };
+    }).filter((w): w is WidgetInstance => w !== null);
+};
+
+interface MarketingProps {
+    globalTimeConfig: TimeConfig;
+    setGlobalTimeConfig: (config: TimeConfig) => void;
+    page: Page;
+    setPage: (page: Page) => void;
+}
+
+export default function Marketing({ globalTimeConfig, setGlobalTimeConfig, page, setPage }: MarketingProps) {
+  const [sections, setSections] = useState<DashboardSection[]>([
+      { id: 'kpis', title: 'Key Metrics' },
+      { id: 'main', title: 'Dashboard Widgets' },
+  ]);
+  const [widgets, setWidgets] = useState<WidgetInstance[]>(() => {
+    const kpiWidgets = initialMarketingMetrics.map(kpi => ({
+        id: `kpi-marketing-${kpi.id}`,
+        widgetType: 'KPI_VIEW' as const,
+        sectionId: 'kpis',
+        config: {
+            title: kpi.metric,
+            selectedKpiId: kpi.id,
+            selectedKpiSource: 'Marketing',
+            gridWidth: 1,
+        }
+    }));
+    const otherWidgets = createInitialWidgets(['premade_sales_funnel', 'premade_traffic_sources', 'premade_campaign_performance'], 'main');
+    return [...kpiWidgets, ...otherWidgets];
+  });
   
   const allKpisForModal = useMemo<SelectableKpi[]>(() => 
     initialMarketingMetrics.map(k => ({ ...k, source: 'Marketing' }))
   , []);
-  
-  const availableWidgets = useMemo(() => ALL_WIDGETS.filter(w => 
-      w.id === 'SALES_FUNNEL' || w.id === 'TRAFFIC_SOURCES' || w.id === 'CAMPAIGN_PERFORMANCE'
-  ), []);
 
   return (
     <Dashboard
         title="Marketing Dashboard"
         description="Analyze campaign performance, track funnel conversions, and understand your traffic sources."
-        initialShowcaseKpis={initialMarketingMetrics}
         allKpisForModal={allKpisForModal}
         iconMap={iconMap}
-        availableWidgets={availableWidgets}
-        visibleWidgetIds={visibleWidgetIds}
-        setVisibleWidgetIds={setVisibleWidgetIds}
+        widgets={widgets}
+        setWidgets={setWidgets}
+        sections={sections}
+        setSections={setSections}
+        globalTimeConfig={globalTimeConfig}
+        setGlobalTimeConfig={setGlobalTimeConfig}
+        page={page}
+        setPage={setPage}
     />
   );
 }

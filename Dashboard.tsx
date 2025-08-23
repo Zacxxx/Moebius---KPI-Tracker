@@ -1,72 +1,78 @@
+
 import React, { useMemo, useState } from 'react';
 import { Dashboard } from './components/Dashboard';
-import { TrendingUpIcon, UsersIcon, TrendingDownIcon, SmileIcon } from './components/Icons';
-import { 
-    initialActivityFeed,
-    initialKpiMetrics,
-    initialCustomerMetrics,
-    initialOperationalMetrics,
-    initialProductMetrics,
-    initialMarketingMetrics,
-    initialCapTableMetrics,
-} from './data';
-import type { SelectableKpi, ShowcaseKpi, WidgetType } from './types';
-import { ALL_WIDGETS } from './data-widgets';
+import { TrendingUpIcon, UsersIcon, ClockIcon, TrendingDownIcon } from './components/Icons';
+import { initialKpiMetrics } from './data';
+import type { KpiMetric, SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page } from './types';
+import { PREMADE_WIDGETS } from './data-widgets';
 
 const iconMap: { [key: string]: React.FC<{ className?: string }> } = {
     'Annual Recurring Revenue': TrendingUpIcon,
-    'Customer Lifetime Value (LTV)': TrendingUpIcon,
-    'Burn Rate': TrendingDownIcon,
-    'Net Promoter Score (NPS)': SmileIcon,
     'Active Users': UsersIcon,
-};
-const iconColorMap: { [key: string]: string } = {
-    'Annual Recurring Revenue': 'text-emerald-400',
-    'Customer Lifetime Value (LTV)': 'text-emerald-400',
-    'Burn Rate': 'text-red-400',
-    'Net Promoter Score (NPS)': 'text-emerald-400',
-    'Active Users': 'text-violet-400',
+    'Cash Runway': ClockIcon,
+    'Monthly Burn Rate': TrendingDownIcon,
 };
 
-export default function HomeDashboard() {
-  const [visibleWidgetIds, setVisibleWidgetIds] = useState<WidgetType[]>(['ACTIVITY_FEED']);
+const createInitialWidgets = (premadeIds: string[], sectionId: string): WidgetInstance[] => {
+    return premadeIds.map(id => {
+        const premade = PREMADE_WIDGETS.find(p => p.id === id);
+        if (!premade) return null;
+        return {
+            id: premade.id,
+            widgetType: premade.instance.widgetType,
+            config: premade.instance.config,
+            sectionId: sectionId,
+        };
+    }).filter((w): w is WidgetInstance => w !== null);
+};
 
-  const initialShowcaseKpis = useMemo<ShowcaseKpi[]>(() => {
-    const arr = initialKpiMetrics.find(k => k.metric === 'Annual Recurring Revenue');
-    const ltv = initialCustomerMetrics.find(k => k.metric === 'Customer Lifetime Value (LTV)');
-    const burn = initialOperationalMetrics.find(k => k.metric === 'Burn Rate');
-    const nps = initialProductMetrics.find(k => k.metric === 'Net Promoter Score (NPS)');
-    const kpis: (ShowcaseKpi | undefined)[] = [arr, ltv, burn, nps];
-    return kpis.filter((kpi): kpi is ShowcaseKpi => !!kpi);
-  }, []);
+interface HomeDashboardProps {
+    globalTimeConfig: TimeConfig;
+    setGlobalTimeConfig: (config: TimeConfig) => void;
+    page: Page;
+    setPage: (page: Page) => void;
+}
 
-  const allKpis = useMemo<SelectableKpi[]>(() => [
-    ...initialKpiMetrics.map(k => ({...k, source: 'Home'})),
-    ...initialMarketingMetrics.map(k => ({...k, source: 'Marketing'})),
-    ...initialOperationalMetrics.map(k => ({...k, source: 'Operational'})),
-    ...initialCustomerMetrics.map(k => ({...k, source: 'Customer'})),
-    ...initialProductMetrics.map(k => ({...k, source: 'Product Analytics'})),
-    ...initialCapTableMetrics.map(k => ({...k, source: 'Cap Table'})),
-  ], []);
-  
-  const availableWidgets = useMemo(() => ALL_WIDGETS.filter(w => 
-    w.id === 'ACTIVITY_FEED' || 
-    w.id === 'PROJECTION_GRAPHIC' ||
-    w.id === 'SALES_TREND' ||
-    w.id === 'CAMPAIGN_PERFORMANCE'
-  ), []);
+export default function HomeDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage }: HomeDashboardProps) {
+    const [sections, setSections] = useState<DashboardSection[]>([
+        { id: 'kpis', title: 'Key Metrics' },
+        { id: 'main', title: 'Dashboard Widgets' },
+    ]);
+    
+    const [widgets, setWidgets] = useState<WidgetInstance[]>(() => {
+        const kpiWidgets = initialKpiMetrics.map(kpi => ({
+            id: `kpi-home-${kpi.id}`,
+            widgetType: 'KPI_VIEW' as const,
+            sectionId: 'kpis',
+            config: {
+                title: kpi.metric,
+                selectedKpiId: kpi.id,
+                selectedKpiSource: 'Home',
+                gridWidth: 1,
+            }
+        }));
+        const otherWidgets = createInitialWidgets(['premade_sales_trend', 'premade_activity_feed', 'premade_hiring_pipeline'], 'main');
+        return [...kpiWidgets, ...otherWidgets];
+    });
 
-  return (
-    <Dashboard
-        title="Home Dashboard"
-        description="An overview of your business's key metrics from all sources."
-        initialShowcaseKpis={initialShowcaseKpis}
-        allKpisForModal={allKpis}
-        iconMap={iconMap}
-        iconColorMap={iconColorMap}
-        availableWidgets={availableWidgets}
-        visibleWidgetIds={visibleWidgetIds}
-        setVisibleWidgetIds={setVisibleWidgetIds}
-    />
-  );
+    const allKpisForModal = useMemo<SelectableKpi[]>(() => 
+        initialKpiMetrics.map(k => ({ ...k, source: 'Home' }))
+    , []);
+
+    return (
+        <Dashboard
+            title="Home Dashboard"
+            description="A comprehensive overview of your business's key metrics and activities."
+            allKpisForModal={allKpisForModal}
+            iconMap={iconMap}
+            widgets={widgets}
+            setWidgets={setWidgets}
+            sections={sections}
+            setSections={setSections}
+            globalTimeConfig={globalTimeConfig}
+            setGlobalTimeConfig={setGlobalTimeConfig}
+            page={page}
+            setPage={setPage}
+        />
+    );
 }
