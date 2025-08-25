@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from './components/ui/Card';
 import { PieChartIcon, UsersIcon } from './components/Icons';
@@ -6,7 +7,7 @@ import type { CapTableMetric } from './types';
 import { KpiWidget } from './components/KpiWidget';
 import { initialCapTableMetrics } from './data';
 
-export default function CapTable() {
+export default function CapTable({ isKpiSentimentColoringEnabled }: { isKpiSentimentColoringEnabled?: boolean }) {
   const [capTableMetrics] = useState<CapTableMetric[]>(initialCapTableMetrics);
   return (
     <div className="space-y-8">
@@ -17,13 +18,14 @@ export default function CapTable() {
       
       <section>
         <h2 className="text-xl font-semibold text-zinc-200 mb-4">Ownership Overview</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="fluid-widget-grid">
             {capTableMetrics.map(item => (
                 <KpiWidget 
                   key={item.id} 
                   title={item.metric} 
                   value={item.value} 
                   icon={item.metric.includes('Ownership') ? UsersIcon : PieChartIcon}
+                  isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
                 />
             ))}
         </div>

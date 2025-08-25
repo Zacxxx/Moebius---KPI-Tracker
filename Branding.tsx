@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/Card';
 import { KpiWidget } from './components/KpiWidget';
@@ -15,7 +16,7 @@ const iconMap: { [key: string]: React.FC<{ className?: string }> } = {
     'Brand Mentions': MegaphoneIcon,
 };
 
-export default function Branding() {
+export default function Branding({ isKpiSentimentColoringEnabled }: { isKpiSentimentColoringEnabled?: boolean }) {
     const [brandingMetrics] = useState<BrandingMetric[]>(initialBrandingMetrics);
     const [mentionData] = useState<BrandMentionData[]>(initialBrandMentionData);
 
@@ -28,7 +29,7 @@ export default function Branding() {
             
             <section>
                 <h2 className="text-xl font-semibold text-zinc-200 mb-4">Key Metrics</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="fluid-widget-grid">
                     {brandingMetrics.map(item => (
                         <KpiWidget 
                           key={item.id} 
@@ -36,6 +37,7 @@ export default function Branding() {
                           value={item.value} 
                           change={item.change} 
                           icon={iconMap[item.metric] || MegaphoneIcon}
+                          isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
                         />
                     ))}
                 </div>

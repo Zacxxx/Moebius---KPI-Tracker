@@ -28,6 +28,7 @@ interface DashboardProps {
     setGlobalTimeConfig: (config: TimeConfig) => void;
     page: Page;
     setPage: (page: Page) => void;
+    isKpiSentimentColoringEnabled?: boolean;
 }
 
 const versions = [
@@ -50,6 +51,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     setGlobalTimeConfig,
     page,
     setPage,
+    isKpiSentimentColoringEnabled,
 }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [configuringWidget, setConfiguringWidget] = useState<WidgetInstance | null>(null);
@@ -143,12 +145,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     const sectionWidgets = widgets.filter(w => w.sectionId === section.id);
                     if (sectionWidgets.length === 0 && !isEditing) return null;
 
-                    const gridCols = 'lg:grid-cols-4';
-
                     return (
                         <section key={section.id}>
                             <h2 className="text-xl font-semibold text-zinc-200 mb-4">{section.title}</h2>
-                            <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${gridCols} auto-rows-[minmax(104px,auto)]`}>
+                            <div className="fluid-widget-grid auto-rows-[minmax(104px,auto)]">
                                 {sectionWidgets.map(widgetInstance => {
                                     const WidgetComponent = WIDGET_COMPONENT_MAP[widgetInstance.widgetType];
                                     if (!WidgetComponent) {
@@ -173,6 +173,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                         iconColorMap: iconColorMap,
                                         globalTimeConfig: globalTimeConfig,
                                         onOpenChart: setViewingChartKpi,
+                                        isKpiSentimentColoringEnabled: isKpiSentimentColoringEnabled,
                                     };
 
                                     return (

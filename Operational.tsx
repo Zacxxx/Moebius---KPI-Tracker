@@ -17,7 +17,7 @@ const iconColorMap: { [key: string]: string } = {
     'Burn Rate': 'text-red-400',
 };
 
-export default function Operational() {
+export default function Operational({ isKpiSentimentColoringEnabled }: { isKpiSentimentColoringEnabled?: boolean }) {
   const [operationalMetrics] = useState<OperationalMetric[]>(initialOperationalMetrics);
   return (
     <div className="space-y-8">
@@ -28,7 +28,7 @@ export default function Operational() {
       
       <section>
         <h2 className="text-xl font-semibold text-zinc-200 mb-4">Key Metrics</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="fluid-widget-grid">
             {operationalMetrics.map(item => (
                 <KpiWidget 
                     key={item.id} 
@@ -37,6 +37,8 @@ export default function Operational() {
                     change={item.change}
                     icon={iconMap[item.metric] || TrendingUpIcon}
                     iconColor={iconColorMap[item.metric] || 'text-violet-400'}
+                    inverse={item.inverse}
+                    isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
                 />
             ))}
         </div>

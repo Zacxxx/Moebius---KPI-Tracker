@@ -1,3 +1,5 @@
+
+
 import React, { useMemo } from 'react';
 import type { GenericWidgetProps, SelectableKpi } from '../../types';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
@@ -35,7 +37,7 @@ const getNumericValue = (valueString: string): number => {
     return isNaN(numeric) ? 0 : numeric;
 };
 
-export const ConfigurableKpiWidget: React.FC<ConfigurableKpiWidgetProps> = ({ instance, onConfigure, allKpis, iconMap, iconColorMap, onConfigChange, globalTimeConfig, onOpenChart }) => {
+export const ConfigurableKpiWidget: React.FC<ConfigurableKpiWidgetProps> = ({ instance, onConfigure, allKpis, iconMap, iconColorMap, onConfigChange, globalTimeConfig, onOpenChart, isKpiSentimentColoringEnabled = true }) => {
     const { title, selectedKpiId, selectedKpiSource, timeConfig: localTimeConfig, isTimeLocked, style = 'default', form = 'default' } = instance.config;
     
     const activeTimeConfig = isTimeLocked 
@@ -44,10 +46,16 @@ export const ConfigurableKpiWidget: React.FC<ConfigurableKpiWidgetProps> = ({ in
 
     const selectedKpi = allKpis && allKpis.find(kpi => kpi.id === selectedKpiId && kpi.source === selectedKpiSource);
 
-    const { displayValue, changeText, currentValue, previousValue, sparklineData, changePercent } = useMemo(() => {
+    const { displayValue, changeText, currentValue, previousValue, sparklineData, changePercent, sentiment } = useMemo(() => {
         if (!selectedKpi || !selectedKpi.series) {
             const current = getNumericValue(selectedKpi?.value || '');
-            return { displayValue: selectedKpi?.value || 'N/A', changeText: selectedKpi?.change || '', currentValue: current, previousValue: null, sparklineData: [], changePercent: null };
+            const isPositive = selectedKpi?.change?.includes('+');
+            const isNegative = selectedKpi?.change?.includes('-');
+            let calculatedSentiment: 'positive' | 'negative' | 'neutral' = 'neutral';
+            if (isPositive) calculatedSentiment = selectedKpi.inverse ? 'negative' : 'positive';
+            if (isNegative) calculatedSentiment = selectedKpi.inverse ? 'positive' : 'negative';
+
+            return { displayValue: selectedKpi?.value || 'N/A', changeText: selectedKpi?.change || '', currentValue: current, previousValue: null, sparklineData: [], changePercent: null, sentiment: calculatedSentiment };
         }
         
         const now = new Date();
@@ -76,7 +84,7 @@ export const ConfigurableKpiWidget: React.FC<ConfigurableKpiWidgetProps> = ({ in
             prevStartDate = new Date(prevEndDate.getTime() - duration);
         } else { // 'all' time
              const allTimeData = selectedKpi.series.map(d => d.value);
-            return { displayValue: selectedKpi.value, changeText: selectedKpi.change, currentValue: getNumericValue(selectedKpi.value), previousValue: null, sparklineData: allTimeData, changePercent: null };
+            return { displayValue: selectedKpi.value, changeText: selectedKpi.change, currentValue: getNumericValue(selectedKpi.value), previousValue: null, sparklineData: allTimeData, changePercent: null, sentiment: 'neutral' };
         }
         
         const calculateMetric = (start: Date, end: Date, getSeries: boolean = false) => {
@@ -108,6 +116,13 @@ export const ConfigurableKpiWidget: React.FC<ConfigurableKpiWidgetProps> = ({ in
             percent = Infinity;
         }
 
+        let calculatedSentiment: 'positive' | 'negative' | 'neutral' = 'neutral';
+        if (percent > 0.01) { // use a small threshold
+            calculatedSentiment = selectedKpi.inverse ? 'negative' : 'positive';
+        } else if (percent < -0.01) {
+            calculatedSentiment = selectedKpi.inverse ? 'positive' : 'negative';
+        }
+
         const formattedValue = formatValue(currentVal, selectedKpi.format);
         let formattedChange: string;
         if (isFinite(percent)) {
@@ -116,7 +131,7 @@ export const ConfigurableKpiWidget: React.FC<ConfigurableKpiWidgetProps> = ({ in
             formattedChange = 'vs ∞ previous period';
         }
 
-        return { displayValue: formattedValue, changeText: formattedChange, currentValue: currentVal, previousValue: previousVal, sparklineData: sparklinePoints, changePercent: percent };
+        return { displayValue: formattedValue, changeText: formattedChange, currentValue: currentVal, previousValue: previousVal, sparklineData: sparklinePoints, changePercent: percent, sentiment: calculatedSentiment };
 
     }, [selectedKpi, activeTimeConfig]);
 
@@ -144,8 +159,10 @@ export const ConfigurableKpiWidget: React.FC<ConfigurableKpiWidgetProps> = ({ in
     const isCompact = (instance.config.gridHeight || 2) <= 1;
 
     const renderContent = () => {
-        const valueTextSize = isCompact ? 'text-3xl' : 'text-4xl';
-        const iconSize = isCompact ? 'h-6 w-6' : 'h-8 w-8';
+        const valueTextSize = isCompact ? 'text-2xl' : 'text-3xl';
+        const iconSize = isCompact ? 'h-5 w-5' : 'h-6 w-6';
+        const valueColor = isKpiSentimentColoringEnabled && sentiment === 'positive' ? 'text-emerald-400' : isKpiSentimentColoringEnabled && sentiment === 'negative' ? 'text-red-400' : 'text-white';
+        const changeColor = isKpiSentimentColoringEnabled && sentiment === 'positive' ? 'text-emerald-400/80' : isKpiSentimentColoringEnabled && sentiment === 'negative' ? 'text-red-400/80' : 'text-zinc-500';
         
         switch(form) {
             case 'gauge':
@@ -157,7 +174,7 @@ export const ConfigurableKpiWidget: React.FC<ConfigurableKpiWidgetProps> = ({ in
                 return (
                     <div className="flex flex-col justify-between h-full">
                         <div className="flex items-start justify-between">
-                            <span className={`${valueTextSize} font-bold text-white`}>{displayValue}</span>
+                            <span className={`${valueTextSize} font-bold ${valueColor}`}>{displayValue}</span>
                         </div>
                         <div className="relative h-14 -mx-2 -mb-2">
                            <div className="absolute inset-0 bg-gradient-to-t from-violet-500/0 via-violet-500/10 to-violet-500/0"></div>
@@ -170,14 +187,14 @@ export const ConfigurableKpiWidget: React.FC<ConfigurableKpiWidgetProps> = ({ in
                     </div>
                 );
             case 'comparison':
-                const isPositive = changePercent !== null && changePercent >= 0;
-                const changeColor = changePercent === null ? 'text-zinc-400' : isPositive ? 'text-emerald-400' : 'text-red-400';
+                const isPositive = sentiment === 'positive';
+                const comparisonChangeColor = isKpiSentimentColoringEnabled && sentiment === 'neutral' ? 'text-zinc-400' : isKpiSentimentColoringEnabled && isPositive ? 'text-emerald-400' : isKpiSentimentColoringEnabled && !isPositive ? 'text-red-400' : 'text-zinc-400';
                 return (
                     <div className="flex flex-col justify-center h-full">
                         <div className="flex items-baseline gap-3">
-                            <span className={`${valueTextSize} font-bold text-white`}>{displayValue}</span>
+                            <span className={`${valueTextSize} font-bold ${valueColor}`}>{displayValue}</span>
                             {changePercent !== null && (
-                                <div className={`flex items-center gap-1 font-bold ${isCompact ? 'text-lg' : 'text-xl'} ${changeColor}`}>
+                                <div className={`flex items-center gap-1 font-bold ${isCompact ? 'text-lg' : 'text-xl'} ${comparisonChangeColor}`}>
                                     {isPositive ? <ArrowUpIcon className="h-5 w-5"/> : <ArrowDownIcon className="h-5 w-5"/>}
                                     <span>{Math.abs(changePercent).toFixed(1)}%</span>
                                 </div>
@@ -189,12 +206,12 @@ export const ConfigurableKpiWidget: React.FC<ConfigurableKpiWidgetProps> = ({ in
             case 'default':
             default:
                 return (
-                    <div className="flex flex-col justify-between h-full">
-                        <div className="flex items-start justify-between">
-                            <span className={`${valueTextSize} font-bold text-white tracking-tight`}>{displayValue}</span>
+                    <div className="mt-auto">
+                        <div className="flex items-end justify-between">
+                            <span className={`${valueTextSize} font-bold tracking-tight ${valueColor}`}>{displayValue}</span>
                             <Icon className={`${iconSize} ${iconColor}`} />
                         </div>
-                        {changeText && <p className="text-sm text-zinc-500 mt-2">{changeText}</p>}
+                        {changeText && <p className={`text-xs mt-1 ${changeColor} truncate`}>{changeText}</p>}
                     </div>
                 );
         }
@@ -209,22 +226,24 @@ export const ConfigurableKpiWidget: React.FC<ConfigurableKpiWidgetProps> = ({ in
 
     return (
         <div className={`flex flex-col h-full ${styleClasses[style as keyof typeof styleClasses]}`}>
-            <CardHeader className={`relative ${style === 'transparent' ? 'pt-0' : ''}`}>
-                 <CardTitle className="pr-16">{title || selectedKpi.metric}</CardTitle>
-                 <div className="absolute top-4 right-2 flex items-center gap-1">
-                    {selectedKpi.series && selectedKpi.series.length > 0 && (
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onOpenChart(selectedKpi)} aria-label="View chart">
-                            <ChartBarIcon className="h-4 w-4" />
+            <div className="p-4 flex flex-col h-full">
+                <div className="flex justify-between items-start relative">
+                    <CardTitle className="pr-20">{title || selectedKpi.metric}</CardTitle>
+                    <div className="absolute top-0 right-0 flex items-center -mt-2 -mr-2">
+                        {selectedKpi.series && selectedKpi.series.length > 0 && (
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onOpenChart(selectedKpi)} aria-label="View chart">
+                                <ChartBarIcon className="h-4 w-4" />
+                            </Button>
+                        )}
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onConfigure} aria-label="Configure widget">
+                            <SettingsIcon className="h-4 w-4" />
                         </Button>
-                    )}
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onConfigure} aria-label="Configure widget">
-                        <SettingsIcon className="h-4 w-4" />
-                    </Button>
-                 </div>
-            </CardHeader>
-            <CardContent className="flex-grow flex flex-col justify-center">
-                {renderContent()}
-            </CardContent>
+                    </div>
+                </div>
+                <div className="flex-grow flex flex-col justify-end">
+                     {renderContent()}
+                </div>
+            </div>
         </div>
     )
 };

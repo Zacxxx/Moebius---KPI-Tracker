@@ -1,5 +1,6 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import type { Page, ChatSession } from './types';
 import { MenuIcon, BellIcon, UserIcon, UsersIcon, SearchIcon, MoebiusIcon, ChevronLeftIcon, ChevronDownIcon, DatabaseIcon, MessageSquareIcon, EditIcon, FolderIcon, FolderPlusIcon, Trash2Icon, SparklesIcon, LaptopIcon, ShoppingCartIcon, ShapesIcon } from './components/Icons';
 import UserPanel from './components/UserPanel';
@@ -7,6 +8,15 @@ import NotificationsPanel from './components/NotificationsPanel';
 import TeamPanel from './components/TeamPanel';
 import ConversationsPanel from './components/ConversationsPanel';
 import { NavItemData, platformNavItems } from './navigation';
+
+// Helper hook to get the previous value of a state or prop
+function usePrevious<T>(value: T): T | undefined {
+  const ref = useRef<T | undefined>(undefined);
+  useEffect(() => {
+    ref.current = value;
+  }, [value]);
+  return ref.current;
+}
 
 const NavItem: React.FC<{
   icon: React.FC<{className?: string}>;
@@ -29,11 +39,11 @@ const NavItem: React.FC<{
   return (
     <button
       onClick={handleClick}
-      className={`flex items-center w-full h-12 rounded-lg text-left transition-colors duration-200 ${
+      className={`flex items-center w-full rounded-lg text-left transition-colors duration-200 ${
         isActive
           ? 'bg-violet-500/20 text-violet-300'
           : 'text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200'
-      } ${isSidebarOpen ? 'px-4' : 'justify-center'}`}
+      } ${isSidebarOpen ? 'h-12 px-4' : 'h-full justify-center'}`}
       aria-current={isActive ? 'page' : undefined}
     >
       <Icon className="h-6 w-6 flex-shrink-0" />
@@ -72,12 +82,12 @@ const CollapsibleNavItem: React.FC<{
     };
 
     return (
-        <div>
+        <div className={!isSidebarOpen ? 'h-full' : ''}>
             <button
                 onClick={handleParentClick}
-                className={`flex items-center w-full h-12 rounded-lg text-left transition-colors duration-200 ${
+                className={`flex items-center w-full rounded-lg text-left transition-colors duration-200 ${
                     isParentActive ? 'text-violet-300' : 'text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200'
-                } ${isSidebarOpen ? 'px-4' : 'justify-center'}`}
+                } ${isSidebarOpen ? 'h-12 px-4' : 'h-full justify-center'}`}
             >
                 <item.icon className="h-6 w-6 flex-shrink-0" />
                 <span className={`overflow-hidden text-sm font-medium transition-all duration-300 whitespace-nowrap ${
@@ -137,8 +147,8 @@ const CollapsibleCategory: React.FC<{
   };
 
   return (
-    <div>
-      <div className={`flex items-center w-full h-12 rounded-lg text-left transition-colors duration-200 text-zinc-400 hover:bg-zinc-800/60 ${isSidebarOpen ? 'px-4' : ''}`}>
+    <div className={!isSidebarOpen ? 'h-full' : ''}>
+      <div className={`flex items-center w-full rounded-lg text-left transition-colors duration-200 text-zinc-400 hover:bg-zinc-800/60 ${isSidebarOpen ? 'h-12 px-4' : 'h-full'}`}>
         <button
           onClick={handleToggleCategory}
           className={`flex items-center flex-1 h-full min-w-0 ${isSidebarOpen ? '' : 'justify-center'}`}
@@ -225,7 +235,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <ChevronLeftIcon className={`h-6 w-6 transition-transform duration-300 ${isSidebarOpen ? '' : 'rotate-180'}`} />
           </button>
         </div>
-        <nav className="flex-1 overflow-y-auto p-2 space-y-2 sidebar-nav">
+        <nav className={`flex-1 p-2 sidebar-nav ${isSidebarOpen ? 'overflow-y-auto space-y-2' : 'flex flex-col justify-around'}`}>
             <CollapsibleCategory
                 icon={FolderIcon}
                 label="Projects"
@@ -331,21 +341,41 @@ const Sidebar: React.FC<SidebarProps> = ({
   );
 }
 
-const Header: React.FC<{ 
-  onToggleSidebar: () => void; 
-  onToggleUserPanel: () => void; 
-  onToggleNotificationsPanel: () => void; 
-  onToggleChatToast: () => void; 
+const Header: React.FC<{
+  onToggleSidebar: () => void;
+  onMouseEnterButton: (panel: 'user' | 'notifications' | 'team' | 'conversations') => void;
+  onMouseLeaveButton: () => void;
+  onNavigate: (page: Page) => void;
+  onToggleAiChat: () => void;
   onSearchClick: () => void;
-  onToggleTeamPanel: () => void;
-  onToggleConversationsPanel: () => void;
-}> = ({ onToggleSidebar, onToggleUserPanel, onToggleNotificationsPanel, onToggleChatToast, onSearchClick, onToggleTeamPanel, onToggleConversationsPanel }) => {
+  isRightPanelOpen: boolean;
+  aiChatInterfaceStyle: 'panel' | 'toast';
+}> = ({ onToggleSidebar, onMouseEnterButton, onMouseLeaveButton, onNavigate, onToggleAiChat, onSearchClick, isRightPanelOpen, aiChatInterfaceStyle }) => {
+  const showPanel = isRightPanelOpen && aiChatInterfaceStyle === 'panel';
+
+  const movableButtons = (isCentered: boolean) => (
+    <>
+      <button onMouseEnter={() => onMouseEnterButton('team')} onMouseLeave={onMouseLeaveButton} onClick={() => onNavigate('team-management')} className={`relative p-2 rounded-full text-zinc-400 hover:text-zinc-200 transition-colors ${isCentered ? 'hover:bg-zinc-700' : 'hover:bg-zinc-800/60'}`} aria-label="Team">
+        <UsersIcon className="h-6 w-6" />
+      </button>
+      <button onMouseEnter={() => onMouseEnterButton('conversations')} onMouseLeave={onMouseLeaveButton} onClick={() => onNavigate('conversations')} className={`relative p-2 rounded-full text-zinc-400 hover:text-zinc-200 transition-colors ${isCentered ? 'hover:bg-zinc-700' : 'hover:bg-zinc-800/60'}`} aria-label="Conversations">
+        <MessageSquareIcon className="h-6 w-6" />
+      </button>
+      <button onClick={onToggleAiChat} className={`relative p-2 rounded-full text-zinc-400 hover:text-zinc-200 transition-colors ${isCentered ? 'hover:bg-zinc-700' : 'hover:bg-zinc-800/60'}`} aria-label="Open AI Assistant">
+        <SparklesIcon className="h-6 w-6" />
+      </button>
+      <button onMouseEnter={() => onMouseEnterButton('notifications')} onMouseLeave={onMouseLeaveButton} onClick={() => onNavigate('notifications')} className={`relative p-2 rounded-full text-zinc-400 hover:text-zinc-200 transition-colors ${isCentered ? 'hover:bg-zinc-700' : 'hover:bg-zinc-800/60'}`} aria-label="Notifications">
+        <BellIcon className="h-6 w-6" />
+      </button>
+    </>
+  );
+
   return (
-    <header className="flex items-center justify-between h-16 px-4 md:px-6 bg-zinc-900/50 backdrop-blur-lg border-b border-zinc-700/50 sticky top-0 z-20">
+    <header className="relative flex items-center justify-between h-16 px-4 md:px-6 bg-zinc-900/50 backdrop-blur-lg border-b border-zinc-700/50 sticky top-0 z-20">
       <button onClick={onToggleSidebar} className="p-2 rounded-full hover:bg-zinc-800/60 text-zinc-400 hover:text-zinc-200 lg:hidden" aria-label="Toggle sidebar">
         <MenuIcon className="h-6 w-6" />
       </button>
-      <div className="relative flex-1 max-w-md ml-4 lg:ml-0">
+      <div className="relative flex-1 min-w-0 max-w-2xl ml-4 lg:ml-0">
           <button onClick={onSearchClick} className="w-full h-10 rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-500 flex items-center gap-3 hover:border-zinc-600 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-zinc-900">
               <SearchIcon className="h-5 w-5" />
               Search KPIs, reports...
@@ -354,43 +384,33 @@ const Header: React.FC<{
               </kbd>
           </button>
       </div>
+
+      {/* Centered container for buttons */}
+      <div className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${showPanel ? 'opacity-100' : 'opacity-0 -translate-y-4 pointer-events-none'}`}>
+        <div className="flex items-center gap-1 p-1 bg-zinc-800/80 backdrop-blur-sm rounded-full border border-zinc-700/50">
+          {movableButtons(true)}
+        </div>
+      </div>
+      
       <div className="flex items-center gap-2 ml-4">
-        <button onClick={onToggleTeamPanel} className="relative p-2 rounded-full hover:bg-zinc-800/60 text-zinc-400 hover:text-zinc-200" aria-label="Team">
-            <UsersIcon className="h-6 w-6" />
-        </button>
-        <button onClick={onToggleConversationsPanel} className="relative p-2 rounded-full hover:bg-zinc-800/60 text-zinc-400 hover:text-zinc-200" aria-label="Conversations">
-            <MessageSquareIcon className="h-6 w-6" />
-        </button>
-        <button onClick={onToggleChatToast} className="relative p-2 rounded-full hover:bg-zinc-800/60 text-zinc-400 hover:text-zinc-200" aria-label="Open AI Assistant">
-            <SparklesIcon className="h-6 w-6" />
-        </button>
-        <button onClick={onToggleNotificationsPanel} className="relative p-2 rounded-full hover:bg-zinc-800/60 text-zinc-400 hover:text-zinc-200" aria-label="Notifications">
-            <BellIcon className="h-6 w-6" />
-        </button>
-        <button onClick={onToggleUserPanel} className="p-1 rounded-full hover:bg-zinc-800/60" aria-label="User menu">
+        {/* Original movable buttons container */}
+        <div className={`flex items-center gap-2 transition-opacity duration-300 ${showPanel ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+          {movableButtons(false)}
+        </div>
+
+        {/* These stay on the right */}
+        <button onMouseEnter={() => onMouseEnterButton('user')} onMouseLeave={onMouseLeaveButton} onClick={() => onNavigate('profile')} className="p-1 rounded-full hover:bg-zinc-800/60" aria-label="User menu">
             <UserIcon className="h-8 w-8 text-zinc-400 bg-zinc-700 rounded-full p-1" />
         </button>
+        {aiChatInterfaceStyle === 'panel' && (
+          <button onClick={onToggleAiChat} className="p-2 -ml-2 rounded-full hover:bg-zinc-800/60 text-zinc-400 hover:text-zinc-200">
+              <ChevronLeftIcon className={`h-6 w-6 transition-transform duration-300 ${isRightPanelOpen ? '' : 'rotate-180'}`} />
+          </button>
+        )}
       </div>
     </header>
   );
 }
-
-const useClickOutside = (ref: React.RefObject<HTMLElement>, handler: (event: MouseEvent | TouchEvent) => void) => {
-  useEffect(() => {
-    const listener = (event: MouseEvent | TouchEvent) => {
-      if (!ref.current || ref.current.contains(event.target as Node)) {
-        return;
-      }
-      handler(event);
-    };
-    document.addEventListener('mousedown', listener);
-    document.addEventListener('touchstart', listener);
-    return () => {
-      document.removeEventListener('mousedown', listener);
-      document.removeEventListener('touchstart', listener);
-    };
-  }, [ref, handler]);
-};
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -401,7 +421,7 @@ interface LayoutProps {
   setActiveChatId: (id: string) => void;
   onNewChat: () => void;
   onDeleteChat: (id: string) => void;
-  onToggleChatToast: () => void;
+  onToggleAiChat: () => void;
   activeContentSection: ContentSection;
   setActiveContentSection: (section: ContentSection) => void;
   onSearchClick: () => void;
@@ -410,6 +430,14 @@ interface LayoutProps {
   setViewedProfileId: (id: number | null) => void;
   onStartDm: (memberId: number) => void;
   onOpenConversationToast: (channelId: string) => void;
+  isKpiSentimentColoringEnabled: boolean;
+  setIsKpiSentimentColoringEnabled: (enabled: boolean) => void;
+  aiChatInterfaceStyle: 'panel' | 'toast';
+  setAiChatInterfaceStyle: (style: 'panel' | 'toast') => void;
+  isRightPanelOpen: boolean;
+  setIsRightPanelOpen: (isOpen: boolean) => void;
+  rightPanelWidth: number;
+  isResizing: boolean;
 }
 
 export default function Layout({ 
@@ -421,7 +449,7 @@ export default function Layout({
   setActiveChatId,
   onNewChat,
   onDeleteChat,
-  onToggleChatToast,
+  onToggleAiChat,
   activeContentSection,
   setActiveContentSection,
   onSearchClick,
@@ -430,65 +458,79 @@ export default function Layout({
   setViewedProfileId,
   onStartDm,
   onOpenConversationToast,
+  isKpiSentimentColoringEnabled,
+  setIsKpiSentimentColoringEnabled,
+  aiChatInterfaceStyle,
+  setAiChatInterfaceStyle,
+  isRightPanelOpen,
+  setIsRightPanelOpen,
+  rightPanelWidth,
+  isResizing,
 }: LayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isUserPanelOpen, setIsUserPanelOpen] = useState(false);
   const [isNotificationsPanelOpen, setIsNotificationsPanelOpen] = useState(false);
   const [isTeamPanelOpen, setIsTeamPanelOpen] = useState(false);
   const [isConversationsPanelOpen, setIsConversationsPanelOpen] = useState(false);
-  
-  const userPanelRef = useRef<HTMLDivElement>(null);
-  const notificationsPanelRef = useRef<HTMLDivElement>(null);
-  const teamPanelRef = useRef<HTMLDivElement>(null);
-  const conversationsPanelRef = useRef<HTMLDivElement>(null);
+  const [panelCloseTimer, setPanelCloseTimer] = useState<number | null>(null);
 
-  useClickOutside(userPanelRef, () => setIsUserPanelOpen(false));
-  useClickOutside(notificationsPanelRef, () => setIsNotificationsPanelOpen(false));
-  useClickOutside(teamPanelRef, () => setIsTeamPanelOpen(false));
-  useClickOutside(conversationsPanelRef, () => setIsConversationsPanelOpen(false));
-  
-  const handleToggleUserPanel = () => {
-    setIsUserPanelOpen(prev => !prev);
+  const prevIsRightPanelOpen = usePrevious(isRightPanelOpen);
+
+  useEffect(() => {
+    // If the right panel was just opened (changed from false to true)
+    // and we are using the panel UI style, then minimize the sidebar.
+    if (isRightPanelOpen && !prevIsRightPanelOpen && aiChatInterfaceStyle === 'panel') {
+      setIsSidebarOpen(false);
+    }
+  }, [isRightPanelOpen, prevIsRightPanelOpen, aiChatInterfaceStyle]);
+
+
+  const handleOpenPanel = (panel: 'user' | 'notifications' | 'team' | 'conversations' | null) => {
+    if (panelCloseTimer) clearTimeout(panelCloseTimer);
+    setIsUserPanelOpen(panel === 'user');
+    setIsNotificationsPanelOpen(panel === 'notifications');
+    setIsTeamPanelOpen(panel === 'team');
+    setIsConversationsPanelOpen(panel === 'conversations');
+  };
+
+  const handleClosePanelsWithDelay = () => {
+    const timer = window.setTimeout(() => {
+        setIsUserPanelOpen(false);
+        setIsNotificationsPanelOpen(false);
+        setIsTeamPanelOpen(false);
+        setIsConversationsPanelOpen(false);
+    }, 200);
+    setPanelCloseTimer(timer);
+  };
+
+  const handleEnterPanel = () => {
+    if (panelCloseTimer) clearTimeout(panelCloseTimer);
+  };
+
+  const handleLeavePanel = () => {
+    setIsUserPanelOpen(false);
     setIsNotificationsPanelOpen(false);
     setIsTeamPanelOpen(false);
     setIsConversationsPanelOpen(false);
-  }
+  };
 
-  const handleToggleNotificationsPanel = () => {
-    setIsNotificationsPanelOpen(prev => !prev);
-    setIsUserPanelOpen(false);
-    setIsTeamPanelOpen(false);
-    setIsConversationsPanelOpen(false);
-  }
-
-  const handleToggleTeamPanel = () => {
-    setIsTeamPanelOpen(prev => !prev);
-    setIsUserPanelOpen(false);
-    setIsNotificationsPanelOpen(false);
-    setIsConversationsPanelOpen(false);
-  }
-
-  const handleToggleConversationsPanel = () => {
-      setIsConversationsPanelOpen(prev => !prev);
-      setIsUserPanelOpen(false);
-      setIsNotificationsPanelOpen(false);
-      setIsTeamPanelOpen(false);
-  }
+  const handleNavigate = (page: Page) => {
+      setPage(page);
+      handleLeavePanel(); // Close any open panel immediately on navigation
+  };
   
   const handleGoToConversations = () => {
-      setPage('conversations');
-      setIsConversationsPanelOpen(false);
+      handleNavigate('conversations');
   };
 
   const handleOpenToastAndClosePanel = (channelId: string) => {
     onOpenConversationToast(channelId);
-    setIsConversationsPanelOpen(false);
+    handleLeavePanel();
   };
 
   const handleViewProfile = (memberId: number) => {
     setViewedProfileId(memberId);
-    setPage('profile');
-    setIsTeamPanelOpen(false);
+    handleNavigate('profile');
   };
 
   return (
@@ -513,29 +555,34 @@ export default function Layout({
         activeContentSection={activeContentSection}
         setActiveContentSection={setActiveContentSection}
       />
-      <div className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${isSidebarOpen ? 'lg:ml-64' : 'lg:ml-20'}`}>
+      <div 
+        className={`main-content-wrapper flex-1 flex flex-col ${isSidebarOpen ? 'lg:ml-64' : 'lg:ml-20'} ${isRightPanelOpen && aiChatInterfaceStyle === 'panel' ? 'panel-open' : ''} ${isResizing ? '' : 'transition-all duration-300 ease-in-out'}`}
+        style={{ '--right-panel-width': `${rightPanelWidth}px` } as React.CSSProperties}
+      >
         <div className="relative">
-            <Header 
-                onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} 
-                onToggleUserPanel={handleToggleUserPanel}
-                onToggleNotificationsPanel={handleToggleNotificationsPanel}
-                onToggleTeamPanel={handleToggleTeamPanel}
-                onToggleConversationsPanel={handleToggleConversationsPanel}
-                onToggleChatToast={onToggleChatToast}
+            <Header
+                onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+                onMouseEnterButton={handleOpenPanel}
+                onMouseLeaveButton={handleClosePanelsWithDelay}
+                onNavigate={handleNavigate}
+                onToggleAiChat={onToggleAiChat}
                 onSearchClick={onSearchClick}
+                isRightPanelOpen={isRightPanelOpen}
+                aiChatInterfaceStyle={aiChatInterfaceStyle}
             />
-            {isUserPanelOpen && <UserPanel ref={userPanelRef} onGoToFullscreen={() => { setViewedProfileId(null); setPage('profile'); setIsUserPanelOpen(false); }} />}
-            {isNotificationsPanelOpen && <NotificationsPanel ref={notificationsPanelRef} onGoToFullscreen={() => { setPage('notifications'); setIsNotificationsPanelOpen(false); }} />}
+            {isUserPanelOpen && <UserPanel onMouseEnter={handleEnterPanel} onMouseLeave={handleLeavePanel} onGoToFullscreen={() => { setViewedProfileId(null); handleNavigate('profile'); }} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} setIsKpiSentimentColoringEnabled={setIsKpiSentimentColoringEnabled} aiChatInterfaceStyle={aiChatInterfaceStyle} setAiChatInterfaceStyle={setAiChatInterfaceStyle} />}
+            {isNotificationsPanelOpen && <NotificationsPanel onMouseEnter={handleEnterPanel} onMouseLeave={handleLeavePanel} onGoToFullscreen={() => { handleNavigate('notifications'); }} />}
             {isTeamPanelOpen && <TeamPanel 
-                ref={teamPanelRef} 
+                onMouseEnter={handleEnterPanel}
+                onMouseLeave={handleLeavePanel}
                 activeTeamId={activeTeamId}
                 setActiveTeamId={setActiveTeamId}
-                onGoToFullscreen={() => { setPage('team-management'); setIsTeamPanelOpen(false); }}
+                onGoToFullscreen={() => { handleNavigate('team-management'); }}
                 setPage={setPage}
                 onViewProfile={handleViewProfile}
                 onStartDm={onStartDm}
              />}
-            {isConversationsPanelOpen && <ConversationsPanel ref={conversationsPanelRef} onGoToFullscreen={handleGoToConversations} onOpenConversationToast={handleOpenToastAndClosePanel} />}
+            {isConversationsPanelOpen && <ConversationsPanel onMouseEnter={handleEnterPanel} onMouseLeave={handleLeavePanel} onGoToFullscreen={handleGoToConversations} onOpenConversationToast={handleOpenToastAndClosePanel} />}
         </div>
         
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">

@@ -17,7 +17,7 @@ export const GENERIC_WIDGETS: GenericWidget[] = [
         name: 'KPI',
         description: 'Display a single, configurable Key Performance Indicator.',
         component: ConfigurableKpiWidget,
-        defaultConfig: { title: 'New KPI', gridWidth: 1, gridHeight: 2 },
+        defaultConfig: { title: 'New KPI', gridWidth: 1, gridHeight: 1 },
     },
     { 
         type: 'PROJECTION_GRAPHIC', 

@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/Card';
 import { KpiWidget } from './components/KpiWidget';
@@ -13,7 +14,7 @@ const iconMap: { [key: string]: React.FC<{ className?: string }> } = {
     'Avg. Time on Page': ClockIcon,
 };
 
-export default function Content() {
+export default function Content({ isKpiSentimentColoringEnabled }: { isKpiSentimentColoringEnabled?: boolean }) {
     const [contentMetrics] = useState<ContentMetric[]>(initialContentMetrics);
     const [contentItems] = useState<ContentItem[]>(initialContentItems);
 
@@ -26,7 +27,7 @@ export default function Content() {
             
             <section>
                 <h2 className="text-xl font-semibold text-zinc-200 mb-4">Key Metrics</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="fluid-widget-grid">
                     {contentMetrics.map(item => (
                         <KpiWidget 
                           key={item.id} 
@@ -34,6 +35,7 @@ export default function Content() {
                           value={item.value} 
                           change={item.change} 
                           icon={iconMap[item.metric] || FileTextIcon}
+                          isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
                         />
                     ))}
                 </div>

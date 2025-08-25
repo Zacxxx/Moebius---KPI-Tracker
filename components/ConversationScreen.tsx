@@ -59,7 +59,7 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
                     {isLoading && <TypingIndicator />}
                     <div ref={messagesEndRef} />
                 </CardContent>
-                <ChatInput onSend={onSend} isLoading={isLoading} onToggleBookmarksPanel={() => {}} />
+                <ChatInput onSend={onSend} isLoading={isLoading} />
             </Card>
         </div>
     );

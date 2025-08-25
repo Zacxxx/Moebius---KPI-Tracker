@@ -17,9 +17,10 @@ interface CoordinationDashboardProps {
     setGlobalTimeConfig: (config: TimeConfig) => void;
     page: Page;
     setPage: (page: Page) => void;
+    isKpiSentimentColoringEnabled?: boolean;
 }
 
-export default function CoordinationDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage }: CoordinationDashboardProps) {
+export default function CoordinationDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled }: CoordinationDashboardProps) {
   const [sections, setSections] = useState<DashboardSection[]>([
     { id: 'kpis', title: 'Key Metrics' }
   ]);
@@ -55,6 +56,7 @@ export default function CoordinationDashboard({ globalTimeConfig, setGlobalTimeC
         setGlobalTimeConfig={setGlobalTimeConfig}
         page={page}
         setPage={setPage}
+        isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
     />
   );
 }

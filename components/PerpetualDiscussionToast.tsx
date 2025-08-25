@@ -1,10 +1,13 @@
-import React, { useEffect, useRef, useState, forwardRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardHeader, CardContent, CardTitle } from './ui/Card';
 import { Button } from './ui/Button';
-import { XIcon, Maximize2Icon, MinusIcon, SparklesIcon, ChevronUpIcon, BookmarkIcon as PanelBookmarkIcon, UserIcon } from './Icons';
+import { XIcon, Maximize2Icon, MinusIcon, SparklesIcon, ChevronUpIcon, PlusCircleIcon, PaperclipIcon, BookmarkIcon, ClipboardIcon, FolderIcon, SettingsIcon, UsersIcon } from './Icons';
 import { ChatMessage, TypingIndicator } from './MessageBubble';
 import { ChatInput } from './ChatInput';
 import type { Message, ChatSession, Bookmark } from '../types';
+import { BookmarksPanel } from './chat/BookmarksPanel';
+import { ActionButton } from './chat/ActionButton';
+import { ActionPanel } from './chat/ActionPanel';
 
 interface PerpetualDiscussionToastProps {
     session: ChatSession & { messages: (Message & { isBookmarked?: boolean })[] };
@@ -18,6 +21,7 @@ interface PerpetualDiscussionToastProps {
     bookmarks: Bookmark[];
     onToggleBookmark: (message: Message) => void;
     setActiveChatId: (id: string) => void;
+    getAppContextData?: (command: string) => string;
 }
 
 const useClickOutside = (ref: React.RefObject<HTMLElement>, handler: (event: MouseEvent | TouchEvent) => void) => {
@@ -37,49 +41,6 @@ const useClickOutside = (ref: React.RefObject<HTMLElement>, handler: (event: Mou
   }, [ref, handler]);
 };
 
-interface BookmarksPanelProps {
-    bookmarks: Bookmark[];
-    onSelectBookmark: (sessionId: string) => void;
-}
-const BookmarksPanel = forwardRef<HTMLDivElement, BookmarksPanelProps>(({ bookmarks, onSelectBookmark }, ref) => {
-    return (
-        <div ref={ref} className="absolute bottom-20 -right-2 w-80 max-w-sm z-50">
-            <Card className="overflow-hidden shadow-2xl shadow-black/40 border-violet-500/30">
-                <CardHeader className="flex flex-row items-center justify-between !py-3">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                        <PanelBookmarkIcon className="h-5 w-5" /> Bookmarks
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="!p-0">
-                   {bookmarks.length > 0 ? (
-                       <ul className="divide-y divide-zinc-700/50 max-h-80 overflow-y-auto">
-                            {bookmarks.map(({ message, sessionId, sessionTitle }) => (
-                                <li key={message.id}>
-                                    <button 
-                                        onClick={() => onSelectBookmark(sessionId)}
-                                        className="p-3 w-full text-left hover:bg-zinc-800/40 transition-colors"
-                                    >
-                                        <p className="text-xs text-zinc-400 truncate mb-1">{sessionTitle}</p>
-                                        <div className="flex items-start gap-2">
-                                            {message.sender === 'user' ? <UserIcon className="h-4 w-4 mt-0.5 text-zinc-500 flex-shrink-0" /> : <SparklesIcon className="h-4 w-4 mt-0.5 text-violet-400 flex-shrink-0" />}
-                                            <p className="text-sm text-zinc-200 line-clamp-2">{message.text}</p>
-                                        </div>
-                                    </button>
-                                </li>
-                            ))}
-                       </ul>
-                   ) : (
-                       <div className="p-8 text-center">
-                           <p className="text-sm text-zinc-500">No bookmarks yet.</p>
-                           <p className="text-xs text-zinc-600 mt-1">Click the bookmark icon on a message to save it.</p>
-                       </div>
-                   )}
-                </CardContent>
-            </Card>
-        </div>
-    )
-});
-
 export const PerpetualDiscussionToast: React.FC<PerpetualDiscussionToastProps> = ({
     session,
     isLoading,
@@ -92,12 +53,13 @@ export const PerpetualDiscussionToast: React.FC<PerpetualDiscussionToastProps> =
     bookmarks,
     onToggleBookmark,
     setActiveChatId,
+    getAppContextData,
 }) => {
     const [isClosing, setIsClosing] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const [isBookmarksPanelOpen, setIsBookmarksPanelOpen] = useState(false);
-    const bookmarksPanelRef = useRef<HTMLDivElement>(null);
-    useClickOutside(bookmarksPanelRef, () => setIsBookmarksPanelOpen(false));
+    const [activePanel, setActivePanel] = useState<string | null>(null);
+    const panelContainerRef = useRef<HTMLDivElement>(null);
+    useClickOutside(panelContainerRef, () => setActivePanel(null));
 
 
     const scrollToBottom = () => {
@@ -141,19 +103,59 @@ export const PerpetualDiscussionToast: React.FC<PerpetualDiscussionToastProps> =
                     {isLoading && <TypingIndicator />}
                     <div ref={messagesEndRef} />
                 </CardContent>
+                
+                <div className="relative" ref={panelContainerRef}>
+                    <div className="absolute bottom-full mb-2 right-0 w-80 max-w-sm">
+                        {activePanel === 'bookmark' && (
+                            <BookmarksPanel
+                                bookmarks={bookmarks}
+                                onSelectBookmark={(sessionId) => {
+                                    setActiveChatId(sessionId);
+                                    onMaximize();
+                                    setActivePanel(null);
+                                }}
+                            />
+                        )}
+                        {activePanel === 'link' && (
+                            <ActionPanel title="Attach Link" icon={PaperclipIcon}>
+                                <div className="p-4 text-sm text-zinc-400">Attach link functionality placeholder.</div>
+                            </ActionPanel>
+                        )}
+                        {activePanel === 'copy' && (
+                            <ActionPanel title="Copy Conversation" icon={ClipboardIcon}>
+                                <div className="p-4 text-sm text-zinc-400">Copy conversation functionality placeholder.</div>
+                            </ActionPanel>
+                        )}
+                        {activePanel === 'folder' && (
+                            <ActionPanel title="Save to Folder" icon={FolderIcon}>
+                                <div className="p-4 text-sm text-zinc-400">Save to folder functionality placeholder.</div>
+                            </ActionPanel>
+                        )}
+                        {activePanel === 'settings' && (
+                            <ActionPanel title="Chat Settings" icon={SettingsIcon}>
+                                <div className="p-4 text-sm text-zinc-400">Chat settings functionality placeholder.</div>
+                            </ActionPanel>
+                        )}
+                        {activePanel === 'users' && (
+                            <ActionPanel title="Participants" icon={UsersIcon}>
+                                <div className="p-4 text-sm text-zinc-400">Chat participants functionality placeholder.</div>
+                            </ActionPanel>
+                        )}
+                    </div>
 
-                <div className="relative" ref={bookmarksPanelRef}>
-                    <ChatInput onSend={onSend} isLoading={isLoading} onToggleBookmarksPanel={() => setIsBookmarksPanelOpen(p => !p)} />
-                    {isBookmarksPanelOpen && (
-                        <BookmarksPanel
-                            bookmarks={bookmarks}
-                            onSelectBookmark={(sessionId) => {
-                                setActiveChatId(sessionId);
-                                onMaximize();
-                                setIsBookmarksPanelOpen(false);
-                            }}
-                        />
-                    )}
+                    <div className="px-4 py-2 border-t border-zinc-700/50 flex items-center gap-2">
+                        <Button size="icon" className="h-8 w-8 bg-violet-600 hover:bg-violet-700 flex-shrink-0"><PlusCircleIcon className="h-5 w-5"/></Button>
+                        <div className="flex items-center gap-1 p-1 rounded-full bg-zinc-800/80 border border-zinc-700/50 overflow-x-auto">
+                            <ActionButton label="Link" onClick={() => setActivePanel(p => p === 'link' ? null : 'link')}><PaperclipIcon className="h-4 w-4"/></ActionButton>
+                            <ActionButton label="Bookmark" onClick={() => setActivePanel(p => p === 'bookmark' ? null : 'bookmark')}><BookmarkIcon className="h-4 w-4"/></ActionButton>
+                            <ActionButton label="Copy" onClick={() => setActivePanel(p => p === 'copy' ? null : 'copy')}><ClipboardIcon className="h-4 w-4"/></ActionButton>
+                            <ActionButton label="Folder" onClick={() => setActivePanel(p => p === 'folder' ? null : 'folder')}><FolderIcon className="h-4 w-4"/></ActionButton>
+                            <ActionButton label="Settings" onClick={() => setActivePanel(p => p === 'settings' ? null : 'settings')}><SettingsIcon className="h-4 w-4"/></ActionButton>
+                            <ActionButton label="Users" onClick={() => setActivePanel(p => p === 'users' ? null : 'users')}><UsersIcon className="h-4 w-4"/></ActionButton>
+                        </div>
+                    </div>
+
+                    <ChatInput onSend={onSend} isLoading={isLoading} getAppContextData={getAppContextData} />
                 </div>
             </Card>
         </div>

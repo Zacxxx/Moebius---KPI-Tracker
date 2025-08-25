@@ -73,6 +73,7 @@ export interface Message {
     id: number;
     text: string;
     sender: 'user' | 'ai';
+    timestamp: string;
     isBookmarked?: boolean;
 }
 
@@ -101,14 +102,14 @@ type KpiFormat = 'currency' | 'percent' | 'number' | 'days' | 'hours' | 'ratio';
 type KpiAggregation = 'sum' | 'avg' | 'end_value';
 interface TimeSeries { date: string; value: number; }
 
-export interface KpiMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: KpiFormat; aggregation?: KpiAggregation; target?: number; }
-export interface MarketingMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: KpiFormat; aggregation?: KpiAggregation; target?: number; }
-export interface OperationalMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: KpiFormat; aggregation?: KpiAggregation; target?: number; }
-export interface CustomerMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: KpiFormat; aggregation?: KpiAggregation; target?: number; }
+export interface KpiMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: KpiFormat; aggregation?: KpiAggregation; target?: number; inverse?: boolean; }
+export interface MarketingMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: KpiFormat; aggregation?: KpiAggregation; target?: number; inverse?: boolean; }
+export interface OperationalMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: KpiFormat; aggregation?: KpiAggregation; target?: number; inverse?: boolean; }
+export interface CustomerMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: KpiFormat; aggregation?: KpiAggregation; target?: number; inverse?: boolean; }
 export interface FeedbackItem { id: number; score: number; comment: string; user: string; type: 'promoter' | 'passive' | 'detractor'; }
-export interface ProductMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: KpiFormat; aggregation?: KpiAggregation; target?: number; }
-export interface CapTableMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: KpiFormat; aggregation?: KpiAggregation; target?: number; }
-export interface CoordinationMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: KpiFormat; aggregation?: KpiAggregation; target?: number; }
+export interface ProductMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: KpiFormat; aggregation?: KpiAggregation; target?: number; inverse?: boolean; }
+export interface CapTableMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: KpiFormat; aggregation?: KpiAggregation; target?: number; inverse?: boolean; }
+export interface CoordinationMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: KpiFormat; aggregation?: KpiAggregation; target?: number; inverse?: boolean; }
 export interface ActivityTextPart { text: string; strong?: boolean; }
 export interface ActivityItem {
   id: number;
@@ -189,7 +190,7 @@ export interface DmToastState {
 }
 
 // E-commerce types
-export interface EcommerceMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: KpiFormat; aggregation?: KpiAggregation; target?: number; }
+export interface EcommerceMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: KpiFormat; aggregation?: KpiAggregation; target?: number; inverse?: boolean; }
 export interface OrderItem { id: number; customer: string; date: string; total: number; status: 'New' | 'Processing' | 'Shipped' | 'Delivered'; items: number; }
 export interface ProductItem { id: number; name: string; sku: string; stock: number; price: number; status: 'In Stock' | 'Low Stock' | 'Out of Stock'; }
 export interface PromotionItem { id: number; code: string; type: 'Percentage' | 'Fixed Amount'; value: number; status: 'Active' | 'Expired'; usageCount: number; }
@@ -201,20 +202,20 @@ export type SelectableKpi = ShowcaseKpi & {
 };
 
 // New types for External section pages
-export interface ContentMetric { id: number; metric: string; value: string; change: string; }
+export interface ContentMetric { id: number; metric: string; value: string; change: string; inverse?: boolean; }
 export interface ContentItem { id: number; title: string; type: 'Blog Post' | 'Whitepaper' | 'Case Study'; date: string; views: number; engagement: string; }
 
-export interface SeoMetric { id: number; metric: string; value: string; change: string; }
+export interface SeoMetric { id: number; metric: string; value: string; change: string; inverse?: boolean; }
 export interface KeywordItem { id: number; keyword: string; position: number; change: number; volume: string; }
 export interface BacklinkItem { id: number; domain: string; authority: number; date: string; }
 
-export interface PartnerMetric { id: number; metric: string; value: string; change: string; }
+export interface PartnerMetric { id: number; metric: string; value: string; change: string; inverse?: boolean; }
 export interface PartnerItem { id: number; name: string; tier: 'Gold' | 'Silver' | 'Bronze'; leads: number; revenue: number; commission: number; }
 
-export interface PrMetric { id: number; metric: string; value: string; change: string; }
+export interface PrMetric { id: number; metric: string; value: string; change: string; inverse?: boolean; }
 export interface MediaMentionItem { id: number; publication: string; title: string; date: string; url: string; }
 
-export interface BrandingMetric { id: number; metric: string; value: string; change: string; }
+export interface BrandingMetric { id: number; metric: string; value: string; change: string; inverse?: boolean; }
 export interface BrandMentionData { name: string; Twitter: number; LinkedIn: number; News: number; }
 
 export interface Competitor { id: number; name: string; funding: string; employees: string; founded: number; logoUrl: string; }
@@ -310,6 +311,7 @@ export interface GenericWidgetProps {
   // data is resolved in Dashboard.tsx and passed directly
   data?: any; 
   globalTimeConfig?: TimeConfig;
+  isKpiSentimentColoringEnabled?: boolean;
 }
 export interface BaseWidgetConfigFormProps {
     config: WidgetInstance['config'];

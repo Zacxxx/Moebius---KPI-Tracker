@@ -1,7 +1,10 @@
-import React, { useState, forwardRef } from 'react';
+
+import React, { useState } from 'react';
 import { HeaderPanel } from './ui/HeaderPanel';
 import { UserIcon, SettingsIcon, CreditCardIcon, PaletteIcon, LogOutIcon, SunIcon, MoonIcon, LaptopIcon, Maximize2Icon } from './Icons';
 import { Button } from './ui/Button';
+import { Switch } from './ui/Switch';
+import { Label } from './ui/Label';
 
 type Tab = 'profile' | 'settings' | 'billing' | 'theme';
 
@@ -41,9 +44,15 @@ const ThemeSelector: React.FC = () => {
 
 interface UserPanelProps {
     onGoToFullscreen: () => void;
+    isKpiSentimentColoringEnabled: boolean;
+    setIsKpiSentimentColoringEnabled: (enabled: boolean) => void;
+    aiChatInterfaceStyle: 'panel' | 'toast';
+    setAiChatInterfaceStyle: (style: 'panel' | 'toast') => void;
+    onMouseEnter?: () => void;
+    onMouseLeave?: () => void;
 }
 
-const UserPanel = forwardRef<HTMLDivElement, UserPanelProps>(({ onGoToFullscreen }, ref) => {
+const UserPanel: React.FC<UserPanelProps> = ({ onGoToFullscreen, isKpiSentimentColoringEnabled, setIsKpiSentimentColoringEnabled, aiChatInterfaceStyle, setAiChatInterfaceStyle, onMouseEnter, onMouseLeave }) => {
     const [activeTab, setActiveTab] = useState<Tab>('profile');
 
     const renderContent = () => {
@@ -51,7 +60,37 @@ const UserPanel = forwardRef<HTMLDivElement, UserPanelProps>(({ onGoToFullscreen
             case 'profile':
                 return <div className="text-sm text-zinc-400">Profile settings placeholder.</div>;
             case 'settings':
-                return <div className="text-sm text-zinc-400">General settings placeholder.</div>;
+                 return (
+                  <div className="space-y-6">
+                    <div>
+                        <h4 className="text-sm font-medium text-zinc-100 mb-2">Display Settings</h4>
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/50">
+                          <Label htmlFor="kpi-colors" className="text-sm text-zinc-200 cursor-pointer">KPI Sentiment Colors</Label>
+                          <Switch 
+                            checked={isKpiSentimentColoringEnabled} 
+                            onCheckedChange={setIsKpiSentimentColoringEnabled}
+                          />
+                        </div>
+                    </div>
+                     <div>
+                        <Label className="text-sm font-medium text-zinc-100">AI Chat Interface</Label>
+                        <div className="flex gap-1 p-1 bg-zinc-800/50 rounded-lg mt-2">
+                            <button 
+                                onClick={() => setAiChatInterfaceStyle('panel')}
+                                className={`flex-1 text-center text-sm py-1.5 rounded-md transition-colors ${aiChatInterfaceStyle === 'panel' ? 'bg-zinc-700 text-white' : 'text-zinc-300 hover:bg-zinc-700/50'}`}
+                            >
+                                Panel
+                            </button>
+                            <button 
+                                onClick={() => setAiChatInterfaceStyle('toast')}
+                                className={`flex-1 text-center text-sm py-1.5 rounded-md transition-colors ${aiChatInterfaceStyle === 'toast' ? 'bg-zinc-700 text-white' : 'text-zinc-300 hover:bg-zinc-700/50'}`}
+                            >
+                                Toast
+                            </button>
+                        </div>
+                    </div>
+                  </div>
+                );
             case 'billing':
                 return <div className="text-sm text-zinc-400">Billing information placeholder.</div>;
             case 'theme':
@@ -62,7 +101,7 @@ const UserPanel = forwardRef<HTMLDivElement, UserPanelProps>(({ onGoToFullscreen
     };
     
     return (
-        <HeaderPanel ref={ref} className="right-6 w-[26rem] max-w-md">
+        <HeaderPanel className="right-6 w-[26rem] max-w-md" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
             <div className="flex flex-col">
                 <div className="p-3 flex items-center justify-between border-b border-zinc-700/50">
                     <div>
@@ -107,6 +146,6 @@ const UserPanel = forwardRef<HTMLDivElement, UserPanelProps>(({ onGoToFullscreen
             </div>
         </HeaderPanel>
     )
-});
+};
 
 export default UserPanel;

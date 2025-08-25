@@ -1,4 +1,5 @@
-import React, { useState, forwardRef } from 'react';
+
+import React, { useState } from 'react';
 import { CardHeader, CardTitle, CardContent } from './ui/Card';
 import { BellIcon } from './Icons';
 import { Button } from './ui/Button';
@@ -9,9 +10,11 @@ type Tab = 'All' | 'Unread';
 
 interface NotificationsPanelProps {
     onGoToFullscreen: () => void;
+    onMouseEnter?: () => void;
+    onMouseLeave?: () => void;
 }
 
-const NotificationsPanel = forwardRef<HTMLDivElement, NotificationsPanelProps>(({ onGoToFullscreen }, ref) => {
+const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ onGoToFullscreen, onMouseEnter, onMouseLeave }) => {
     const [activeTab, setActiveTab] = useState<Tab>('All');
 
     const filteredNotifications = initialNotifications.filter(n => 
@@ -19,7 +22,7 @@ const NotificationsPanel = forwardRef<HTMLDivElement, NotificationsPanelProps>((
     );
     
     return (
-        <HeaderPanel ref={ref} className="right-16 w-[30rem] max-w-lg">
+        <HeaderPanel className="right-16 w-[30rem] max-w-lg" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
             <CardHeader className="flex flex-row items-center justify-between !pb-4">
                 <CardTitle className="flex items-center gap-2">
                     <BellIcon className="h-5 w-5" /> Notifications
@@ -83,6 +86,6 @@ const NotificationsPanel = forwardRef<HTMLDivElement, NotificationsPanelProps>((
             </div>
         </HeaderPanel>
     )
-});
+};
 
 export default NotificationsPanel;

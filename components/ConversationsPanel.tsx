@@ -1,4 +1,5 @@
-import React, { forwardRef, useState, useMemo } from 'react';
+
+import React, { useState, useMemo } from 'react';
 import { CardHeader, CardTitle, CardContent } from './ui/Card';
 import { Button } from './ui/Button';
 import { MessageSquareIcon, EditIcon, Maximize2Icon, SearchIcon, HashIcon, LockIcon } from './Icons';
@@ -38,9 +39,11 @@ const UserAvatar: React.FC<{ user: ConversationUser | undefined }> = ({ user }) 
 interface ConversationsPanelProps {
     onGoToFullscreen: () => void;
     onOpenConversationToast: (channelId: string) => void;
+    onMouseEnter?: () => void;
+    onMouseLeave?: () => void;
 }
 
-const ConversationsPanel = forwardRef<HTMLDivElement, ConversationsPanelProps>(({ onGoToFullscreen, onOpenConversationToast }, ref) => {
+const ConversationsPanel: React.FC<ConversationsPanelProps> = ({ onGoToFullscreen, onOpenConversationToast, onMouseEnter, onMouseLeave }) => {
     const [search, setSearch] = useState('');
     
     const filteredChannels = useMemo(() => {
@@ -52,7 +55,7 @@ const ConversationsPanel = forwardRef<HTMLDivElement, ConversationsPanelProps>((
     const dms = filteredChannels.filter(c => c.type === 'dm');
 
     return (
-        <HeaderPanel ref={ref} className="right-28 w-[22rem] max-w-md">
+        <HeaderPanel className="right-28 w-[22rem] max-w-md" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
             <CardHeader className="flex flex-row items-center justify-between !pb-3">
                 <CardTitle className="flex items-center gap-2">
                     <MessageSquareIcon className="h-5 w-5" />
@@ -116,6 +119,6 @@ const ConversationsPanel = forwardRef<HTMLDivElement, ConversationsPanelProps>((
             </CardContent>
         </HeaderPanel>
     );
-});
+};
 
 export default ConversationsPanel;

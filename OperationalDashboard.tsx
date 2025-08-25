@@ -22,9 +22,10 @@ interface OperationalDashboardProps {
     setGlobalTimeConfig: (config: TimeConfig) => void;
     page: Page;
     setPage: (page: Page) => void;
+    isKpiSentimentColoringEnabled?: boolean;
 }
 
-export default function OperationalDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage }: OperationalDashboardProps) {
+export default function OperationalDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled }: OperationalDashboardProps) {
   const [sections, setSections] = useState<DashboardSection[]>([
     { id: 'kpis', title: 'Key Metrics' }
   ]);
@@ -61,6 +62,7 @@ export default function OperationalDashboard({ globalTimeConfig, setGlobalTimeCo
         setGlobalTimeConfig={setGlobalTimeConfig}
         page={page}
         setPage={setPage}
+        isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
     />
   );
 }

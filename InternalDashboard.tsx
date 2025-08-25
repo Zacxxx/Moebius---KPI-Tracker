@@ -37,9 +37,10 @@ interface InternalDashboardProps {
     setGlobalTimeConfig: (config: TimeConfig) => void;
     page: Page;
     setPage: (page: Page) => void;
+    isKpiSentimentColoringEnabled?: boolean;
 }
 
-export default function InternalDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage }: InternalDashboardProps) {
+export default function InternalDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled }: InternalDashboardProps) {
   const [sections, setSections] = useState<DashboardSection[]>([
       { id: 'kpis', title: 'Key Metrics' },
       { id: 'main', title: 'Dashboard Widgets' },
@@ -92,6 +93,7 @@ export default function InternalDashboard({ globalTimeConfig, setGlobalTimeConfi
         setGlobalTimeConfig={setGlobalTimeConfig}
         page={page}
         setPage={setPage}
+        isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
     />
   );
 }

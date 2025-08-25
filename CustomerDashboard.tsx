@@ -20,7 +20,7 @@ const iconColorMap: { [key: string]: string } = {
     'Active Subscribers': 'text-violet-400',
 };
 
-export default function CustomerDashboard() {
+export default function CustomerDashboard({ isKpiSentimentColoringEnabled }: { isKpiSentimentColoringEnabled?: boolean }) {
   const [customerMetrics] = useState<CustomerMetric[]>(initialCustomerMetrics);
   return (
     <div className="space-y-8">
@@ -31,7 +31,7 @@ export default function CustomerDashboard() {
 
       <section>
         <h2 className="text-xl font-semibold text-zinc-200 mb-4">Key Metrics</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="fluid-widget-grid">
             {customerMetrics.map(metric => (
                 <KpiWidget
                     key={metric.id}
@@ -40,6 +40,8 @@ export default function CustomerDashboard() {
                     change={metric.change}
                     icon={iconMap[metric.metric] || UsersIcon}
                     iconColor={iconColorMap[metric.metric] || 'text-violet-400'}
+                    inverse={metric.inverse}
+                    isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
                 />
             ))}
         </div>

@@ -100,6 +100,8 @@ export const initialRequestData: RequestDataItem[] = [
 export const initialKpiMetrics: KpiMetric[] = [
     { id: 1, metric: 'Annual Recurring Revenue', value: '€1.2M', change: '+20.1% from last month', format: 'currency', aggregation: 'end_value', series: generateTimeSeriesData(900000, 500, 0.05, 730), target: 1500000 },
     { id: 2, metric: 'Active Users', value: '11,600', change: '+180 since last week', format: 'number', aggregation: 'end_value', series: generateTimeSeriesData(8000, 5, 0.1, 730), target: 15000 },
+    { id: 3, metric: 'Customer Lifetime Value (LTV)', value: '€2,480', change: '+12% from last month', format: 'currency', aggregation: 'avg', series: generateTimeSeriesData(2000, 0.8, 0.05, 730), target: 2600 },
+    { id: 4, metric: 'Customer Churn Rate', value: '2.1%', change: '-0.3% from last month', format: 'percent', aggregation: 'avg', series: generateTimeSeriesData(2.5, -0.001, 0.1, 730, 0.3), target: 2, inverse: true },
 ];
 export const initialMarketingMetrics: MarketingMetric[] = [
     { id: 1, metric: 'Leads', value: '3,450', change: '+15% this month', format: 'number', aggregation: 'sum', series: generateTimeSeriesData(80, 0.1, 0.15, 730), target: 4000 },
@@ -107,12 +109,12 @@ export const initialMarketingMetrics: MarketingMetric[] = [
 ];
 export const initialOperationalMetrics: OperationalMetric[] = [
     { id: 1, metric: 'System Uptime', value: '99.98%', change: 'Last 30 days', target: 99.99 },
-    { id: 2, metric: 'Avg. Ticket Resolution Time', value: '4.2 hours', change: '-10% from last week', target: 4 },
-    { id: 3, metric: 'Burn Rate', value: '€85k/month', change: 'Based on last month', target: 80000 },
+    { id: 2, metric: 'Avg. Ticket Resolution Time', value: '4.2 hours', change: '-10% from last week', target: 4, inverse: true },
+    { id: 3, metric: 'Burn Rate', value: '€85k/month', change: 'Based on last month', target: 80000, inverse: true },
 ];
 export const initialCustomerMetrics: CustomerMetric[] = [
     { id: 1, metric: 'Customer Lifetime Value (LTV)', value: '€2,480', change: '+12% from last month', format: 'currency', aggregation: 'avg', series: generateTimeSeriesData(2000, 0.8, 0.05, 730), target: 2600 },
-    { id: 2, metric: 'Customer Churn Rate', value: '2.1%', change: '-0.3% from last month', format: 'percent', aggregation: 'avg', series: generateTimeSeriesData(2.5, -0.001, 0.1, 730, 0.3), target: 2 },
+    { id: 2, metric: 'Customer Churn Rate', value: '2.1%', change: '-0.3% from last month', format: 'percent', aggregation: 'avg', series: generateTimeSeriesData(2.5, -0.001, 0.1, 730, 0.3), target: 2, inverse: true },
 ];
 export const initialFeedbackData: FeedbackItem[] = [
     { id: 1, score: 10, comment: "Absolutely love the new dashboard design! It's so much more intuitive and visually appealing. Keep up the great work!", user: 'Sarah K.', type: 'promoter' },
@@ -191,6 +193,8 @@ export const initialNotifications: NotificationItem[] = [
 export const initialEcommerceMetrics: EcommerceMetric[] = [
     { id: 1, metric: 'Gross Merchandise Volume', value: '€212,450', change: '+12.5% this month', format: 'currency', aggregation: 'sum', series: generateTimeSeriesData(5000, 10, 0.2, 730), target: 250000 },
     { id: 2, metric: 'Average Order Value', value: '€84.98', change: '+€2.10 this month', format: 'currency', aggregation: 'avg', series: generateTimeSeriesData(80, 0.01, 0.05, 730), target: 90 },
+    { id: 3, metric: 'Conversion Rate', value: '3.5%', change: '+0.2% this month', format: 'percent', aggregation: 'avg', series: generateTimeSeriesData(3, 0.001, 0.1, 730, 0.2), target: 4 },
+    { id: 4, metric: 'Cart Abandonment Rate', value: '28%', change: '-1.5% this month', format: 'percent', aggregation: 'avg', inverse: true, series: generateTimeSeriesData(35, -0.01, 0.1, 730, 0.3), target: 25 },
 ];
 export const initialOrders: OrderItem[] = [
     { id: 1, customer: 'Liam Gallagher', date: '2024-07-21', total: 75.50, status: 'Shipped', items: 3 },
@@ -219,7 +223,7 @@ export const initialContentItems: ContentItem[] = [
 // SEO Page Data
 export const initialSeoMetrics: SeoMetric[] = [
     { id: 1, metric: 'Organic Traffic', value: '82.1k', change: '+15% MoM' },
-    { id: 2, metric: 'Avg. Keyword Position', value: '8.2', change: '-0.5 this month' },
+    { id: 2, metric: 'Avg. Keyword Position', value: '8.2', change: '-0.5 this month', inverse: true },
 ];
 export const initialKeywordItems: KeywordItem[] = [
     { id: 1, keyword: "saas dashboard", position: 3, change: 1, volume: "12.1k" },

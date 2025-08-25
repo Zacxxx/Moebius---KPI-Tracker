@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from './components/ui/Card';
 import { GaugeIcon, TrendingUpIcon, SmileIcon, ClockIcon } from './components/Icons';
@@ -14,7 +15,7 @@ const iconMap: { [key: string]: React.FC<{ className?: string }> } = {
     'Avg. Session Duration': ClockIcon,
 };
 
-export default function ProductAnalytics() {
+export default function ProductAnalytics({ isKpiSentimentColoringEnabled }: { isKpiSentimentColoringEnabled?: boolean }) {
   const [productMetrics] = useState<ProductMetric[]>(initialProductMetrics);
   return (
     <div className="space-y-8">
@@ -25,7 +26,7 @@ export default function ProductAnalytics() {
       
       <section>
         <h2 className="text-xl font-semibold text-zinc-200 mb-4">Key Metrics</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="fluid-widget-grid">
             {productMetrics.map(item => (
                 <KpiWidget 
                   key={item.id} 
@@ -33,6 +34,7 @@ export default function ProductAnalytics() {
                   value={item.value} 
                   change={item.change || ''}
                   icon={iconMap[item.metric] || GaugeIcon}
+                  isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
                 />
             ))}
         </div>

@@ -52,9 +52,10 @@ interface SimulationDashboardProps {
     setGlobalTimeConfig: (config: TimeConfig) => void;
     page: Page;
     setPage: (page: Page) => void;
+    isKpiSentimentColoringEnabled?: boolean;
 }
 
-export default function SimulationDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage }: SimulationDashboardProps) {
+export default function SimulationDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled }: SimulationDashboardProps) {
   const [sections, setSections] = useState<DashboardSection[]>([
       { id: 'kpis', title: 'Key Metrics' },
       { id: 'main', title: 'Dashboard Widgets' },
@@ -94,6 +95,7 @@ export default function SimulationDashboard({ globalTimeConfig, setGlobalTimeCon
         setGlobalTimeConfig={setGlobalTimeConfig}
         page={page}
         setPage={setPage}
+        isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
     />
   );
 }

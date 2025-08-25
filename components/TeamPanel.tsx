@@ -1,4 +1,5 @@
-import React, { forwardRef, useState, useMemo } from 'react';
+
+import React, { useState, useMemo } from 'react';
 import { CardHeader, CardTitle, CardContent } from './ui/Card';
 import { Button } from './ui/Button';
 import { UserPlusIcon, Maximize2Icon, ChevronDownIcon, MessageSquareIcon, HashIcon } from './Icons';
@@ -37,9 +38,11 @@ interface TeamPanelProps {
     setPage: (page: Page) => void;
     onViewProfile: (memberId: number) => void;
     onStartDm: (memberId: number) => void;
+    onMouseEnter?: () => void;
+    onMouseLeave?: () => void;
 }
 
-const TeamPanel = forwardRef<HTMLDivElement, TeamPanelProps>(({ activeTeamId, setActiveTeamId, onGoToFullscreen, setPage, onViewProfile, onStartDm }, ref) => {
+const TeamPanel: React.FC<TeamPanelProps> = ({ activeTeamId, setActiveTeamId, onGoToFullscreen, setPage, onViewProfile, onStartDm, onMouseEnter, onMouseLeave }) => {
     const [activeTab, setActiveTab] = useState<'members' | 'activity'>('members');
     const [isTeamDropdownOpen, setIsTeamDropdownOpen] = useState(false);
 
@@ -54,7 +57,7 @@ const TeamPanel = forwardRef<HTMLDivElement, TeamPanelProps>(({ activeTeamId, se
     };
     
     return (
-        <HeaderPanel ref={ref} className="right-40 w-[26rem] max-w-md">
+        <HeaderPanel className="right-40 w-[26rem] max-w-md" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
             <CardHeader className="flex flex-row items-center justify-between !pb-3">
                  <div className="relative">
                     <button onClick={() => setIsTeamDropdownOpen(p => !p)} className="flex items-center gap-2 p-1 -m-1 rounded-md hover:bg-zinc-800">
@@ -134,6 +137,6 @@ const TeamPanel = forwardRef<HTMLDivElement, TeamPanelProps>(({ activeTeamId, se
             </CardContent>
         </HeaderPanel>
     );
-});
+};
 
 export default TeamPanel;

@@ -35,9 +35,10 @@ interface MarketingProps {
     setGlobalTimeConfig: (config: TimeConfig) => void;
     page: Page;
     setPage: (page: Page) => void;
+    isKpiSentimentColoringEnabled?: boolean;
 }
 
-export default function Marketing({ globalTimeConfig, setGlobalTimeConfig, page, setPage }: MarketingProps) {
+export default function Marketing({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled }: MarketingProps) {
   const [sections, setSections] = useState<DashboardSection[]>([
       { id: 'kpis', title: 'Key Metrics' },
       { id: 'main', title: 'Dashboard Widgets' },
@@ -76,6 +77,7 @@ export default function Marketing({ globalTimeConfig, setGlobalTimeConfig, page,
         setGlobalTimeConfig={setGlobalTimeConfig}
         page={page}
         setPage={setPage}
+        isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
     />
   );
 }

@@ -1,16 +1,15 @@
 
+
 import React, { useMemo, useState } from 'react';
 import { Dashboard } from './components/Dashboard';
-import { TrendingUpIcon, UsersIcon, ClockIcon, TrendingDownIcon } from './components/Icons';
 import { initialKpiMetrics } from './data';
-import type { KpiMetric, SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page } from './types';
 import { PREMADE_WIDGETS } from './data-widgets';
+import type { SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page } from './types';
+import { TrendingUpIcon, UsersIcon } from './components/Icons';
 
 const iconMap: { [key: string]: React.FC<{ className?: string }> } = {
     'Annual Recurring Revenue': TrendingUpIcon,
     'Active Users': UsersIcon,
-    'Cash Runway': ClockIcon,
-    'Monthly Burn Rate': TrendingDownIcon,
 };
 
 const createInitialWidgets = (premadeIds: string[], sectionId: string): WidgetInstance[] => {
@@ -31,9 +30,10 @@ interface HomeDashboardProps {
     setGlobalTimeConfig: (config: TimeConfig) => void;
     page: Page;
     setPage: (page: Page) => void;
+    isKpiSentimentColoringEnabled?: boolean;
 }
 
-export default function HomeDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage }: HomeDashboardProps) {
+export default function HomeDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled }: HomeDashboardProps) {
     const [sections, setSections] = useState<DashboardSection[]>([
         { id: 'kpis', title: 'Key Metrics' },
         { id: 'main', title: 'Dashboard Widgets' },
@@ -49,9 +49,10 @@ export default function HomeDashboard({ globalTimeConfig, setGlobalTimeConfig, p
                 selectedKpiId: kpi.id,
                 selectedKpiSource: 'Home',
                 gridWidth: 1,
+                gridHeight: 1,
             }
         }));
-        const otherWidgets = createInitialWidgets(['premade_sales_trend', 'premade_activity_feed', 'premade_hiring_pipeline'], 'main');
+        const otherWidgets = createInitialWidgets(['premade_sales_trend', 'premade_activity_feed', 'premade_top_products'], 'main');
         return [...kpiWidgets, ...otherWidgets];
     });
 
@@ -62,7 +63,7 @@ export default function HomeDashboard({ globalTimeConfig, setGlobalTimeConfig, p
     return (
         <Dashboard
             title="Home Dashboard"
-            description="A comprehensive overview of your business's key metrics and activities."
+            description="A comprehensive overview of your business's key performance indicators."
             allKpisForModal={allKpisForModal}
             iconMap={iconMap}
             widgets={widgets}
@@ -73,6 +74,7 @@ export default function HomeDashboard({ globalTimeConfig, setGlobalTimeConfig, p
             setGlobalTimeConfig={setGlobalTimeConfig}
             page={page}
             setPage={setPage}
+            isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
         />
     );
 }

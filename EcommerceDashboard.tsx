@@ -38,9 +38,10 @@ interface SalesDashboardProps {
     setGlobalTimeConfig: (config: TimeConfig) => void;
     page: Page;
     setPage: (page: Page) => void;
+    isKpiSentimentColoringEnabled?: boolean;
 }
 
-export default function SalesDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage }: SalesDashboardProps) {
+export default function SalesDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled }: SalesDashboardProps) {
     const [sections, setSections] = useState<DashboardSection[]>([
         { id: 'kpis', title: 'Key Metrics' },
         { id: 'main', title: 'Dashboard Widgets' },
@@ -80,6 +81,7 @@ export default function SalesDashboard({ globalTimeConfig, setGlobalTimeConfig, 
             setGlobalTimeConfig={setGlobalTimeConfig}
             page={page}
             setPage={setPage}
+            isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
         />
     );
 }

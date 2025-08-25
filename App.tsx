@@ -47,8 +47,11 @@ import PublicRelations from './PublicRelations';
 import Branding from './Branding';
 import Competition from './Competition';
 import ExternalDashboard from './ExternalDashboard';
-import { initialConversationChannels, initialConversationMessages, initialConversationUsers } from './data';
+import { initialConversationChannels, initialConversationMessages, initialConversationUsers, initialKpiMetrics, initialRevenueStreams, initialExpenses, initialEcommerceMetrics, initialCustomerMetrics, initialHiringPipeline, initialMarketingMetrics, initialOperationalMetrics, initialCrmData, initialFeedbackData, initialRequestData } from './data';
 import { PersonChatToast } from './components/PersonChatToast';
+import { AiChatPanel } from './components/AiChatPanel';
+import { fmtEuro } from './utils';
+import { DEFAULTS as simulationDefaults } from './constants';
 
 
 // Helper hook to get the previous value of a state or prop
@@ -69,6 +72,11 @@ export default function App() {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [activeTeamId, setActiveTeamId] = useState<string>('eng');
   const [viewedProfileId, setViewedProfileId] = useState<number | null>(null);
+  const [isKpiSentimentColoringEnabled, setIsKpiSentimentColoringEnabled] = useState(true);
+  const [aiChatInterfaceStyle, setAiChatInterfaceStyle] = useState<'panel' | 'toast'>('panel');
+  const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
+  const [rightPanelWidth, setRightPanelWidth] = useState(384);
+  const [isResizing, setIsResizing] = useState(false);
 
   // AI Chat state
   const [aiChatSessions, setAiChatSessions] = useState<ChatSession[]>([]);
@@ -91,25 +99,32 @@ export default function App() {
 
   const prevPage = usePrevious(page);
 
+  const handleRightPanelResize = (newWidth: number) => {
+    const minWidth = 320; // w-80
+    const maxWidth = 800; // custom max width
+    setRightPanelWidth(Math.max(minWidth, Math.min(maxWidth, newWidth)));
+  };
+  
   useEffect(() => {
     // When navigating away from the full-screen chat to a non-chat page,
-    // open the toast in a minimized state.
-    if (prevPage === 'chat' && page !== 'chat' && activeAiChatId) {
+    // open the toast in a minimized state if using the toast interface.
+    if (prevPage === 'chat' && page !== 'chat' && activeAiChatId && aiChatInterfaceStyle === 'toast') {
       setIsAiChatToastOpen(true);
       setIsAiChatToastMinimized(true);
     }
 
-    // When navigating TO a full-screen page, ensure toasts are closed.
+    // When navigating TO a full-screen page, ensure toasts and panels are closed.
     if (page === 'chat' || page === 'conversations') {
         setIsAiChatToastOpen(false);
         setOpenDmToasts([]);
+        setIsRightPanelOpen(false);
     }
     
     // When navigating away from the profile page, reset the viewed profile ID
     if (prevPage === 'profile' && page !== 'profile') {
         setViewedProfileId(null);
     }
-  }, [page, prevPage, activeAiChatId]);
+  }, [page, prevPage, activeAiChatId, aiChatInterfaceStyle]);
   
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -143,7 +158,7 @@ export default function App() {
     const newChatSession: ChatSession = {
       id: Date.now().toString(),
       title: 'New Chat',
-      messages: [{ id: 1, text: "Hello! How can I assist with your business data today?", sender: 'ai' }],
+      messages: [{ id: 1, text: "Hello! How can I assist with your business data today?", sender: 'ai', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }],
       geminiChat: ai.chats.create({ model: 'gemini-2.5-flash' }),
     };
     setAiChatSessions(prev => [newChatSession, ...prev]);
@@ -167,7 +182,7 @@ export default function App() {
 
     setIsAiLoading(true);
 
-    const userMessage: Message = { id: Date.now(), text: messageText, sender: 'user' };
+    const userMessage: Message = { id: Date.now(), text: messageText, sender: 'user', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
     
     setAiChatSessions(prevSessions =>
       prevSessions.map(s => {
@@ -198,7 +213,7 @@ export default function App() {
     }
 
     const aiMessageId = Date.now() + 1;
-    const aiMessagePlaceholder: Message = { id: aiMessageId, text: '', sender: 'ai' };
+    const aiMessagePlaceholder: Message = { id: aiMessageId, text: '', sender: 'ai', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
     setAiChatSessions(prev =>
       prev.map(s => (s.id === activeAiChatId ? { ...s, messages: [...s.messages, aiMessagePlaceholder] } : s))
     );
@@ -267,7 +282,7 @@ export default function App() {
     setAiChatSessions(prev => prev.map(s => {
       if (s.id === activeAiChatId) {
         const newMessages = s.messages.filter(m => m.id !== messageId);
-        newMessages.push({ id: messageId, text: '', sender: 'ai' });
+        newMessages.push({ id: messageId, text: '', sender: 'ai', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
         return { ...s, messages: newMessages };
       }
       return s;
@@ -297,35 +312,43 @@ export default function App() {
     }
   };
 
-  const handleToggleAiChatToast = () => {
-    if (isAiChatToastOpen) {
-        setIsAiChatToastOpen(false);
-        return;
-    }
+  const handleToggleAiChat = () => {
+    const ensureChatExists = () => {
+      if (!activeAiChatId) {
+          if (aiChatSessions.length > 0) {
+              setActiveAiChatId(aiChatSessions[0].id);
+          } else {
+              const newChatSession: ChatSession = {
+                  id: Date.now().toString(),
+                  title: 'New Chat',
+                  messages: [{ id: 1, text: "Hello! How can I assist with your business data today?", sender: 'ai', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }],
+                  geminiChat: ai.chats.create({ model: 'gemini-2.5-flash' }),
+              };
+              setAiChatSessions(prev => [newChatSession, ...prev]);
+              setActiveAiChatId(newChatSession.id);
+          }
+      }
+    };
 
-    if (!activeAiChatId) {
-        if (aiChatSessions.length > 0) {
-            // Set the most recent chat as active
-            setActiveAiChatId(aiChatSessions[0].id);
-        } else {
-            // No chats exist, create a new one.
-            const newChatSession: ChatSession = {
-                id: Date.now().toString(),
-                title: 'New Chat',
-                messages: [{ id: 1, text: "Hello! How can I assist with your business data today?", sender: 'ai' }],
-                geminiChat: ai.chats.create({ model: 'gemini-2.5-flash' }),
-            };
-            setAiChatSessions(prev => [newChatSession, ...prev]);
-            setActiveAiChatId(newChatSession.id);
+    if (aiChatInterfaceStyle === 'toast') {
+        if (isAiChatToastOpen) {
+            setIsAiChatToastOpen(false);
+            return;
         }
+        ensureChatExists();
+        setIsAiChatToastOpen(true);
+        setIsAiChatToastMinimized(false);
+    } else { // 'panel' style
+        if (!isRightPanelOpen) {
+          ensureChatExists();
+        }
+        setIsRightPanelOpen(prev => !prev);
     }
-    
-    setIsAiChatToastOpen(true);
-    setIsAiChatToastMinimized(false);
   };
   
   const handleMaximizeAiChat = () => {
       setIsAiChatToastOpen(false);
+      setIsRightPanelOpen(false);
       setPage('chat');
   };
   
@@ -412,6 +435,80 @@ export default function App() {
     setPage('conversations');
   };
 
+  const getAppContextData = useCallback((command: string): string => {
+    let context = 'No data found for this command.';
+    const parts = command.split('.');
+    const mainCommand = parts[0];
+    const subCommand = parts[1];
+
+    try {
+        switch (mainCommand) {
+            case 'dashboard':
+                context = `## Home Dashboard KPIs\n${initialKpiMetrics.map(k => `- **${k.metric}**: ${k.value} (${k.change})`).join('\n')}`;
+                break;
+            case 'financial': {
+                const totalRevenue = initialRevenueStreams.reduce((sum, item) => sum + item.mrr, 0);
+                const totalExpenses = initialExpenses.reduce((sum, item) => sum + item.cost, 0);
+
+                if (subCommand === 'revenue') {
+                    context = `## Revenue Streams\n${initialRevenueStreams.map(r => `- **${r.stream}**: ${fmtEuro(r.mrr)}/month`).join('\n')}`;
+                } else if (subCommand === 'expenses') {
+                    context = `## Expense Breakdown\n${initialExpenses.map(e => `- **${e.category}**: ${fmtEuro(e.cost)}/month`).join('\n')}`;
+                } else {
+                    context = `## Key Financial Metrics
+- **Total Monthly Revenue**: ${fmtEuro(totalRevenue)}
+- **Total Monthly Expenses**: ${fmtEuro(totalExpenses)}
+- **Net Monthly Income**: ${fmtEuro(totalRevenue - totalExpenses)}`;
+                }
+                break;
+            }
+            case 'simulation':
+                context = `## Current Simulation Parameters
+- **ARPU Current**: ${fmtEuro(simulationDefaults.arpuCurrent)}/year
+- **ARPU Supernova**: ${fmtEuro(simulationDefaults.arpuSuper)}/year
+- **User Range**: ${simulationDefaults.usersMin.toLocaleString()} - ${simulationDefaults.usersMax.toLocaleString()}
+- **Valuation Multiplier (Low Band)**: ${simulationDefaults.lowBand.min}x - ${simulationDefaults.lowBand.max}x
+- **Valuation Multiplier (High Band)**: ${simulationDefaults.highBand.min}x - ${simulationDefaults.highBand.max}x`;
+                break;
+            case 'sales':
+                context = `## E-commerce Sales KPIs\n${initialEcommerceMetrics.map(k => `- **${k.metric}**: ${k.value} (${k.change})`).join('\n')}`;
+                break;
+            case 'customer': {
+                 if (subCommand === 'crm') {
+                    context = `## CRM Pipeline\n${initialCrmData.slice(0, 5).map(c => `- **${c.company} (${c.name})**: ${fmtEuro(c.value)} - ${c.status}`).join('\n')}`;
+                } else if (subCommand === 'feedback') {
+                    const promoters = initialFeedbackData.filter(f => f.type === 'promoter').length;
+                    const total = initialFeedbackData.length;
+                    context = `## Customer Feedback Summary\n- Total Feedback entries: ${total}\n- Promoters: ${promoters} (${((promoters/total)*100).toFixed(0)}%)`;
+                } else if (subCommand === 'requests') {
+                    context = `## Top Feature Requests\n${initialRequestData.slice(0, 5).map(r => `- **${r.title}**: ${r.votes} votes - ${r.status}`).join('\n')}`;
+                } else {
+                    context = `## Customer KPIs\n${initialCustomerMetrics.map(k => `- **${k.metric}**: ${k.value} (${k.change})`).join('\n')}`;
+                }
+                break;
+            }
+            case 'internal': {
+                if (subCommand === 'hiring') {
+                    context = `## Hiring Pipeline Summary\n- **Open Roles**: ${initialHiringPipeline.length}\n- **Total Candidates**: ${initialHiringPipeline.reduce((sum, item) => sum + item.candidates, 0)}\n${initialHiringPipeline.map(r => `  - ${r.role}: ${r.candidates} candidates`).join('\n')}`;
+                } else {
+                     context = `## Internal KPIs\n- **Headcount**: 42 (+2 this month)\n- **eNPS**: 75 (Last surveyed in Q2)`;
+                }
+                break;
+            }
+            case 'marketing':
+                context = `## Marketing KPIs\n${initialMarketingMetrics.map(k => `- **${k.metric}**: ${k.value} (${k.change})`).join('\n')}`;
+                break;
+            case 'operational':
+                context = `## Operational KPIs\n${initialOperationalMetrics.map(k => `- **${k.metric}**: ${k.value} (${k.change})`).join('\n')}`;
+                break;
+        }
+    } catch (error) {
+        console.error("Error gathering context data:", error);
+        context = "An error occurred while fetching data.";
+    }
+    return context.trim();
+  }, []);
+
   const activeAiChat = aiChatSessions.find(c => c.id === activeAiChatId);
   const bookmarkedMessageIds = new Set(bookmarks.map(b => b.message.id));
   const activeChatWithBookmarks = activeAiChat ? {
@@ -464,49 +561,49 @@ export default function App() {
   const renderPage = () => {
     switch (page) {
       case 'dashboard':
-        return <HomeDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} />;
+        return <HomeDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'simulation-dashboard':
-        return <SimulationDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} />;
+        return <SimulationDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'simulation-revenue':
         return <FinancialSimulations />;
       case 'simulation-pnl':
-        return <PNLStatement />;
+        return <PNLStatement isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'simulation-balance-sheet':
-        return <BalanceSheet />;
+        return <BalanceSheet isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'financial-dashboard':
-        return <FinancialPlanning page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} />;
+        return <FinancialPlanning page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'financial-revenue':
         return <Revenue />;
       case 'financial-expenses':
         return <Expenses />;
       case 'customer-dashboard':
-        return <CustomerDashboard />;
+        return <CustomerDashboard isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'customer-crm':
         return <CustomerCRM />;
       case 'customer-requests':
         return <CustomerRequests />;
       case 'customer-feedback':
-        return <CustomerFeedback />;
+        return <CustomerFeedback isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'product-analytics':
-        return <ProductAnalytics />;
+        return <ProductAnalytics isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'marketing':
-        return <Marketing page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} />;
+        return <Marketing page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'operational-dashboard':
-        return <OperationalDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} />;
+        return <OperationalDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'operational-efficiency':
-        return <Operational />;
+        return <Operational isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'operational-status':
         return <SystemStatus />;
       case 'operational-costs':
         return <CostAnalysis />;
       case 'internal-dashboard':
-        return <InternalDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} />;
+        return <InternalDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'internal-people':
-        return <Internal page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} />;
+        return <Internal page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'internal-cap-table':
-        return <CapTable />;
+        return <CapTable isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'sales-dashboard':
-        return <SalesDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} />;
+        return <SalesDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'sales-orders':
         return <OrderFulfillment />;
       case 'sales-inventory':
@@ -547,10 +644,11 @@ export default function App() {
               setActiveAiChatId(id);
               setPage('chat');
             }}
+            getAppContextData={getAppContextData}
           />
         );
       case 'coordination-dashboard':
-        return <CoordinationDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} />;
+        return <CoordinationDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'coordination-contractors':
         return <PlaceholderPage title="Contractors" description="Manage and coordinate with your organization's contractors." />;
       case 'coordination-agents':
@@ -582,21 +680,21 @@ export default function App() {
       case 'internal-culture':
         return <PlaceholderPage title="Culture" description="Monitor and foster company culture." />;
       case 'external-dashboard':
-        return <ExternalDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} />;
+        return <ExternalDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'external-content':
-        return <Content />;
+        return <Content isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'external-seo':
-        return <Seo />;
+        return <Seo isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'external-partners':
-        return <Partners />;
+        return <Partners isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'external-pr':
-        return <PublicRelations />;
+        return <PublicRelations isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'external-branding':
-        return <Branding />;
+        return <Branding isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'external-competition':
         return <Competition />;
       default:
-        return <FinancialPlanning page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} />;
+        return <FinancialPlanning page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
     }
   };
 
@@ -609,9 +707,11 @@ export default function App() {
   const aiToastWidthRem = 26; // from PerpetualDiscussionToast component
   const personToastWidthRem = 24; // from PersonChatToast component
   const gapRem = 1;
+  const rightPanelRemWidth = isRightPanelOpen && aiChatInterfaceStyle === 'panel' ? rightPanelWidth / 16 : 0;
+
 
   // Calculate the position for the container of minimized toasts
-  let minimizedContainerRightOffset = baseOffsetRem;
+  let minimizedContainerRightOffset = baseOffsetRem + rightPanelRemWidth;
   if (isAiToastMaximized) {
     minimizedContainerRightOffset += aiToastWidthRem + gapRem;
   }
@@ -638,7 +738,7 @@ export default function App() {
         }}
         onNewChat={handleNewChat}
         onDeleteChat={handleDeleteChat}
-        onToggleChatToast={handleToggleAiChatToast}
+        onToggleAiChat={handleToggleAiChat}
         activeContentSection={activeContentSection}
         setActiveContentSection={setActiveContentSection}
         onSearchClick={() => setIsCommandPaletteOpen(true)}
@@ -647,6 +747,14 @@ export default function App() {
         setViewedProfileId={setViewedProfileId}
         onStartDm={handleStartDm}
         onOpenConversationToast={handleOpenConversation}
+        isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
+        setIsKpiSentimentColoringEnabled={setIsKpiSentimentColoringEnabled}
+        aiChatInterfaceStyle={aiChatInterfaceStyle}
+        setAiChatInterfaceStyle={setAiChatInterfaceStyle}
+        isRightPanelOpen={isRightPanelOpen}
+        setIsRightPanelOpen={setIsRightPanelOpen}
+        rightPanelWidth={rightPanelWidth}
+        isResizing={isResizing}
       >
         {renderPage()}
       </Layout>
@@ -657,7 +765,28 @@ export default function App() {
         commands={commands}
       />
 
-      {isAiChatToastOpen && !isAiChatToastMinimized && activeChatWithBookmarks && (
+      {aiChatInterfaceStyle === 'panel' && isRightPanelOpen && (
+          <AiChatPanel
+              session={activeChatWithBookmarks}
+              isLoading={isAiLoading}
+              onSend={handleSendAiMessage}
+              onRegenerate={handleRegenerate}
+              onClose={() => setIsRightPanelOpen(false)}
+              onMaximize={handleMaximizeAiChat}
+              bookmarks={bookmarks}
+              onToggleBookmark={handleToggleBookmark}
+              setActiveChatId={(id) => {
+                setActiveAiChatId(id);
+                setPage('chat');
+              }}
+              getAppContextData={getAppContextData}
+              width={rightPanelWidth}
+              onResize={handleRightPanelResize}
+              setIsResizing={setIsResizing}
+          />
+      )}
+
+      {aiChatInterfaceStyle === 'toast' && isAiChatToastOpen && !isAiChatToastMinimized && activeChatWithBookmarks && (
         <PerpetualDiscussionToast
             session={activeChatWithBookmarks}
             isLoading={isAiLoading}
@@ -673,6 +802,7 @@ export default function App() {
               setActiveAiChatId(id);
               setPage('chat');
             }}
+            getAppContextData={getAppContextData}
         />
       )}
       
@@ -681,13 +811,13 @@ export default function App() {
           if (!channel) return null;
           const messages = conversationMessages[toast.channelId] || [];
 
-          let rightOffsetRem = baseOffsetRem;
+          let rightOffsetRem = baseOffsetRem + rightPanelRemWidth;
           if (isAiToastMaximized) {
               rightOffsetRem += aiToastWidthRem + gapRem;
           }
           rightOffsetRem += index * (personToastWidthRem + gapRem);
           
-          const style = { right: `${rightOffsetRem}rem` };
+          const style = { right: `${rightOffsetRem}rem`, transition: 'right 0.3s ease-in-out' };
 
           return (
               <PersonChatToast
@@ -705,10 +835,10 @@ export default function App() {
       })}
 
       <div 
-        className="fixed bottom-6 z-40 flex flex-row-reverse items-center gap-2"
+        className="fixed bottom-6 z-40 flex flex-row-reverse items-center gap-2 transition-all duration-300 ease-in-out"
         style={minimizedContainerStyle}
       >
-          {isAiChatToastOpen && isAiChatToastMinimized && (
+          {aiChatInterfaceStyle === 'toast' && isAiChatToastOpen && isAiChatToastMinimized && (
               <button
                   onClick={() => setIsAiChatToastMinimized(false)}
                   className="flex items-center gap-3 p-3 rounded-full bg-violet-600 hover:bg-violet-700 text-white shadow-2xl shadow-black/30 transition-all duration-200 hover:scale-105"

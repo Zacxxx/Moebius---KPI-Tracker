@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/Card';
 import { KpiWidget } from './components/KpiWidget';
@@ -24,7 +25,7 @@ const PositionChange: React.FC<{ change: number }> = ({ change }) => {
     );
 };
 
-export default function Seo() {
+export default function Seo({ isKpiSentimentColoringEnabled }: { isKpiSentimentColoringEnabled?: boolean }) {
     const [seoMetrics] = useState<SeoMetric[]>(initialSeoMetrics);
     const [keywords] = useState<KeywordItem[]>(initialKeywordItems);
     const [backlinks] = useState<BacklinkItem[]>(initialBacklinkItems);
@@ -38,7 +39,7 @@ export default function Seo() {
             
             <section>
                 <h2 className="text-xl font-semibold text-zinc-200 mb-4">Key Metrics</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="fluid-widget-grid">
                     {seoMetrics.map(item => (
                         <KpiWidget 
                           key={item.id} 
@@ -46,6 +47,7 @@ export default function Seo() {
                           value={item.value} 
                           change={item.change} 
                           icon={iconMap[item.metric] || SearchIcon}
+                          isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
                         />
                     ))}
                 </div>

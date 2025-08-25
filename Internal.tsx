@@ -9,8 +9,8 @@ import { PREMADE_WIDGETS } from './data-widgets';
 const internalKpis = [
     { id: 201, metric: 'Headcount', value: '42', change: '+2 this month' },
     { id: 202, metric: 'eNPS', value: '75', change: 'Last surveyed in Q2' },
-    { id: 203, metric: 'Avg. Time to Hire', value: '38 days', change: '-5 days vs last quarter' },
-    { id: 204, metric: 'Quarterly Turnover', value: '3.1%', change: '+0.5% vs last quarter' },
+    { id: 203, metric: 'Avg. Time to Hire', value: '38 days', change: '-5 days vs last quarter', inverse: true },
+    { id: 204, metric: 'Quarterly Turnover', value: '3.1%', change: '+0.5% vs last quarter', inverse: true },
 ];
 
 const iconMap: { [key: string]: React.FC<{ className?: string }> } = {
@@ -38,9 +38,10 @@ interface InternalProps {
     setGlobalTimeConfig: (config: TimeConfig) => void;
     page: Page;
     setPage: (page: Page) => void;
+    isKpiSentimentColoringEnabled?: boolean;
 }
 
-export default function Internal({ globalTimeConfig, setGlobalTimeConfig, page, setPage }: InternalProps) {
+export default function Internal({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled }: InternalProps) {
     const [sections, setSections] = useState<DashboardSection[]>([
         { id: 'kpis', title: 'Key Metrics' },
         { id: 'main', title: 'Dashboard Widgets' },
@@ -81,6 +82,7 @@ export default function Internal({ globalTimeConfig, setGlobalTimeConfig, page, 
             setGlobalTimeConfig={setGlobalTimeConfig}
             page={page}
             setPage={setPage}
+            isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
         />
     );
 }

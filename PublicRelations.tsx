@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/Card';
 import { KpiWidget } from './components/KpiWidget';
@@ -13,7 +14,7 @@ const iconMap: { [key: string]: React.FC<{ className?: string }> } = {
     'Estimated Reach': TrendingUpIcon,
 };
 
-export default function PublicRelations() {
+export default function PublicRelations({ isKpiSentimentColoringEnabled }: { isKpiSentimentColoringEnabled?: boolean }) {
     const [prMetrics] = useState<PrMetric[]>(initialPrMetrics);
     const [mentions] = useState<MediaMentionItem[]>(initialMediaMentionItems);
 
@@ -26,7 +27,7 @@ export default function PublicRelations() {
             
             <section>
                 <h2 className="text-xl font-semibold text-zinc-200 mb-4">Key Metrics</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="fluid-widget-grid">
                     {prMetrics.map(item => (
                         <KpiWidget 
                           key={item.id} 
@@ -34,6 +35,7 @@ export default function PublicRelations() {
                           value={item.value} 
                           change={item.change} 
                           icon={iconMap[item.metric] || MegaphoneIcon}
+                          isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
                         />
                     ))}
                 </div>

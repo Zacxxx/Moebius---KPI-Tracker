@@ -28,6 +28,16 @@
   .sidebar-nav {
     scrollbar-gutter: stable;
   }
+  @media (min-width: 1024px) {
+    .main-content-wrapper.panel-open {
+      margin-right: var(--right-panel-width, 24rem);
+    }
+  }
+  .fluid-widget-grid {
+    display: grid;
+    gap: 1.5rem; /* Corresponds to gap-6 in Tailwind */
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
 </style>
 </head>
   <body>

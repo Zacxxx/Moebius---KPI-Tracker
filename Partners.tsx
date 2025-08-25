@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/Card';
 import { KpiWidget } from './components/KpiWidget';
@@ -22,7 +23,7 @@ const tierBadgeMap: { [key: string]: 'violet' | 'default' | 'blue' } = {
 }
 
 
-export default function Partners() {
+export default function Partners({ isKpiSentimentColoringEnabled }: { isKpiSentimentColoringEnabled?: boolean }) {
     const [partnerMetrics] = useState<PartnerMetric[]>(initialPartnerMetrics);
     const [partners] = useState<PartnerItem[]>(initialPartnerItems);
 
@@ -35,7 +36,7 @@ export default function Partners() {
             
             <section>
                 <h2 className="text-xl font-semibold text-zinc-200 mb-4">Key Metrics</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="fluid-widget-grid">
                     {partnerMetrics.map(item => (
                         <KpiWidget 
                           key={item.id} 
@@ -43,6 +44,7 @@ export default function Partners() {
                           value={item.value} 
                           change={item.change} 
                           icon={iconMap[item.metric] || UsersIcon}
+                          isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
                         />
                     ))}
                 </div>

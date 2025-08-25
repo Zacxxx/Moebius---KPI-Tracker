@@ -44,9 +44,10 @@ interface ExternalDashboardProps {
     setGlobalTimeConfig: (config: TimeConfig) => void;
     page: Page;
     setPage: (page: Page) => void;
+    isKpiSentimentColoringEnabled?: boolean;
 }
 
-export default function ExternalDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage }: ExternalDashboardProps) {
+export default function ExternalDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled }: ExternalDashboardProps) {
     const [sections, setSections] = useState<DashboardSection[]>([
         { id: 'kpis', title: 'Key Metrics' },
         { id: 'main', title: 'Dashboard Widgets' },
@@ -104,6 +105,7 @@ export default function ExternalDashboard({ globalTimeConfig, setGlobalTimeConfi
         setGlobalTimeConfig={setGlobalTimeConfig}
         page={page}
         setPage={setPage}
+        isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
     />
   );
 }

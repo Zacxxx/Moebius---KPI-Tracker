@@ -23,9 +23,10 @@ interface FinancialPlanningProps {
     setGlobalTimeConfig: (config: TimeConfig) => void;
     page: Page;
     setPage: (page: Page) => void;
+    isKpiSentimentColoringEnabled?: boolean;
 }
 
-export default function FinancialPlanning({ globalTimeConfig, setGlobalTimeConfig, page, setPage }: FinancialPlanningProps) {
+export default function FinancialPlanning({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled }: FinancialPlanningProps) {
   const [sections, setSections] = useState<DashboardSection[]>([
       { id: 'kpis', title: 'Key Metrics' },
       { id: 'main', title: 'Dashboard Widgets' },
@@ -93,6 +94,7 @@ export default function FinancialPlanning({ globalTimeConfig, setGlobalTimeConfi
         setGlobalTimeConfig={setGlobalTimeConfig}
         page={page}
         setPage={setPage}
+        isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
     />
   );
 }
