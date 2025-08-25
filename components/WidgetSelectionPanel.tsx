@@ -139,6 +139,10 @@ export const WidgetSelectionPanel: React.FC<WidgetSelectionPanelProps> = ({ isOp
         setWidgets(prev => prev.map(w => w.id === widgetId ? { ...w, sectionId: newSectionId } : w));
     };
 
+    const handleWidgetTitleChange = (widgetId: string, newTitle: string) => {
+      setWidgets(prev => prev.map(w => w.id === widgetId ? { ...w, config: { ...w.config, title: newTitle }} : w));
+    };
+
     if (!isOpen) return null;
     
     return (
@@ -218,7 +222,11 @@ export const WidgetSelectionPanel: React.FC<WidgetSelectionPanelProps> = ({ isOp
                                         {sectionWidgets.length > 0 ? sectionWidgets.map(widget => (
                                             <div key={widget.id} className="p-3 rounded-xl bg-zinc-800/50 border border-zinc-700/50 space-y-3 mb-3">
                                                 <div className="flex items-start justify-between">
-                                                    <p className="font-semibold text-white text-sm truncate pr-2 pt-1">{widget.config.title}</p>
+                                                    <Input 
+                                                        value={widget.config.title}
+                                                        onChange={e => handleWidgetTitleChange(widget.id, e.target.value)}
+                                                        className="h-9 text-sm font-semibold !bg-transparent border-0 focus:!bg-zinc-700 focus:ring-1 focus:ring-violet-500 flex-1"
+                                                    />
                                                     <div className="flex items-center gap-1 flex-shrink-0">
                                                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleMoveWidget(widget.id, 'up')} aria-label="Move up"><ChevronUpIcon className="h-4 w-4"/></Button>
                                                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleMoveWidget(widget.id, 'down')} aria-label="Move down"><ChevronDownIcon className="h-4 w-4"/></Button>

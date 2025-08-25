@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDownIcon, CheckIcon } from '../Icons';
 import type { Page } from '../../types';
@@ -30,7 +29,7 @@ export const DashboardBreadcrumb: React.FC<DashboardBreadcrumbProps> = ({ title,
     }, []);
 
     if (!items || items.length === 0) {
-        return <h1 className="text-2xl font-bold tracking-tight text-white">{title}</h1>;
+        return <h1 className="text-xl font-bold tracking-tight text-white whitespace-nowrap">{title}</h1>;
     }
 
     return (
@@ -41,8 +40,8 @@ export const DashboardBreadcrumb: React.FC<DashboardBreadcrumbProps> = ({ title,
                 aria-haspopup="true"
                 aria-expanded={isOpen}
             >
-                <h1 className="text-2xl font-bold tracking-tight text-white group-hover:text-zinc-300 transition-colors">{title}</h1>
-                <ChevronDownIcon className={`h-6 w-6 text-zinc-400 transition-transform group-hover:text-zinc-200 ${isOpen ? 'rotate-180' : ''}`} />
+                <h1 className="text-xl font-bold tracking-tight text-white group-hover:text-zinc-300 transition-colors whitespace-nowrap">{title}</h1>
+                <ChevronDownIcon className={`h-5 w-5 text-zinc-400 transition-transform group-hover:text-zinc-200 ${isOpen ? 'rotate-180' : ''}`} />
             </button>
             {isOpen && (
                 <div className="absolute top-full left-0 mt-2 w-72 bg-zinc-800 border border-zinc-700 rounded-lg shadow-lg z-20 p-2">

@@ -29,7 +29,7 @@ export default function Branding({ isKpiSentimentColoringEnabled }: { isKpiSenti
             
             <section>
                 <h2 className="text-xl font-semibold text-zinc-200 mb-4">Key Metrics</h2>
-                <div className="fluid-widget-grid">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
                     {brandingMetrics.map(item => (
                         <KpiWidget 
                           key={item.id} 

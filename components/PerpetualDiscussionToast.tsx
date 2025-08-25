@@ -3,13 +3,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardHeader, CardContent, CardTitle } from './ui/Card';
 import { Button } from './ui/Button';
-import { XIcon, Maximize2Icon, MinusIcon, SparklesIcon, ChevronUpIcon, PlusCircleIcon, PaperclipIcon, BookmarkIcon, ClipboardIcon, FolderIcon, SettingsIcon, UsersIcon } from './Icons';
+import { XIcon, Maximize2Icon, MinusIcon, SparklesIcon, PlusIcon, BookmarkIcon, GitBranchIcon, FileTextIcon, FolderIcon, SettingsIcon, UsersIcon, CubeIcon, CheckSquareIcon, TargetIcon, FilterOffIcon } from './Icons';
 import { ChatMessage, TypingIndicator } from './MessageBubble';
 import { ChatInput } from './ChatInput';
 import type { Message, ChatSession, Bookmark, WidgetContext } from '../types';
-import { BookmarksPanel } from './chat/BookmarksPanel';
-import { ActionButton } from './chat/ActionButton';
-import { ActionPanel } from './chat/ActionPanel';
 
 interface PerpetualDiscussionToastProps {
     session: ChatSession & { messages: (Message & { isBookmarked?: boolean })[] };
@@ -29,23 +26,6 @@ interface PerpetualDiscussionToastProps {
     onRemoveWidgetContext: (id: string) => void;
     onClearWidgetContexts: () => void;
 }
-
-const useClickOutside = (ref: React.RefObject<HTMLElement>, handler: (event: MouseEvent | TouchEvent) => void) => {
-  useEffect(() => {
-    const listener = (event: MouseEvent | TouchEvent) => {
-      if (!ref.current || ref.current.contains(event.target as Node)) {
-        return;
-      }
-      handler(event);
-    };
-    document.addEventListener('mousedown', listener);
-    document.addEventListener('touchstart', listener);
-    return () => {
-      document.removeEventListener('mousedown', listener);
-      document.removeEventListener('touchstart', listener);
-    };
-  }, [ref, handler]);
-};
 
 export const PerpetualDiscussionToast: React.FC<PerpetualDiscussionToastProps> = ({
     session,
@@ -67,9 +47,6 @@ export const PerpetualDiscussionToast: React.FC<PerpetualDiscussionToastProps> =
 }) => {
     const [isClosing, setIsClosing] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const [activePanel, setActivePanel] = useState<string | null>(null);
-    const panelContainerRef = useRef<HTMLDivElement>(null);
-    useClickOutside(panelContainerRef, () => setActivePanel(null));
 
 
     const scrollToBottom = () => {
@@ -114,67 +91,19 @@ export const PerpetualDiscussionToast: React.FC<PerpetualDiscussionToastProps> =
                     <div ref={messagesEndRef} />
                 </CardContent>
                 
-                <div className="relative" ref={panelContainerRef}>
-                    <div className="absolute bottom-full mb-2 right-0 w-80 max-w-sm">
-                        {activePanel === 'bookmark' && (
-                            <BookmarksPanel
-                                bookmarks={bookmarks}
-                                onSelectBookmark={(sessionId) => {
-                                    setActiveChatId(sessionId);
-                                    onMaximize();
-                                    setActivePanel(null);
-                                }}
-                            />
-                        )}
-                        {activePanel === 'link' && (
-                            <ActionPanel title="Attach Link" icon={PaperclipIcon}>
-                                <div className="p-4 text-sm text-zinc-400">Attach link functionality placeholder.</div>
-                            </ActionPanel>
-                        )}
-                        {activePanel === 'copy' && (
-                            <ActionPanel title="Copy Conversation" icon={ClipboardIcon}>
-                                <div className="p-4 text-sm text-zinc-400">Copy conversation functionality placeholder.</div>
-                            </ActionPanel>
-                        )}
-                        {activePanel === 'folder' && (
-                            <ActionPanel title="Save to Folder" icon={FolderIcon}>
-                                <div className="p-4 text-sm text-zinc-400">Save to folder functionality placeholder.</div>
-                            </ActionPanel>
-                        )}
-                        {activePanel === 'settings' && (
-                            <ActionPanel title="Chat Settings" icon={SettingsIcon}>
-                                <div className="p-4 text-sm text-zinc-400">Chat settings functionality placeholder.</div>
-                            </ActionPanel>
-                        )}
-                        {activePanel === 'users' && (
-                            <ActionPanel title="Participants" icon={UsersIcon}>
-                                <div className="p-4 text-sm text-zinc-400">Chat participants functionality placeholder.</div>
-                            </ActionPanel>
-                        )}
-                    </div>
-
-                    <div className="px-4 py-2 border-t border-zinc-700/50 flex items-center gap-2">
-                        <Button size="icon" className="h-8 w-8 bg-violet-600 hover:bg-violet-700 flex-shrink-0"><PlusCircleIcon className="h-5 w-5"/></Button>
-                        <div className="flex items-center gap-1 p-1 rounded-full bg-zinc-800/80 border border-zinc-700/50 overflow-x-auto">
-                            <ActionButton label="Link" onClick={() => setActivePanel(p => p === 'link' ? null : 'link')}><PaperclipIcon className="h-4 w-4"/></ActionButton>
-                            <ActionButton label="Bookmark" onClick={() => setActivePanel(p => p === 'bookmark' ? null : 'bookmark')}><BookmarkIcon className="h-4 w-4"/></ActionButton>
-                            <ActionButton label="Copy" onClick={() => setActivePanel(p => p === 'copy' ? null : 'copy')}><ClipboardIcon className="h-4 w-4"/></ActionButton>
-                            <ActionButton label="Folder" onClick={() => setActivePanel(p => p === 'folder' ? null : 'folder')}><FolderIcon className="h-4 w-4"/></ActionButton>
-                            <ActionButton label="Settings" onClick={() => setActivePanel(p => p === 'settings' ? null : 'settings')}><SettingsIcon className="h-4 w-4"/></ActionButton>
-                            <ActionButton label="Users" onClick={() => setActivePanel(p => p === 'users' ? null : 'users')}><UsersIcon className="h-4 w-4"/></ActionButton>
-                        </div>
-                    </div>
-
-                    <ChatInput 
-                        onSend={onSend} 
-                        isLoading={isLoading} 
-                        isMessageQueued={isMessageQueued}
-                        getAppContextData={getAppContextData}
-                        widgetContexts={attachedWidgetContexts}
-                        onRemoveWidgetContext={onRemoveWidgetContext}
-                        onClearWidgetContexts={onClearWidgetContexts}
-                    />
-                </div>
+                <ChatInput 
+                    onSend={onSend} 
+                    isLoading={isLoading} 
+                    isMessageQueued={isMessageQueued}
+                    getAppContextData={getAppContextData}
+                    widgetContexts={attachedWidgetContexts}
+                    onRemoveWidgetContext={onRemoveWidgetContext}
+                    onClearWidgetContexts={onClearWidgetContexts}
+                    context="toast"
+                    bookmarks={bookmarks}
+                    setActiveChatId={setActiveChatId}
+                    onMaximize={onMaximize}
+                />
             </Card>
         </div>
     );

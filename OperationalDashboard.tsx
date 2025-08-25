@@ -50,7 +50,6 @@ export default function OperationalDashboard({ globalTimeConfig, setGlobalTimeCo
   return (
     <Dashboard
         title="Operational Dashboard"
-        description="Track costs, uptime, and system performance."
         allKpisForModal={allKpisForModal}
         iconMap={iconMap}
         iconColorMap={iconColorMap}

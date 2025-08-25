@@ -1,11 +1,13 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from './ui/Button';
-import { SendIcon, PaperclipIcon } from './Icons';
+import { SendIcon, PaperclipIcon, BookmarkIcon, GitBranchIcon, FileTextIcon, FolderIcon, SettingsIcon, UsersIcon, CubeIcon, CheckSquareIcon, TargetIcon, FilterOffIcon, PlusIcon, CodeIcon } from './Icons';
 import { slashCommands, SlashCommand } from './chat/slashCommands';
 import { SlashCommandSuggestions } from './chat/SlashCommandSuggestions';
 import { AttachedContext } from './chat/AttachedContext';
-import type { WidgetContext } from '../types';
+import type { WidgetContext, Bookmark } from '../types';
+import { ActionButton } from './chat/ActionButton';
+import { BookmarksPanel } from './chat/BookmarksPanel';
+import { ActionPanel } from './chat/ActionPanel';
 
 interface ChatInputProps {
     onSend: (message: string) => void;
@@ -15,9 +17,65 @@ interface ChatInputProps {
     widgetContexts: WidgetContext[];
     onRemoveWidgetContext: (id: string) => void;
     onClearWidgetContexts: () => void;
+    context: 'full' | 'panel' | 'toast';
+    // Props for internal panel handling
+    bookmarks: Bookmark[];
+    setActiveChatId: (id: string) => void;
+    onMaximize?: () => void;
 }
 
-export const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, isMessageQueued, getAppContextData, widgetContexts, onRemoveWidgetContext, onClearWidgetContexts }) => {
+const useClickOutside = (ref: React.RefObject<HTMLElement>, handler: (event: MouseEvent | TouchEvent) => void) => {
+  useEffect(() => {
+    const listener = (event: MouseEvent | TouchEvent) => {
+      if (!ref.current || ref.current.contains(event.target as Node)) {
+        return;
+      }
+      handler(event);
+    };
+    document.addEventListener('mousedown', listener);
+    document.addEventListener('touchstart', listener);
+    return () => {
+      document.removeEventListener('mousedown', listener);
+      document.removeEventListener('touchstart', listener);
+    };
+  }, [ref, handler]);
+};
+
+const ToggleSwitch: React.FC<{ label: string; enabled: boolean; onToggle: () => void; }> = ({ label, enabled, onToggle }) => (
+    <div className="flex items-center gap-2">
+        <label className="text-xs text-zinc-400 cursor-pointer" onClick={onToggle}>{label}</label>
+        <button
+            type="button"
+            role="switch"
+            aria-checked={enabled}
+            onClick={onToggle}
+            className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-zinc-900 ${
+                enabled ? 'bg-violet-600' : 'bg-zinc-700'
+            }`}
+        >
+            <span
+                aria-hidden="true"
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    enabled ? 'translate-x-4' : 'translate-x-0'
+                }`}
+            />
+        </button>
+    </div>
+);
+
+export const ChatInput: React.FC<ChatInputProps> = ({
+    onSend,
+    isLoading,
+    isMessageQueued,
+    getAppContextData,
+    widgetContexts,
+    onRemoveWidgetContext,
+    onClearWidgetContexts,
+    context,
+    bookmarks,
+    setActiveChatId,
+    onMaximize,
+}) => {
     const [inputValue, setInputValue] = useState('');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     
@@ -26,6 +84,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, isMessa
     const [commandPath, setCommandPath] = useState<SlashCommand[]>([]);
     const [commandQuery, setCommandQuery] = useState('');
     const [selectedIndex, setSelectedIndex] = useState(0);
+    
+    const [activePanel, setActivePanel] = useState<string | null>(null);
+    const panelContainerRef = useRef<HTMLDivElement>(null);
+    useClickOutside(panelContainerRef, () => setActivePanel(null));
+
+    const [isAutoPilotOn, setIsAutoPilotOn] = useState(false);
+    const [isAsyncOn, setIsAsyncOn] = useState(false);
 
     const activeCommandList = commandPath.length > 0 ? commandPath[commandPath.length - 1].subCommands || [] : slashCommands;
     
@@ -38,7 +103,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, isMessa
         if (textarea) {
             textarea.style.height = 'auto';
             const scrollHeight = textarea.scrollHeight;
-            textarea.style.height = `${Math.min(scrollHeight, 130)}px`;
+            textarea.style.height = `${Math.min(scrollHeight, 160)}px`;
         }
     }, [inputValue]);
     
@@ -106,8 +171,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, isMessa
             }
             onSend(messageToSend);
             setInputValue('');
-            setAttachedContexts([]); // clear local slash command contexts
-            onClearWidgetContexts(); // clear parent widget contexts
+            setAttachedContexts([]);
+            onClearWidgetContexts();
             setShowSuggestions(false);
             setCommandPath([]);
             setCommandQuery('');
@@ -137,21 +202,50 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, isMessa
             handleBack();
         }
     };
+    
+    const handleSlashButtonClick = () => {
+        setInputValue('/');
+        setShowSuggestions(true);
+        textareaRef.current?.focus();
+    };
 
     return (
-        <div className="p-4 border-t border-zinc-700/50 bg-zinc-900 relative">
-            {showSuggestions && (
-                <SlashCommandSuggestions
-                    commands={filteredCommands}
-                    onSelect={handleSelectCommand}
-                    selectedIndex={selectedIndex}
-                    path={commandPath}
-                    onBack={handleBack}
-                />
-            )}
-            <div className="bg-zinc-800/50 border border-zinc-700 rounded-xl p-2 flex flex-col gap-2">
+        <div className="relative" ref={panelContainerRef}>
+            <div className="absolute bottom-full mb-2 w-full px-3 z-10">
+                {activePanel === 'bookmark' && (
+                    <BookmarksPanel
+                        bookmarks={bookmarks}
+                        onSelectBookmark={(sessionId) => {
+                            setActiveChatId(sessionId);
+                            if (onMaximize) onMaximize();
+                            setActivePanel(null);
+                        }}
+                    />
+                )}
+                 {(context === 'full' || context === 'panel') && activePanel === 'parameters' && (
+                    <ActionPanel title="AI Parameters" icon={SettingsIcon}>
+                        <div className="p-4 text-sm text-zinc-400">Set system instructions and parameters.</div>
+                    </ActionPanel>
+                )}
+                {(context === 'full' || context === 'panel') && activePanel === 'participants' && (
+                     <ActionPanel title="Participants" icon={UsersIcon}>
+                        <div className="p-4 text-sm text-zinc-400">You and the AI assistant.</div>
+                    </ActionPanel>
+                )}
+            </div>
+            
+            <div className="p-3 bg-zinc-900 border-t border-zinc-700/50">
+                {showSuggestions && (
+                    <SlashCommandSuggestions
+                        commands={filteredCommands}
+                        onSelect={handleSelectCommand}
+                        selectedIndex={selectedIndex}
+                        path={commandPath}
+                        onBack={handleBack}
+                    />
+                )}
                 {(attachedContexts.length > 0 || widgetContexts.length > 0) && (
-                    <div className="px-1 pt-1 flex flex-wrap gap-2">
+                    <div className="px-1 pb-2 flex flex-wrap gap-2">
                         {attachedContexts.map(ctx => (
                             <AttachedContext
                                 key={ctx.command.id}
@@ -170,29 +264,59 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, isMessa
                         ))}
                     </div>
                 )}
-                <div className="flex items-end gap-2">
-                    <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0" aria-label="Attach file">
-                        <PaperclipIcon className="h-5 w-5 text-zinc-400"/>
-                    </Button>
-                    <textarea
-                        ref={textareaRef}
-                        rows={1}
-                        placeholder={isMessageQueued ? "Message queued..." : isLoading ? "Generating response..." : "Type your message... (Ctrl+Enter to send)"}
-                        className="w-full resize-none bg-transparent text-sm text-zinc-100 placeholder:text-zinc-500 py-2 px-1 focus:outline-none max-h-[130px]"
-                        value={inputValue}
-                        onChange={handleInputChange}
-                        onKeyDown={handleKeyDown}
-                        disabled={isMessageQueued}
-                    />
-                    <Button 
-                        size="icon" 
-                        className="h-9 w-9 flex-shrink-0 bg-zinc-700 hover:bg-zinc-600 disabled:bg-zinc-800"
-                        onClick={handleSend}
-                        disabled={(!inputValue.trim() && attachedContexts.length === 0 && widgetContexts.length === 0) || isMessageQueued}
-                        aria-label="Send message"
-                    >
-                        <SendIcon className="h-5 w-5" />
-                    </Button>
+                <div className="bg-zinc-800/80 border border-zinc-700/50 rounded-xl p-2">
+                    <div className="flex items-center gap-1 flex-wrap pb-2 mb-2 border-b border-zinc-700/50 animate-fade-in-fast">
+                        <ActionButton label="Attach File" onClick={() => alert('Attach file clicked')}><PaperclipIcon className="h-4 w-4"/></ActionButton>
+                        <ActionButton label="Branch" onClick={() => alert('Branch clicked')}><GitBranchIcon className="h-4 w-4"/></ActionButton>
+                        <ActionButton label="Bookmark" onClick={() => setActivePanel(activePanel === 'bookmark' ? null : 'bookmark')}><BookmarkIcon className="h-4 w-4"/></ActionButton>
+                        <ActionButton label="File" onClick={() => alert('File clicked')}><FileTextIcon className="h-4 w-4"/></ActionButton>
+                        <ActionButton label="Folder" onClick={() => alert('Folder clicked')}><FolderIcon className="h-4 w-4"/></ActionButton>
+                        <div className="w-px h-5 bg-zinc-700 mx-1" />
+                        <ActionButton label="Parameters" onClick={() => context === 'toast' ? alert('Parameters unavailable in toast.') : setActivePanel(activePanel === 'parameters' ? null : 'parameters')}><SettingsIcon className="h-4 w-4"/></ActionButton>
+                        <ActionButton label="Participants" onClick={() => context === 'toast' ? alert('Participants unavailable in toast.') : setActivePanel(activePanel === 'participants' ? null : 'participants')}><UsersIcon className="h-4 w-4"/></ActionButton>
+                        <div className="w-px h-5 bg-zinc-700 mx-1" />
+                        <ActionButton label="Cube" onClick={() => alert('Cube clicked')}><CubeIcon className="h-4 w-4"/></ActionButton>
+                        <ActionButton label="Tasks" onClick={() => alert('Tasks clicked')}><CheckSquareIcon className="h-4 w-4"/></ActionButton>
+                        <ActionButton label="Target" onClick={() => alert('Target clicked')}><TargetIcon className="h-4 w-4"/></ActionButton>
+                        <ActionButton label="Filter Off" onClick={() => alert('Filter Off clicked')}><FilterOffIcon className="h-4 w-4"/></ActionButton>
+                    </div>
+                    <div className="relative flex items-end gap-2">
+                        <div className="relative flex-1">
+                            <textarea
+                                ref={textareaRef}
+                                rows={1}
+                                placeholder={isMessageQueued ? "Message queued..." : isLoading ? "Generating response..." : "Type your message..."}
+                                className="w-full resize-none bg-transparent text-sm text-zinc-100 placeholder:text-zinc-500 py-2.5 pl-1 pr-3 focus:outline-none min-h-[52px] max-h-[160px]"
+                                value={inputValue}
+                                onChange={handleInputChange}
+                                onKeyDown={handleKeyDown}
+                                disabled={isMessageQueued}
+                            />
+                        </div>
+                         <Button 
+                            size="default" 
+                            className="h-10 px-4 flex-shrink-0 bg-violet-600 hover:bg-violet-700 disabled:bg-zinc-700 disabled:text-zinc-400"
+                            onClick={handleSend}
+                            disabled={(!inputValue.trim() && attachedContexts.length === 0 && widgetContexts.length === 0) || isMessageQueued}
+                            aria-label="Send message"
+                        >
+                            <SendIcon className="h-5 w-5" />
+                        </Button>
+                    </div>
+                </div>
+                 <div className="flex items-center justify-between mt-1 pt-2 px-1 border-t border-zinc-800">
+                    <div className="flex items-center gap-1">
+                        <ActionButton label="Commands" onClick={handleSlashButtonClick}>
+                            <CodeIcon className="h-4 w-4" />
+                        </ActionButton>
+                        <ActionButton label="Attach file" onClick={() => alert('Attach file clicked')}>
+                            <FileTextIcon className="h-4 w-4" />
+                        </ActionButton>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <ToggleSwitch label="Auto-pilot" enabled={isAutoPilotOn} onToggle={() => setIsAutoPilotOn(p => !p)} />
+                        <ToggleSwitch label="Async" enabled={isAsyncOn} onToggle={() => setIsAsyncOn(p => !p)} />
+                    </div>
                 </div>
             </div>
         </div>

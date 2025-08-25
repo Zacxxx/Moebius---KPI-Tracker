@@ -1,4 +1,4 @@
-import type { Chat } from '@google/genai';
+import type { Chat as GeminiChat } from '@google/genai';
 import React from 'react';
 
 export interface ColumnDef<T> {
@@ -67,6 +67,7 @@ export type Page =
   'team-management' |
   'profile' |
   'notifications' |
+  'monitoring-dashboard' |
   'chat';
 
 export interface Message {
@@ -81,7 +82,7 @@ export interface ChatSession {
   id: string;
   title: string;
   messages: Message[];
-  geminiChat?: Chat;
+  geminiChat?: GeminiChat;
   isGeneratingTitle?: boolean;
 }
 

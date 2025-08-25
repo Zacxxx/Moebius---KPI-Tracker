@@ -82,7 +82,6 @@ export default function FinancialPlanning({ globalTimeConfig, setGlobalTimeConfi
   return (
     <Dashboard
         title="Financial Dashboard"
-        description="Monitor your burn rate, cash runway, and overall financial health."
         allKpisForModal={allKpisForModal}
         iconMap={iconMap}
         iconColorMap={iconColorMap}

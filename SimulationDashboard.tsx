@@ -84,7 +84,6 @@ export default function SimulationDashboard({ globalTimeConfig, setGlobalTimeCon
   return (
     <Dashboard
         title="Simulation Dashboard"
-        description="An overview of your business's key financial simulations and projections."
         allKpisForModal={allKpisForModal}
         iconMap={iconMap}
         widgets={widgets}

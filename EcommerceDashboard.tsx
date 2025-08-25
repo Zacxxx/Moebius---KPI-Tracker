@@ -69,7 +69,6 @@ export default function SalesDashboard({ globalTimeConfig, setGlobalTimeConfig, 
     return (
         <Dashboard
             title="Sales Performance Dashboard"
-            description="A real-time command center for your online store."
             allKpisForModal={allKpisForModal}
             iconMap={iconMap}
             iconColorMap={iconColorMap}

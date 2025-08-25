@@ -86,7 +86,7 @@ export default function BalanceSheet({ isKpiSentimentColoringEnabled }: { isKpiS
 
       <section>
         <h2 className="text-xl font-semibold text-zinc-200 mb-4">Key Ratios</h2>
-        <div className="fluid-widget-grid">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
           <KpiWidget title="Total Assets" value={EURO.format(totals.totalAssets)} change="Assets = Liabilities + Equity" icon={WalletIcon} iconColor="text-emerald-400" isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />
           <KpiWidget title="Total Liabilities" value={EURO.format(totals.totalLiabilities)} change="What the company owes" icon={CreditCardIcon} iconColor="text-red-400" isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />
           <KpiWidget title="Current Ratio" value={totals.currentRatio.toFixed(2)} change="Liquidity measure" icon={ScaleIcon} iconColor={totals.currentRatio > 2 ? "text-emerald-400" : "text-yellow-400"} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />

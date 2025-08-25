@@ -1,5 +1,3 @@
-
-
 import React, { useEffect, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/Card';
 import { Button } from './ui/Button';
@@ -75,6 +73,9 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
                     widgetContexts={widgetContexts}
                     onRemoveWidgetContext={onRemoveWidgetContext}
                     onClearWidgetContexts={onClearWidgetContexts}
+                    context="full"
+                    bookmarks={[]}
+                    setActiveChatId={() => {}}
                 />
             </Card>
         </div>

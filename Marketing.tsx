@@ -66,7 +66,6 @@ export default function Marketing({ globalTimeConfig, setGlobalTimeConfig, page,
   return (
     <Dashboard
         title="Marketing Dashboard"
-        description="Analyze campaign performance, track funnel conversions, and understand your traffic sources."
         allKpisForModal={allKpisForModal}
         iconMap={iconMap}
         widgets={widgets}

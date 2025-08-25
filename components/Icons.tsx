@@ -37,7 +37,7 @@ function createIcon(
           size = 24,
           stroke = defaultStroke,
           fill = defaultFill,
-          strokeWidth = 2,
+          strokeWidth = 1.5,
           className,
           title,
           decorative = !title,
@@ -323,6 +323,14 @@ export const PlusCircleIcon = createIcon(
   </>
 );
 
+export const PlusIcon = createIcon(
+  "PlusIcon",
+  <>
+    <line x1="12" y1="5" x2="12" y2="19" />
+    <line x1="5" y1="12" x2="19" y2="12" />
+  </>
+);
+
 export const BriefcaseIcon = createIcon(
   "BriefcaseIcon",
   <>
@@ -428,6 +436,15 @@ export const CreditCardIcon = createIcon(
   </>
 );
 
+export const CubeIcon = createIcon(
+  "CubeIcon",
+  <>
+    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+    <path d="m3.27 6.96 8.73 5.05 8.73-5.05" />
+    <path d="M12 22.08V12" />
+  </>
+);
+
 export const LogOutIcon = createIcon(
   "LogOutIcon",
   <>
@@ -480,6 +497,14 @@ export const FileTextIcon = createIcon(
   </>
 );
 
+export const FilterOffIcon = createIcon(
+  "FilterOffIcon",
+  <>
+    <path d="M12 2C2 7 2 17 12 22 22 17 22 7 12 2Z" />
+    <line x1="4" y1="20" x2="20" y2="4" />
+  </>
+);
+
 export const Trash2Icon = createIcon(
   "Trash2Icon",
   <>
@@ -511,6 +536,14 @@ export const CheckIcon = createIcon(
   <path d="M20 6 9 17l-5-5" />
 );
 
+export const CheckSquareIcon = createIcon(
+  "CheckSquareIcon",
+  <>
+    <polyline points="9 11 12 14 22 4" />
+    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+  </>
+);
+
 export const ShoppingCartIcon = createIcon(
   "ShoppingCartIcon",
   <>
@@ -535,6 +568,15 @@ export const TagIcon = createIcon(
   <>
     <path d="M12 2H2v10l9.29 9.29a1 1 0 0 0 1.41 0L22 13.41a1 1 0 0 0 0-1.41z" />
     <path d="M7 7h.01" />
+  </>
+);
+
+export const TargetIcon = createIcon(
+  "TargetIcon",
+  <>
+    <circle cx="12" cy="12" r="10" />
+    <circle cx="12" cy="12" r="6" />
+    <circle cx="12" cy="12" r="2" />
   </>
 );
 

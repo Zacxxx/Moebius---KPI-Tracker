@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from 'react';
 import type { SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page } from './types';
 import { initialCapTableMetrics } from './data';
@@ -71,7 +70,6 @@ export default function Internal({ globalTimeConfig, setGlobalTimeConfig, page, 
     return (
         <Dashboard
             title="People"
-            description="Monitor team growth, hiring, and key HR metrics."
             allKpisForModal={allKpisForModal}
             iconMap={iconMap}
             widgets={widgets}

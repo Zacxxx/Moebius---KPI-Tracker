@@ -1,12 +1,16 @@
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
+import { Card, CardHeader, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { PlusCircleIcon, MegaphoneIcon, FileTextIcon } from '../Icons';
+import { GenericWidgetProps } from '../../types';
+import { WidgetHeader } from './ProductStockWidget';
 
-export const QuickActionsWidget: React.FC = () => {
+export const QuickActionsWidget: React.FC<GenericWidgetProps> = ({ instance, onConfigure, onCite }) => {
     return (
         <Card className="h-full">
-            <CardHeader><CardTitle>Quick Actions</CardTitle></CardHeader>
+            <CardHeader>
+                <WidgetHeader title={instance.config.title} onConfigure={onConfigure} onCite={onCite} />
+            </CardHeader>
             <CardContent className="grid grid-cols-1 gap-3">
                 <Button variant="secondary" onClick={() => alert('Add new product')}>
                     <PlusCircleIcon className="w-4 h-4 mr-2" /> Add New Product

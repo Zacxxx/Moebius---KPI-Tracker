@@ -45,7 +45,6 @@ export default function CoordinationDashboard({ globalTimeConfig, setGlobalTimeC
   return (
     <Dashboard
         title="Coordination Dashboard"
-        description="Manage and coordinate with your organization's contractors, agents, and services."
         allKpisForModal={allKpisForModal}
         iconMap={iconMap}
         widgets={widgets}

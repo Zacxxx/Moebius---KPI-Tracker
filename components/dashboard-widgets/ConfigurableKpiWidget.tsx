@@ -1,11 +1,14 @@
-import React, { useMemo } from 'react';
+
+import React, { useMemo, useRef } from 'react';
 import type { GenericWidgetProps, SelectableKpi } from '../../types';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
-import { PlusCircleIcon, TrendingUpIcon, ArrowUpIcon, ArrowDownIcon, SettingsIcon, ChartBarIcon, MessageSquareIcon } from '../Icons';
+import { Card, CardContent, CardHeader } from '../ui/Card';
+import { PlusCircleIcon, TrendingUpIcon, ArrowUpIcon, ArrowDownIcon, ChartBarIcon, GaugeIcon, LineChartIcon, BarChartIcon } from '../Icons';
 import { Button } from '../ui/Button';
 import { fmtEuro } from '../../utils';
 import { Gauge } from '../ui/Gauge';
 import { Sparkline } from '../ui/Sparkline';
+import useResizeObserver from '../../hooks/useResizeObserver';
+import { WidgetHeader } from './ProductStockWidget';
 
 interface ConfigurableKpiWidgetProps extends GenericWidgetProps {
     allKpis: SelectableKpi[];
@@ -35,9 +38,22 @@ const getNumericValue = (valueString: string): number => {
     return isNaN(numeric) ? 0 : numeric;
 };
 
+const createAcronym = (text: string): string => {
+  if (!text) return '';
+  const words = text.replace(/[.,]/g, '').split(' ');
+  return words.map(word => {
+    if (word === '/') return '/';
+    if (!word) return '';
+    return word.charAt(0);
+  }).join('').toUpperCase();
+};
+
 export const ConfigurableKpiWidget: React.FC<ConfigurableKpiWidgetProps> = ({ instance, onConfigure, allKpis, iconMap, iconColorMap, onConfigChange, globalTimeConfig, onOpenChart, onCite, isKpiSentimentColoringEnabled = true }) => {
     const { title, selectedKpiId, selectedKpiSource, timeConfig: localTimeConfig, isTimeLocked, style = 'default', form = 'default' } = instance.config;
     
+    const widgetRef = useRef<HTMLDivElement>(null);
+    const { width } = useResizeObserver(widgetRef);
+
     const activeTimeConfig = isTimeLocked 
         ? (localTimeConfig || { type: 'preset', preset: '3m', granularity: 'monthly', offset: 0 }) 
         : (globalTimeConfig || { type: 'preset', preset: '3m', granularity: 'monthly', offset: 0 });
@@ -137,10 +153,7 @@ export const ConfigurableKpiWidget: React.FC<ConfigurableKpiWidgetProps> = ({ in
         return (
             <Card>
                 <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <CardTitle>{title || 'Unconfigured KPI'}</CardTitle>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onConfigure} aria-label="Configure widget"><SettingsIcon className="h-4 w-4" /></Button>
-                    </div>
+                    <WidgetHeader title={title || 'Unconfigured KPI'} onConfigure={onConfigure} />
                 </CardHeader>
                 <CardContent>
                     <button onClick={onConfigure} className="w-full h-24 border-2 border-dashed border-zinc-700 rounded-lg flex flex-col items-center justify-center text-zinc-500 hover:border-violet-500 hover:text-violet-400 transition-colors">
@@ -154,11 +167,24 @@ export const ConfigurableKpiWidget: React.FC<ConfigurableKpiWidgetProps> = ({ in
 
     const Icon = iconMap[selectedKpi.metric] || TrendingUpIcon;
     const iconColor = iconColorMap[selectedKpi.metric] || 'text-violet-400';
-    const isCompact = (instance.config.gridHeight || 2) <= 1;
+    
+    const getSizeConfig = (w: number) => {
+        if (w < 120) { // Micro
+            return { valueTextSize: 'text-xl', showChange: false, titleSize: 'text-xs' };
+        }
+        if (w < 200) { // Compact
+            return { valueTextSize: 'text-2xl', showChange: true, titleSize: 'text-sm' };
+        }
+        // Normal
+        return { valueTextSize: 'text-3xl', showChange: true, titleSize: 'text-base' };
+    };
+    const { valueTextSize, showChange } = getSizeConfig(width);
+
+    const isOneByOne = (instance.config.gridWidth || 1) === 1 && (instance.config.gridHeight || 1) === 1;
+    const fullTitle = title || selectedKpi.metric;
+    const acronym = createAcronym(fullTitle);
 
     const renderContent = () => {
-        const valueTextSize = isCompact ? 'text-2xl' : 'text-3xl';
-        const iconSize = isCompact ? 'h-5 w-5' : 'h-6 w-6';
         const valueColor = isKpiSentimentColoringEnabled && sentiment === 'positive' ? 'text-emerald-400' : isKpiSentimentColoringEnabled && sentiment === 'negative' ? 'text-red-400' : 'text-white';
         const changeColor = isKpiSentimentColoringEnabled && sentiment === 'positive' ? 'text-emerald-400/80' : isKpiSentimentColoringEnabled && sentiment === 'negative' ? 'text-red-400/80' : 'text-zinc-500';
         
@@ -178,10 +204,12 @@ export const ConfigurableKpiWidget: React.FC<ConfigurableKpiWidgetProps> = ({ in
                            <div className="absolute inset-0 bg-gradient-to-t from-violet-500/0 via-violet-500/10 to-violet-500/0"></div>
                            {sparklineData.length > 1 && <Sparkline data={sparklineData} stroke={'#a78bfa'} />}
                         </div>
-                        <div className="flex justify-between text-xs text-zinc-400">
-                            <span>{formatValue(startValue, selectedKpi.format)}</span>
-                             <span>{formatValue(endValue, selectedKpi.format)}</span>
-                        </div>
+                        {width > 120 && (
+                            <div className="flex justify-between text-xs text-zinc-400">
+                                <span>{formatValue(startValue, selectedKpi.format)}</span>
+                                 <span>{formatValue(endValue, selectedKpi.format)}</span>
+                            </div>
+                        )}
                     </div>
                 );
             case 'comparison':
@@ -191,14 +219,14 @@ export const ConfigurableKpiWidget: React.FC<ConfigurableKpiWidgetProps> = ({ in
                     <div className="flex flex-col justify-center h-full">
                         <div className="flex items-baseline gap-3">
                             <span className={`${valueTextSize} font-bold ${valueColor}`}>{displayValue}</span>
-                            {changePercent !== null && (
-                                <div className={`flex items-center gap-1 font-bold ${isCompact ? 'text-lg' : 'text-xl'} ${comparisonChangeColor}`}>
+                            {changePercent !== null && width > 120 && (
+                                <div className={`flex items-center gap-1 font-bold text-xl ${comparisonChangeColor}`}>
                                     {isPositive ? <ArrowUpIcon className="h-5 w-5"/> : <ArrowDownIcon className="h-5 w-5"/>}
                                     <span>{Math.abs(changePercent).toFixed(1)}%</span>
                                 </div>
                             )}
                         </div>
-                        <p className="text-sm text-zinc-500 mt-2">vs {formatValue(previousValue || 0, selectedKpi.format)}</p>
+                        {width > 150 && <p className="text-sm text-zinc-500 mt-2">vs {formatValue(previousValue || 0, selectedKpi.format)}</p>}
                     </div>
                 );
             case 'default':
@@ -207,46 +235,41 @@ export const ConfigurableKpiWidget: React.FC<ConfigurableKpiWidgetProps> = ({ in
                     <div className="mt-auto">
                         <div className="flex items-end justify-between">
                             <span className={`${valueTextSize} font-bold tracking-tight ${valueColor}`}>{displayValue}</span>
-                            <Icon className={`${iconSize} ${iconColor}`} />
+                            {!isOneByOne && <Icon className={`h-6 w-6 ${iconColor}`} />}
                         </div>
-                        {changeText && <p className={`text-xs mt-1 ${changeColor} truncate`}>{changeText}</p>}
+                        {changeText && showChange && <p className={`text-xs mt-1 ${changeColor} truncate`}>{changeText}</p>}
                     </div>
                 );
         }
     }
     
     const styleClasses = {
-        default: 'rounded-3xl border border-zinc-700/50 bg-zinc-900/50 backdrop-blur-xl shadow-2xl shadow-black/20',
-        subtle: 'rounded-3xl border border-zinc-800 bg-zinc-900',
-        highlighted: 'rounded-3xl border-2 border-violet-500/50 bg-zinc-900/50 backdrop-blur-xl shadow-2xl shadow-violet-500/10',
-        transparent: 'bg-transparent'
+        default: '',
+        subtle: 'border-zinc-800 bg-zinc-900',
+        highlighted: 'border-2 border-violet-500/50 shadow-violet-500/10',
+        transparent: 'bg-transparent border-none shadow-none backdrop-blur-none'
     };
-
+    
+    // The base card styles are now in the Card component. The style config will append/override.
     return (
-        <div className={`flex flex-col h-full ${styleClasses[style as keyof typeof styleClasses]}`}>
-            <div className="p-4 flex flex-col h-full">
-                <div className="flex justify-between items-start relative">
-                    <CardTitle className="pr-20">{title || selectedKpi.metric}</CardTitle>
-                    <div className="absolute top-0 right-0 flex items-center -mt-2 -mr-2">
-                        {onCite && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onCite} aria-label="Cite KPI in chat">
-                                <MessageSquareIcon className="h-4 w-4" />
-                            </Button>
-                        )}
-                        {selectedKpi.series && selectedKpi.series.length > 0 && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onOpenChart(selectedKpi)} aria-label="View chart">
-                                <ChartBarIcon className="h-4 w-4" />
-                            </Button>
-                        )}
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onConfigure} aria-label="Configure widget">
-                            <SettingsIcon className="h-4 w-4" />
+        <Card ref={widgetRef} className={`h-full flex flex-col ${styleClasses[style as keyof typeof styleClasses]}`}>
+            <CardHeader>
+                <WidgetHeader
+                    title={isOneByOne ? acronym : fullTitle}
+                    subtitle={isOneByOne ? fullTitle : undefined}
+                    onConfigure={onConfigure}
+                    onCite={onCite}
+                >
+                    {selectedKpi.series && selectedKpi.series.length > 0 && (
+                        <Button variant="secondary" size="icon" className="h-6 w-6 rounded-full" onClick={() => onOpenChart(selectedKpi)} aria-label="View chart">
+                            <ChartBarIcon className="h-3 w-3" />
                         </Button>
-                    </div>
-                </div>
-                <div className="flex-grow flex flex-col justify-end">
-                     {renderContent()}
-                </div>
-            </div>
-        </div>
+                    )}
+                </WidgetHeader>
+            </CardHeader>
+            <CardContent className="flex-grow flex flex-col justify-end">
+                 {renderContent()}
+            </CardContent>
+        </Card>
     )
 };

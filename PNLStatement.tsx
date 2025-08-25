@@ -75,7 +75,7 @@ export default function PNLStatement({ isKpiSentimentColoringEnabled }: { isKpiS
 
       <section>
         <h2 className="text-xl font-semibold text-zinc-200 mb-4">Key Margins</h2>
-        <div className="fluid-widget-grid">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
           <KpiWidget title="Gross Profit Margin" value={`${grossMargin.toFixed(1)}%`} change="Revenue - COGS" icon={PieChartIcon} iconColor="text-emerald-400" sentiment={grossMargin >= 0 ? 'positive' : 'negative'} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />
           <KpiWidget title="Operating Margin" value={`${operatingMargin.toFixed(1)}%`} change="Profitability from operations" icon={ScaleIcon} iconColor={operatingMargin >= 0 ? "text-emerald-400" : "text-red-400"} sentiment={operatingMargin >= 0 ? 'positive' : 'negative'} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />
           <KpiWidget title="Net Profit Margin" value={`${netProfitMargin.toFixed(1)}%`} change="After all expenses & taxes" icon={TrendingUpIcon} iconColor={netProfitMargin >= 0 ? "text-emerald-400" : "text-red-400"} sentiment={netProfitMargin >= 0 ? 'positive' : 'negative'} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from './Button';
-import { GitBranchIcon, ChevronDownIcon, CheckIcon } from '../Icons';
+import { GitBranchIcon, CheckIcon } from '../Icons';
 
 interface VersionSelectorProps {
     versions: { id: string; label: string; }[];
@@ -25,12 +25,13 @@ export const VersionSelector: React.FC<VersionSelectorProps> = ({ versions, acti
     const activeVersionLabel = versions.find(v => v.id === activeVersion)?.label || 'Select Version';
 
     return (
-        <div className="relative" ref={dropdownRef}>
-            <Button variant="secondary" onClick={() => setIsOpen(prev => !prev)}>
-                <GitBranchIcon className="h-4 w-4 mr-2" />
-                {activeVersionLabel}
-                <ChevronDownIcon className={`h-4 w-4 ml-2 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <div className="relative group" ref={dropdownRef}>
+            <Button variant="secondary" size="icon" className="h-8 w-8" onClick={() => setIsOpen(prev => !prev)}>
+                <GitBranchIcon className="h-4 w-4" />
             </Button>
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap bg-zinc-700 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                {activeVersionLabel}
+            </div>
             {isOpen && (
                 <div className="absolute top-full right-0 mt-2 w-56 bg-zinc-800 border border-zinc-700 rounded-lg shadow-lg z-10 p-1">
                     {versions.map(version => (

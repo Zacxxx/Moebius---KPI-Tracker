@@ -35,11 +35,11 @@ import TeamManagement from './TeamManagement';
 import Profile from './Profile';
 import Notifications from './Notifications';
 import type { Page, ChatSession, Message, Bookmark, ConversationMessage, ConversationChannel, DmToastState, TimeConfig, WidgetContext, WidgetInstance } from './types';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, Chat as GeminiChat } from '@google/genai';
 import PlaceholderPage from './PlaceholderPage';
 import { PerpetualDiscussionToast } from './components/PerpetualDiscussionToast';
 import { Command, CommandPalette } from './components/CommandPalette';
-import { platformNavItems } from './navigation';
+import { navStructure } from './navigation';
 import { DatabaseIcon, MessageSquareIcon, SparklesIcon, ChevronUpIcon, LineChartIcon, TrendingUpIcon, ClockIcon, LightningBoltIcon } from './components/Icons';
 import Content from './Content';
 import Seo from './Seo';
@@ -68,7 +68,6 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export default function App() {
   const [page, setPage] = useState<Page>('dashboard');
-  const [activeContentSection, setActiveContentSection] = useState<'platform' | 'studio' | 'coordination' | 'marketplace'>('platform');
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [activeTeamId, setActiveTeamId] = useState<string>('eng');
@@ -84,6 +83,7 @@ export default function App() {
   });
   const [isResizing, setIsResizing] = useState(false);
   const [attachedWidgetContexts, setAttachedWidgetContexts] = useState<WidgetContext[]>([]);
+
 
   // AI Chat state
   const [aiChatSessions, setAiChatSessions] = useState<ChatSession[]>([]);
@@ -174,6 +174,17 @@ export default function App() {
     setPage('chat');
   }, []);
   
+  const handleNewChatInPanel = useCallback(() => {
+    const newChatSession: ChatSession = {
+      id: Date.now().toString(),
+      title: 'New Chat',
+      messages: [{ id: 1, text: "Hello! How can I assist with your business data today?", sender: 'ai', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }],
+      geminiChat: ai.chats.create({ model: 'gemini-2.5-flash' }),
+    };
+    setAiChatSessions(prev => [newChatSession, ...prev]);
+    setActiveAiChatId(newChatSession.id);
+  }, []);
+
   const handleDeleteChat = (sessionId: string) => {
     setAiChatSessions(prev => prev.filter(s => s.id !== sessionId));
     if (activeAiChatId === sessionId) {
@@ -201,27 +212,50 @@ export default function App() {
 
   const handleSendAiMessage = async (messageText: string) => {
     if (isAiLoading) {
-      setQueuedAiMessage(messageText);
-      return;
-    }
-    if (!activeAiChatId) return;
-
-    const sessionToUpdate = aiChatSessions.find(s => s.id === activeAiChatId);
-    if (!sessionToUpdate) {
-      console.error("Could not find active chat session to send message.");
-      setIsAiLoading(false);
-      return;
+        setQueuedAiMessage(messageText);
+        return;
     }
 
-    const { geminiChat } = sessionToUpdate;
-    if (!geminiChat) {
-      console.error("Gemini chat not initialized for session");
-      setIsAiLoading(false);
-      return;
+    let sessionId = activeAiChatId;
+    let session = aiChatSessions.find(s => s.id === sessionId);
+    let chatInstance: GeminiChat | undefined;
+    let isFirstUserMessageInSession = false;
+
+    // If no active session, create one
+    if (!session) {
+        const newSession: ChatSession = {
+            id: Date.now().toString(),
+            title: 'New Chat',
+            messages: [],
+            geminiChat: ai.chats.create({ model: 'gemini-2.5-flash' }),
+        };
+        
+        setAiChatSessions(prev => [newSession, ...prev]);
+        setActiveAiChatId(newSession.id);
+        
+        sessionId = newSession.id;
+        session = newSession;
+        chatInstance = newSession.geminiChat;
+        isFirstUserMessageInSession = true;
+
+        // Also open the chat UI if it's not open
+        if (aiChatInterfaceStyle === 'toast' && !isAiChatToastOpen) {
+            setIsAiChatToastOpen(true);
+            setIsAiChatToastMinimized(false);
+        } else if (aiChatInterfaceStyle === 'panel' && !isRightPanelOpen) {
+            setIsRightPanelOpen(true);
+        }
+    } else {
+        chatInstance = session.geminiChat;
+        isFirstUserMessageInSession = session.messages.filter(m => m.sender === 'user').length === 0;
+    }
+
+    if (!sessionId || !session || !chatInstance) {
+        console.error("handleSendAiMessage: Failed to find or create a valid chat session.");
+        setIsAiLoading(false);
+        return;
     }
     
-    const isFirstUserMessage = sessionToUpdate.messages.filter(m => m.sender === 'user').length === 0;
-
     setIsAiLoading(true);
 
     const userMessage: Message = { id: Date.now(), text: messageText, sender: 'user', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
@@ -230,25 +264,25 @@ export default function App() {
 
     setAiChatSessions(prevSessions =>
       prevSessions.map(s => {
-        if (s.id === activeAiChatId) {
+        if (s.id === sessionId) {
           return { ...s, messages: [...s.messages, userMessage, aiMessagePlaceholder] };
         }
         return s;
       })
     );
 
-    if (isFirstUserMessage) {
-        generateChatTitle(activeAiChatId, messageText);
+    if (isFirstUserMessageInSession) {
+        generateChatTitle(sessionId, messageText);
     }
     
     try {
-        const stream = await geminiChat.sendMessageStream({ message: messageText });
+        const stream = await chatInstance.sendMessageStream({ message: messageText });
 
         for await (const chunk of stream) {
             const chunkText = chunk.text;
             setAiChatSessions(prev =>
                 prev.map(s => {
-                    if (s.id === activeAiChatId) {
+                    if (s.id === sessionId) {
                         const newMessages = s.messages.map(m =>
                             m.id === aiMessageId ? { ...m, text: m.text + chunkText } : m
                         );
@@ -262,7 +296,7 @@ export default function App() {
         console.error("Error sending message to Gemini:", error);
         setAiChatSessions(prev =>
             prev.map(s => {
-                if (s.id === activeAiChatId) {
+                if (s.id === sessionId) {
                     const newMessages = s.messages.map(m =>
                         m.id === aiMessageId ? { ...m, text: "Sorry, I encountered an error. Please try again." } : m
                     );
@@ -598,24 +632,26 @@ const handleClearWidgetContexts = () => {
 
   const commands = useMemo(() => {
     const pageCommands: Command[] = [];
-    platformNavItems.forEach(item => {
-      if (item.subItems) {
-        item.subItems.forEach(sub => {
-          pageCommands.push({
-            id: sub.page,
-            title: `${item.label} → ${sub.label}`,
-            icon: item.icon,
-            action: () => { setPage(sub.page); setIsCommandPaletteOpen(false); }
-          });
+    navStructure.forEach(section => {
+        section.items.forEach(item => {
+            if (item.subItems) {
+                item.subItems.forEach(sub => {
+                  pageCommands.push({
+                    id: sub.page,
+                    title: `${item.label} → ${sub.label}`,
+                    icon: item.icon,
+                    action: () => { setPage(sub.page); setIsCommandPaletteOpen(false); }
+                  });
+                });
+            } else {
+                pageCommands.push({
+                  id: item.page,
+                  title: item.label,
+                  icon: item.icon,
+                  action: () => { setPage(item.page); setIsCommandPaletteOpen(false); }
+                });
+            }
         });
-      } else {
-        pageCommands.push({
-          id: item.page,
-          title: item.label,
-          icon: item.icon,
-          action: () => { setPage(item.page); setIsCommandPaletteOpen(false); }
-        });
-      }
     });
 
     pageCommands.push({
@@ -775,6 +811,8 @@ const handleClearWidgetContexts = () => {
         return <Branding isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'external-competition':
         return <Competition />;
+      case 'monitoring-dashboard':
+        return <PlaceholderPage title="Monitoring Dashboard" description="An overview of system monitoring." />;
       default:
         return <FinancialPlanning page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} onCiteWidget={handleCiteWidget} />;
     }
@@ -821,8 +859,6 @@ const handleClearWidgetContexts = () => {
         onNewChat={handleNewChat}
         onDeleteChat={handleDeleteChat}
         onToggleAiChat={handleToggleAiChat}
-        activeContentSection={activeContentSection}
-        setActiveContentSection={setActiveContentSection}
         onSearchClick={() => setIsCommandPaletteOpen(true)}
         activeTeamId={activeTeamId}
         setActiveTeamId={setActiveTeamId}
@@ -854,6 +890,7 @@ const handleClearWidgetContexts = () => {
               isMessageQueued={!!queuedAiMessage}
               onSend={handleSendAiMessage}
               onRegenerate={handleRegenerate}
+              onNewChat={handleNewChatInPanel}
               onReload={() => activeAiChatId && handleReloadChat(activeAiChatId)}
               onClose={() => setIsRightPanelOpen(false)}
               onMaximize={handleMaximizeAiChat}

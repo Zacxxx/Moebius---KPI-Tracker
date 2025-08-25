@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { EditIcon } from './Icons';
 import type { SelectableKpi, WidgetInstance, DashboardSection, ShowcaseKpi, TimeConfig, Page } from '../types';
@@ -15,7 +16,6 @@ import { KpiChartModal } from './KpiChartModal';
 
 interface DashboardProps {
     title: string;
-    description: string;
     allKpisForModal: SelectableKpi[];
     iconMap: { [key: string]: React.FC<{ className?: string }> };
     iconColorMap?: { [key: string]: string };
@@ -39,7 +39,6 @@ const versions = [
 
 export const Dashboard: React.FC<DashboardProps> = ({
     title,
-    description,
     allKpisForModal,
     iconMap,
     iconColorMap = {},
@@ -118,7 +117,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     return (
         <>
             <div className="space-y-8">
-                <header className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 h-12">
                     <div>
                          <DashboardBreadcrumb 
                             title={activeDashboardTitle}
@@ -126,19 +125,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             activePage={page}
                             onSelect={setPage}
                         />
-                        {description && <p className="text-zinc-400 mt-1">{description}</p>}
                     </div>
-                    <div className="flex items-center gap-2 flex-wrap">
+                     <div className="flex items-center gap-2 flex-wrap">
                         <TimeRangeControl timeConfig={globalTimeConfig} setTimeConfig={setGlobalTimeConfig} />
                         <VersionSelector 
                             versions={versions}
                             activeVersion={activeVersion}
                             onVersionChange={setActiveVersion}
                         />
-                        <Button variant="secondary" onClick={() => setIsEditing(true)}>
-                            <EditIcon className="h-4 w-4 mr-2" />
-                            Edit Dashboard
-                        </Button>
+                        <div className="relative group">
+                            <Button variant="secondary" size="icon" className="h-8 w-8" onClick={() => setIsEditing(true)}>
+                                <EditIcon className="h-4 w-4" />
+                            </Button>
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap bg-zinc-700 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                Edit Dashboard
+                            </div>
+                        </div>
                     </div>
                 </header>
                 
@@ -148,8 +150,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
                     return (
                         <section key={section.id}>
-                            <h2 className="text-xl font-semibold text-zinc-200 mb-4">{section.title}</h2>
-                            <div className="fluid-widget-grid auto-rows-[minmax(104px,auto)]">
+                            {section.id !== 'kpis' && (
+                                isEditing ? (
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <h2 className="text-xl font-semibold text-zinc-200">{section.title}</h2>
+                                        <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-700 text-zinc-400">Section</span>
+                                    </div>
+                                ) : (
+                                    <h2 className="text-xl font-semibold text-zinc-200 mb-4">{section.title}</h2>
+                                )
+                            )}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 auto-rows-[minmax(104px,auto)]">
                                 {sectionWidgets.map(widgetInstance => {
                                     const WidgetComponent = WIDGET_COMPONENT_MAP[widgetInstance.widgetType];
                                     if (!WidgetComponent) {
@@ -157,9 +168,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                         return null;
                                     }
                                     
-                                    const colSpanClass = `lg:col-span-${widgetInstance.config.gridWidth || 1}`;
-                                    const rowSpanClass = `row-span-${widgetInstance.config.gridHeight || 1}`;
-                                    const gridSpan = `${colSpanClass} ${rowSpanClass}`.trim();
+                                    const colSpan = widgetInstance.config.gridWidth || 1;
+                                    const rowSpan = widgetInstance.config.gridHeight || 1;
+                                    
+                                    const smColSpan = `sm:col-span-${Math.min(colSpan, 2)}`;
+                                    const mdColSpan = `md:col-span-${Math.min(colSpan, 4)}`;
+
+                                    const gridSpan = `col-span-1 ${smColSpan} ${mdColSpan} row-span-${rowSpan}`;
                                     
                                     const dataSourceKey = widgetInstance.config.dataSourceKey;
                                     const data = dataSourceKey ? ALL_DATA_SOURCES[dataSourceKey]?.data : undefined;

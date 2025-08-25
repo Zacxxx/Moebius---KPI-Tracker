@@ -82,7 +82,6 @@ export default function InternalDashboard({ globalTimeConfig, setGlobalTimeConfi
   return (
     <Dashboard
         title="Internal Dashboard"
-        description="Monitor team growth, hiring, ownership, and key HR metrics."
         allKpisForModal={allKpisForModal}
         iconMap={iconMap}
         widgets={widgets}

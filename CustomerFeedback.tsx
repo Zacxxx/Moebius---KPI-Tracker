@@ -64,7 +64,7 @@ export default function CustomerFeedback({ isKpiSentimentColoringEnabled }: { is
 
       <section>
         <h2 className="text-xl font-semibold text-zinc-200 mb-4">Net Promoter Score</h2>
-        <div className="fluid-widget-grid">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             <KPIWidget title="Overall NPS" value="45" icon={SmileIcon} iconColor="text-emerald-400" sentiment="positive" isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />
             <KPIWidget title="Promoters" value="60%" icon={TrendingUpIcon} iconColor="text-emerald-400" sentiment="positive" isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />
             <KPIWidget title="Detractors" value="15%" icon={TrendingDownIcon} iconColor="text-red-400" sentiment="negative" isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />
@@ -73,7 +73,7 @@ export default function CustomerFeedback({ isKpiSentimentColoringEnabled }: { is
 
       <section>
         <h2 className="text-xl font-semibold text-zinc-200 mb-4">Recent Feedback</h2>
-        <div className="fluid-widget-grid">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {feedbackData.map((fb) => <FeedbackCard key={fb.id} {...fb} />)}
         </div>
       </section>

@@ -94,7 +94,6 @@ export default function ExternalDashboard({ globalTimeConfig, setGlobalTimeConfi
   return (
     <Dashboard
         title="External Dashboard"
-        description="An overview of your marketing, content, SEO, and branding efforts."
         allKpisForModal={allKpis}
         iconMap={iconMap}
         widgets={widgets}

@@ -1,13 +1,13 @@
 
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, forwardRef } from 'react';
 import type { Page, ChatSession } from './types';
 import { MenuIcon, BellIcon, UserIcon, UsersIcon, SearchIcon, MoebiusIcon, ChevronLeftIcon, ChevronDownIcon, DatabaseIcon, MessageSquareIcon, EditIcon, FolderIcon, FolderPlusIcon, Trash2Icon, SparklesIcon, LaptopIcon, ShoppingCartIcon, ShapesIcon } from './components/Icons';
 import UserPanel from './components/UserPanel';
 import NotificationsPanel from './components/NotificationsPanel';
 import TeamPanel from './components/TeamPanel';
 import ConversationsPanel from './components/ConversationsPanel';
-import { NavItemData, platformNavItems } from './navigation';
+import { NavItemData, navStructure } from './navigation';
 
 // Helper hook to get the previous value of a state or prop
 function usePrevious<T>(value: T): T | undefined {
@@ -48,7 +48,7 @@ const NavItem: React.FC<{
           } h-full flex-col flex-1 justify-center py-2`}
           aria-current={isActive ? 'page' : undefined}
         >
-          <Icon className="h-6 w-6 flex-shrink-0" />
+          <Icon className="h-5 w-5 flex-shrink-0" />
         </button>
         <div className="absolute top-1/2 -translate-y-1/2 left-full ml-3 px-2 py-1 bg-zinc-700 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
           {label}
@@ -67,7 +67,7 @@ const NavItem: React.FC<{
       } ${isSidebarOpen ? 'h-12 px-4' : 'h-full flex-col flex-1 justify-center py-2'}`}
       aria-current={isActive ? 'page' : undefined}
     >
-      <Icon className="h-6 w-6 flex-shrink-0" />
+      <Icon className="h-5 w-5 flex-shrink-0" />
       <span className={`overflow-hidden text-sm font-medium transition-all duration-300 whitespace-nowrap ${
         isSidebarOpen ? 'w-auto opacity-100 ml-4' : 'w-0 opacity-0 h-0'
       }`}>
@@ -83,10 +83,11 @@ const CollapsibleNavItem: React.FC<{
   setPage: (page: Page) => void;
   isSidebarOpen: boolean;
   setIsSidebarOpen: (open: boolean) => void;
-}> = ({ item, activePage, setPage, isSidebarOpen, setIsSidebarOpen }) => {
+  openCollapsedMenu: Page | null;
+  setOpenCollapsedMenu: (page: Page | null) => void;
+}> = ({ item, activePage, setPage, isSidebarOpen, setIsSidebarOpen, openCollapsedMenu, setOpenCollapsedMenu }) => {
     const isParentActive = item.page === activePage || (item.subItems || []).some(sub => sub.page === activePage);
     const [isOpen, setIsOpen] = useState(isParentActive);
-    const [isHovered, setIsHovered] = useState(false);
     
     useEffect(() => {
         if (isParentActive && isSidebarOpen) {
@@ -96,8 +97,7 @@ const CollapsibleNavItem: React.FC<{
 
     const handleParentClick = () => {
         if (!isSidebarOpen) {
-            setIsSidebarOpen(true);
-            setIsOpen(true);
+          setOpenCollapsedMenu(openCollapsedMenu === item.page ? null : item.page);
         } else {
             setIsOpen(!isOpen);
         }
@@ -107,8 +107,6 @@ const CollapsibleNavItem: React.FC<{
       return (
           <div 
               className="h-full relative group"
-              onMouseEnter={() => setIsHovered(true)}
-              onMouseLeave={() => setIsHovered(false)}
           >
               <button
                   onClick={handleParentClick}
@@ -116,13 +114,13 @@ const CollapsibleNavItem: React.FC<{
                       isParentActive ? 'text-violet-300' : 'text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200'
                   } h-full flex-col flex-1 justify-center py-2`}
               >
-                  <item.icon className="h-6 w-6 flex-shrink-0" />
+                  <item.icon className="h-5 w-5 flex-shrink-0" />
               </button>
               <div className="absolute top-1/2 -translate-y-1/2 left-full ml-3 px-2 py-1 bg-zinc-700 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
                 {item.label}
               </div>
-              {isHovered && item.subItems && (
-                  <div className="absolute left-full ml-2 top-0 py-2 w-52 bg-zinc-800 rounded-lg shadow-xl border border-zinc-700 z-50">
+              {openCollapsedMenu === item.page && item.subItems && (
+                  <div className="absolute left-full ml-2 top-0 py-2 w-52 bg-zinc-800 rounded-lg shadow-xl border border-zinc-700 z-50 animate-fade-in-fast">
                       <div className="px-4 py-1 text-sm font-semibold text-white">{item.label}</div>
                       <div className="mt-1">
                           {(item.subItems || []).map(subItem => {
@@ -130,7 +128,10 @@ const CollapsibleNavItem: React.FC<{
                                return (
                                   <button
                                       key={subItem.page}
-                                      onClick={() => setPage(subItem.page)}
+                                      onClick={() => {
+                                        setPage(subItem.page)
+                                        setOpenCollapsedMenu(null);
+                                      }}
                                       className={`flex items-center w-full px-4 py-2 text-left text-sm transition-colors duration-200 ${
                                           isActive ? 'text-violet-300' : 'text-zinc-300 hover:text-white hover:bg-zinc-700/50'
                                       }`}
@@ -155,7 +156,7 @@ const CollapsibleNavItem: React.FC<{
                     isParentActive ? 'text-violet-300' : 'text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200'
                 } ${isSidebarOpen ? 'h-12 px-4' : 'h-full flex-col flex-1 justify-center py-2'}`}
             >
-                <item.icon className="h-6 w-6 flex-shrink-0" />
+                <item.icon className="h-5 w-5 flex-shrink-0" />
                 <span className={`overflow-hidden text-sm font-medium transition-all duration-300 whitespace-nowrap ${
                     isSidebarOpen ? 'flex-1 w-auto opacity-100 ml-4' : 'w-0 opacity-0 h-0'
                 }`}>
@@ -220,7 +221,7 @@ const CollapsibleCategory: React.FC<{
           className={`flex items-center flex-1 h-full min-w-0 ${isSidebarOpen ? '' : 'flex-col flex-1 justify-center py-2'}`}
           aria-expanded={isOpen}
         >
-          <Icon className="h-6 w-6 flex-shrink-0" />
+          <Icon className="h-5 w-5 flex-shrink-0" />
           <span className={`overflow-hidden text-sm font-medium transition-all duration-300 whitespace-nowrap ${isSidebarOpen ? 'flex-1 w-auto opacity-100 ml-4' : 'w-0 opacity-0 h-0'}`}>
             {label}
           </span>
@@ -250,22 +251,6 @@ const CollapsibleCategory: React.FC<{
   );
 };
 
-const allNavItems: Record<string, NavItemData[]> = {
-    platform: platformNavItems,
-    studio: [],
-    coordination: [],
-    marketplace: [],
-};
-
-type ContentSection = 'platform' | 'studio' | 'coordination' | 'marketplace';
-
-const contentSections: { id: ContentSection; label: string; icon: React.FC<{ className?: string }> }[] = [
-    { id: 'platform', label: 'Platform', icon: LaptopIcon },
-    { id: 'studio', label: 'Studio', icon: SparklesIcon },
-    { id: 'coordination', label: 'Coordination', icon: ShapesIcon },
-    { id: 'marketplace', label: 'Marketplace', icon: ShoppingCartIcon },
-];
-
 interface SidebarProps {
   isSidebarOpen: boolean;
   setIsSidebarOpen: (open: boolean) => void;
@@ -276,8 +261,6 @@ interface SidebarProps {
   setActiveChatId: (id: string) => void;
   onNewChat: () => void;
   onDeleteChat: (id: string) => void;
-  activeContentSection: keyof typeof allNavItems;
-  setActiveContentSection: (section: ContentSection) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -290,12 +273,39 @@ const Sidebar: React.FC<SidebarProps> = ({
   setActiveChatId,
   onNewChat,
   onDeleteChat,
-  activeContentSection,
-  setActiveContentSection
 }) => {
-  const navItemsForCurrentSection = allNavItems[activeContentSection];
+  const [openCollapsedMenu, setOpenCollapsedMenu] = useState<Page | null>(null);
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({ "Dashboards": true });
+  const sidebarRef = useRef<HTMLElement>(null);
+
+  const toggleSection = (label: string) => {
+    setOpenSections(prev => ({ ...prev, [label]: !prev[label] }));
+  };
+  
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
+        setOpenCollapsedMenu(null);
+      }
+    };
+    
+    if (!isSidebarOpen && openCollapsedMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isSidebarOpen, openCollapsedMenu]);
+  
+  useEffect(() => {
+    if (isSidebarOpen) {
+      setOpenCollapsedMenu(null);
+    }
+  }, [isSidebarOpen]);
+
   return (
-    <aside className={`fixed top-0 left-0 h-full bg-zinc-900/70 backdrop-blur-xl border-r border-zinc-700/50 z-30 w-64 transition-transform duration-300 ease-in-out lg:transition-all ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 ${isSidebarOpen ? 'lg:w-64' : 'lg:w-20'}`}>
+    <aside ref={sidebarRef} className={`fixed top-0 left-0 h-full bg-zinc-900/70 backdrop-blur-xl border-r border-zinc-700/50 z-30 w-64 transition-transform duration-300 ease-in-out lg:transition-all ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 ${isSidebarOpen ? 'lg:w-64' : 'lg:w-20'}`}>
       <div className="flex flex-col h-full">
         <div className={`flex items-center h-16 px-4 border-b border-zinc-700/50 flex-shrink-0 ${isSidebarOpen ? 'justify-between' : 'justify-center'}`}>
            <div className={`flex items-center gap-2 overflow-hidden transition-all duration-300 ${isSidebarOpen ? 'w-auto opacity-100' : 'w-0 opacity-0'}`}>
@@ -303,10 +313,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <span className="font-bold text-lg text-white whitespace-nowrap">Moebius</span>
            </div>
           <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 rounded-full hover:bg-zinc-800/60 text-zinc-400 hover:text-zinc-200 hidden lg:inline-flex">
-            <ChevronLeftIcon className={`h-6 w-6 transition-transform duration-300 ${isSidebarOpen ? '' : 'rotate-180'}`} />
+            <ChevronLeftIcon className={`h-5 w-5 transition-transform duration-300 ${isSidebarOpen ? '' : 'rotate-180'}`} />
           </button>
         </div>
-        <nav className={`flex-1 p-2 sidebar-nav ${isSidebarOpen ? 'overflow-y-auto space-y-2' : 'flex flex-col'}`}>
+        <nav className={`flex-1 p-2 sidebar-nav ${isSidebarOpen ? 'overflow-y-auto space-y-1' : 'flex flex-col'}`}>
             <CollapsibleCategory
                 icon={FolderIcon}
                 label="Projects"
@@ -364,37 +374,75 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <div className={`border-t border-zinc-700/50 ${isSidebarOpen ? 'mx-4' : 'mx-2'}`}></div>
             </div>
 
-            <div className={`py-2 ${isSidebarOpen ? 'px-2' : ''}`}>
-                <div className={`flex items-center gap-2 ${isSidebarOpen ? 'justify-around' : 'flex-col'}`}>
-                    {contentSections.map(section => (
-                        <div key={section.id} className="relative group">
-                            <button
-                                onClick={() => setActiveContentSection(section.id)}
-                                className={`rounded-lg transition-colors ${isSidebarOpen ? 'p-3' : 'p-1.5'} ${activeContentSection === section.id ? 'bg-violet-500/20 text-violet-300' : 'text-zinc-400 hover:bg-zinc-800/60'}`}
-                                aria-label={section.label}
-                            >
-                                <section.icon className="h-6 w-6" />
-                            </button>
-                            <div className={`absolute top-1/2 -translate-y-1/2 left-full ml-3 px-2 py-1 bg-zinc-700 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 ${isSidebarOpen ? 'hidden' : 'block'}`}>
-                                {section.label}
-                            </div>
-                        </div>
+            {navStructure.map((section, sectionIndex) => {
+              if (section.collapsible && section.label && section.icon) {
+                const Icon = section.icon;
+                const isOpen = openSections[section.label] ?? false;
+                const isAnyChildActive = section.items.some(item => 
+                    item.page === activePage || (item.subItems || []).some(sub => sub.page === activePage)
+                );
+
+                if (!isSidebarOpen) {
+                  return (
+                    <React.Fragment key={`${section.label}-collapsed`}>
+                      {section.items.map(item => (
+                        item.subItems ? (
+                          <CollapsibleNavItem key={item.page} item={item} activePage={activePage} setPage={setPage} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} openCollapsedMenu={openCollapsedMenu} setOpenCollapsedMenu={setOpenCollapsedMenu} />
+                        ) : (
+                          <NavItem key={item.page} {...item} activePage={activePage} setPage={setPage} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+                        )
+                      ))}
+                    </React.Fragment>
+                  );
+                }
+
+                return (
+                  <div key={section.label}>
+                    <button
+                      onClick={() => toggleSection(section.label!)}
+                      className={`flex items-center w-full h-12 px-4 rounded-lg text-left transition-colors duration-200 ${
+                        isAnyChildActive ? 'text-violet-300' : 'text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200'
+                      }`}
+                    >
+                      <Icon className="h-5 w-5 flex-shrink-0" />
+                      <span className="flex-1 w-auto opacity-100 ml-4 text-sm font-medium">
+                        {section.label}
+                      </span>
+                      <ChevronDownIcon className={`h-5 w-5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {isOpen && (
+                      <div className="pl-6 pt-1 space-y-1">
+                        {section.items.map(item => (
+                          item.subItems ? (
+                            <CollapsibleNavItem key={item.page} item={item} activePage={activePage} setPage={setPage} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} openCollapsedMenu={openCollapsedMenu} setOpenCollapsedMenu={setOpenCollapsedMenu} />
+                          ) : (
+                            <NavItem key={item.page} {...item} activePage={activePage} setPage={setPage} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+                          )
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              return (
+                <div key={section.label || `section-${sectionIndex}`}>
+                  {section.label && isSidebarOpen && (
+                    <h3 className="px-4 pt-4 pb-1 text-xs font-semibold text-zinc-500 uppercase tracking-wider">{section.label}</h3>
+                  )}
+                  <div className={isSidebarOpen ? 'space-y-1' : 'flex flex-col'}>
+                    {section.items.map(item => (
+                      item.subItems ? (
+                        <CollapsibleNavItem key={item.page} item={item} activePage={activePage} setPage={setPage} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} openCollapsedMenu={openCollapsedMenu} setOpenCollapsedMenu={setOpenCollapsedMenu} />
+                      ) : (
+                        <NavItem key={item.page} {...item} activePage={activePage} setPage={setPage} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+                      )
                     ))}
+                  </div>
                 </div>
-            </div>
+              );
+            })}
 
-            <div className="pt-2">
-                <div className={`border-t border-zinc-700/50 ${isSidebarOpen ? 'mx-4' : 'mx-2'}`}></div>
-            </div>
-
-            {navItemsForCurrentSection.length > 0 ? navItemsForCurrentSection.map(item => 
-              item.subItems ? (
-                  <CollapsibleNavItem key={item.page} item={item} activePage={activePage} setPage={setPage} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-              ) : (
-                  <NavItem key={item.page} {...item} activePage={activePage} setPage={setPage} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-              )
-            ) : (isSidebarOpen && <div className="px-4 py-2 text-center text-xs text-zinc-500">No pages in this section.</div>)
-          }
         </nav>
         <div className="p-2 border-t border-zinc-700/50">
             <NavItem 
@@ -412,27 +460,37 @@ const Sidebar: React.FC<SidebarProps> = ({
   );
 }
 
-const Header: React.FC<{
+interface HeaderProps {
   onToggleSidebar: () => void;
-  onMouseEnterButton: (panel: 'user' | 'notifications' | 'team' | 'conversations') => void;
-  onMouseLeaveButton: () => void;
+  onHeaderButtonToggle: (panel: 'user' | 'notifications' | 'team' | 'conversations') => void;
   onNavigate: (page: Page) => void;
   onToggleAiChat: () => void;
   onSearchClick: () => void;
   isRightPanelOpen: boolean;
   aiChatInterfaceStyle: 'panel' | 'toast';
-}> = ({ onToggleSidebar, onMouseEnterButton, onMouseLeaveButton, onNavigate, onToggleAiChat, onSearchClick, isRightPanelOpen, aiChatInterfaceStyle }) => {
+  buttonRefs: {
+      user: React.RefObject<HTMLButtonElement>;
+      notifications: React.RefObject<HTMLButtonElement>;
+      team: React.RefObject<HTMLButtonElement>;
+      conversations: React.RefObject<HTMLButtonElement>;
+  };
+}
+
+const Header: React.FC<HeaderProps> = ({ onToggleSidebar, onHeaderButtonToggle, onNavigate, onToggleAiChat, onSearchClick, isRightPanelOpen, aiChatInterfaceStyle, buttonRefs }) => {
   
   const ActionIcons: React.FC = () => (
     <>
-        <button onMouseEnter={() => onMouseEnterButton('team')} onMouseLeave={onMouseLeaveButton} onClick={() => onNavigate('team-management')} className="relative p-2 rounded-full text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 transition-colors" aria-label="Team">
-            <UsersIcon className="h-6 w-6" />
+        <button ref={buttonRefs.team} onClick={() => onHeaderButtonToggle('team')} className="relative p-2 rounded-full text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 transition-colors" aria-label="Team">
+            <UsersIcon className="h-5 w-5" />
         </button>
-        <button onMouseEnter={() => onMouseEnterButton('conversations')} onMouseLeave={onMouseLeaveButton} onClick={() => onNavigate('conversations')} className="relative p-2 rounded-full text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 transition-colors" aria-label="Conversations">
-            <MessageSquareIcon className="h-6 w-6" />
+        <button ref={buttonRefs.conversations} onClick={() => onHeaderButtonToggle('conversations')} className="relative p-2 rounded-full text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 transition-colors" aria-label="Conversations">
+            <MessageSquareIcon className="h-5 w-5" />
         </button>
-        <button onMouseEnter={() => onMouseEnterButton('notifications')} onMouseLeave={onMouseLeaveButton} onClick={() => onNavigate('notifications')} className="relative p-2 rounded-full text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 transition-colors" aria-label="Notifications">
-            <BellIcon className="h-6 w-6" />
+        <button ref={buttonRefs.notifications} onClick={() => onHeaderButtonToggle('notifications')} className="relative p-2 rounded-full text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 transition-colors" aria-label="Notifications">
+            <BellIcon className="h-5 w-5" />
+        </button>
+        <button ref={buttonRefs.user} onClick={() => onHeaderButtonToggle('user')} className="relative p-2 rounded-full text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 transition-colors" aria-label="User menu">
+          <UserIcon className="h-5 w-5" />
         </button>
     </>
   );
@@ -440,7 +498,7 @@ const Header: React.FC<{
   return (
     <header className="relative flex items-center justify-between h-16 px-4 md:px-6 bg-zinc-900/50 backdrop-blur-lg border-b border-zinc-700/50 sticky top-0 z-20">
       <button onClick={onToggleSidebar} className="p-2 rounded-full hover:bg-zinc-800/60 text-zinc-400 hover:text-zinc-200 lg:hidden" aria-label="Toggle sidebar">
-        <MenuIcon className="h-6 w-6" />
+        <MenuIcon className="h-5 w-5" />
       </button>
 
       {/* Main search bar */}
@@ -457,9 +515,12 @@ const Header: React.FC<{
       {/* Centered icons when panel is open */}
       <div className={`absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 flex items-center gap-1 sm:gap-2 transition-opacity duration-300 ${isRightPanelOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
           <button onClick={onSearchClick} className="p-2 rounded-full text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 transition-colors" aria-label="Search">
-              <SearchIcon className="h-6 w-6" />
+              <SearchIcon className="h-5 w-5" />
           </button>
-          <ActionIcons />
+          <button onClick={() => onHeaderButtonToggle('team')} className="relative p-2 rounded-full text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 transition-colors" aria-label="Team"><UsersIcon className="h-5 w-5" /></button>
+          <button onClick={() => onHeaderButtonToggle('conversations')} className="relative p-2 rounded-full text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 transition-colors" aria-label="Conversations"><MessageSquareIcon className="h-5 w-5" /></button>
+          <button onClick={() => onHeaderButtonToggle('notifications')} className="relative p-2 rounded-full text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 transition-colors" aria-label="Notifications"><BellIcon className="h-5 w-5" /></button>
+          <button onClick={() => onHeaderButtonToggle('user')} className="relative p-2 rounded-full text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 transition-colors" aria-label="User menu"><UserIcon className="h-5 w-5" /></button>
       </div>
       
       {/* Right-aligned icons */}
@@ -469,13 +530,9 @@ const Header: React.FC<{
             <ActionIcons />
         </div>
         
-        {/* Always visible right-side icons */}
-        <button onMouseEnter={() => onMouseEnterButton('user')} onMouseLeave={onMouseLeaveButton} onClick={() => onNavigate('profile')} className="p-1 rounded-full hover:bg-zinc-800/60" aria-label="User menu">
-            <UserIcon className="h-7 w-7 sm:h-8 sm:w-8 text-zinc-400 bg-zinc-700 rounded-full p-1" />
-        </button>
-        {aiChatInterfaceStyle === 'panel' && (
+        {aiChatInterfaceStyle === 'panel' && !isRightPanelOpen && (
           <button onClick={onToggleAiChat} className="p-2 -ml-2 rounded-full hover:bg-zinc-800/60 text-zinc-400 hover:text-zinc-200">
-              <ChevronLeftIcon className={`h-6 w-6 transition-transform duration-300 ${isRightPanelOpen ? '' : 'rotate-180'}`} />
+              <ChevronLeftIcon className="h-5 w-5 transition-transform duration-300 rotate-180" />
           </button>
         )}
       </div>
@@ -493,8 +550,6 @@ interface LayoutProps {
   onNewChat: () => void;
   onDeleteChat: (id: string) => void;
   onToggleAiChat: () => void;
-  activeContentSection: ContentSection;
-  setActiveContentSection: (section: ContentSection) => void;
   onSearchClick: () => void;
   activeTeamId: string;
   setActiveTeamId: (id: string) => void;
@@ -521,8 +576,6 @@ export default function Layout({
   onNewChat,
   onDeleteChat,
   onToggleAiChat,
-  activeContentSection,
-  setActiveContentSection,
   onSearchClick,
   activeTeamId,
   setActiveTeamId,
@@ -539,11 +592,18 @@ export default function Layout({
   isResizing,
 }: LayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isUserPanelOpen, setIsUserPanelOpen] = useState(false);
-  const [isNotificationsPanelOpen, setIsNotificationsPanelOpen] = useState(false);
-  const [isTeamPanelOpen, setIsTeamPanelOpen] = useState(false);
-  const [isConversationsPanelOpen, setIsConversationsPanelOpen] = useState(false);
-  const [panelCloseTimer, setPanelCloseTimer] = useState<number | null>(null);
+  const [activeHeaderPanel, setActiveHeaderPanel] = useState<'user' | 'notifications' | 'team' | 'conversations' | null>(null);
+  const [panelPosition, setPanelPosition] = useState<{ top: number; left: number } | null>(null);
+  
+  const userButtonRef = useRef<HTMLButtonElement>(null);
+  const notificationsButtonRef = useRef<HTMLButtonElement>(null);
+  const teamButtonRef = useRef<HTMLButtonElement>(null);
+  const conversationsButtonRef = useRef<HTMLButtonElement>(null);
+  
+  const userPanelRef = useRef<HTMLDivElement>(null);
+  const notificationsPanelRef = useRef<HTMLDivElement>(null);
+  const teamPanelRef = useRef<HTMLDivElement>(null);
+  const conversationsPanelRef = useRef<HTMLDivElement>(null);
 
   const prevIsRightPanelOpen = usePrevious(isRightPanelOpen);
 
@@ -555,39 +615,62 @@ export default function Layout({
     }
   }, [isRightPanelOpen, prevIsRightPanelOpen, aiChatInterfaceStyle]);
 
+  const handleToggleHeaderPanel = (panel: 'user' | 'notifications' | 'team' | 'conversations') => {
+    setActiveHeaderPanel(prev => {
+        const next = prev === panel ? null : panel;
+        
+        if (next) {
+            let buttonRef: React.RefObject<HTMLButtonElement> | null = null;
+            let panelWidth = 0;
+            switch (next) {
+                case 'user': buttonRef = userButtonRef; panelWidth = 416; break;
+                case 'notifications': buttonRef = notificationsButtonRef; panelWidth = 480; break;
+                case 'team': buttonRef = teamButtonRef; panelWidth = 416; break;
+                case 'conversations': buttonRef = conversationsButtonRef; panelWidth = 352; break;
+            }
 
-  const handleOpenPanel = (panel: 'user' | 'notifications' | 'team' | 'conversations' | null) => {
-    if (panelCloseTimer) clearTimeout(panelCloseTimer);
-    setIsUserPanelOpen(panel === 'user');
-    setIsNotificationsPanelOpen(panel === 'notifications');
-    setIsTeamPanelOpen(panel === 'team');
-    setIsConversationsPanelOpen(panel === 'conversations');
+            if (buttonRef?.current) {
+                const rect = buttonRef.current.getBoundingClientRect();
+                const top = rect.bottom + 12;
+                let left = rect.left + rect.width / 2 - panelWidth / 2;
+                if (left < 8) left = 8;
+                if (left + panelWidth > window.innerWidth - 8) {
+                    left = window.innerWidth - panelWidth - 8;
+                }
+                setPanelPosition({ top, left });
+            } else {
+                setPanelPosition(null);
+            }
+        } else {
+            setPanelPosition(null);
+        }
+        
+        return next;
+    });
   };
 
-  const handleClosePanelsWithDelay = () => {
-    const timer = window.setTimeout(() => {
-        setIsUserPanelOpen(false);
-        setIsNotificationsPanelOpen(false);
-        setIsTeamPanelOpen(false);
-        setIsConversationsPanelOpen(false);
-    }, 200);
-    setPanelCloseTimer(timer);
-  };
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+        if (!activeHeaderPanel) return;
 
-  const handleEnterPanel = () => {
-    if (panelCloseTimer) clearTimeout(panelCloseTimer);
-  };
+        const buttonRefs = { user: userButtonRef, notifications: notificationsButtonRef, team: teamButtonRef, conversations: conversationsButtonRef };
+        const panelRefs = { user: userPanelRef, notifications: notificationsPanelRef, team: teamPanelRef, conversations: conversationsPanelRef };
+        
+        const activeButtonRef = buttonRefs[activeHeaderPanel];
+        const activePanelRef = panelRefs[activeHeaderPanel];
+        
+        if (activeButtonRef.current && !activeButtonRef.current.contains(event.target as Node) && activePanelRef.current && !activePanelRef.current.contains(event.target as Node)) {
+            setActiveHeaderPanel(null);
+        }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [activeHeaderPanel]);
 
-  const handleLeavePanel = () => {
-    setIsUserPanelOpen(false);
-    setIsNotificationsPanelOpen(false);
-    setIsTeamPanelOpen(false);
-    setIsConversationsPanelOpen(false);
-  };
 
   const handleNavigate = (page: Page) => {
       setPage(page);
-      handleLeavePanel(); // Close any open panel immediately on navigation
+      setActiveHeaderPanel(null);
   };
   
   const handleGoToConversations = () => {
@@ -596,7 +679,7 @@ export default function Layout({
 
   const handleOpenToastAndClosePanel = (channelId: string) => {
     onOpenConversationToast(channelId);
-    handleLeavePanel();
+    setActiveHeaderPanel(null);
   };
 
   const handleViewProfile = (memberId: number) => {
@@ -623,29 +706,32 @@ export default function Layout({
         setActiveChatId={setActiveChatId}
         onNewChat={onNewChat}
         onDeleteChat={onDeleteChat}
-        activeContentSection={activeContentSection}
-        setActiveContentSection={setActiveContentSection}
       />
       <div 
-        className={`main-content-wrapper flex-1 flex flex-col ${isSidebarOpen ? 'lg:ml-64' : 'lg:ml-20'} ${isRightPanelOpen && aiChatInterfaceStyle === 'panel' ? 'panel-open' : ''} ${isResizing ? '' : 'transition-all duration-300 ease-in-out'}`}
+        className={`main-content-wrapper flex-1 flex flex-col min-w-0 overflow-x-hidden ${isSidebarOpen ? 'lg:ml-64' : 'lg:ml-20'} ${isRightPanelOpen && aiChatInterfaceStyle === 'panel' ? 'panel-open' : ''} ${isResizing ? '' : 'transition-all duration-300 ease-in-out'}`}
         style={{ '--right-panel-width': `${rightPanelWidth}px` } as React.CSSProperties}
       >
         <div className="relative">
             <Header
                 onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-                onMouseEnterButton={handleOpenPanel}
-                onMouseLeaveButton={handleClosePanelsWithDelay}
+                onHeaderButtonToggle={handleToggleHeaderPanel}
                 onNavigate={handleNavigate}
                 onToggleAiChat={onToggleAiChat}
                 onSearchClick={onSearchClick}
                 isRightPanelOpen={isRightPanelOpen}
                 aiChatInterfaceStyle={aiChatInterfaceStyle}
+                buttonRefs={{
+                    user: userButtonRef,
+                    notifications: notificationsButtonRef,
+                    team: teamButtonRef,
+                    conversations: conversationsButtonRef,
+                }}
             />
-            {isUserPanelOpen && <UserPanel onMouseEnter={handleEnterPanel} onMouseLeave={handleLeavePanel} onGoToFullscreen={() => { setViewedProfileId(null); handleNavigate('profile'); }} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} setIsKpiSentimentColoringEnabled={setIsKpiSentimentColoringEnabled} aiChatInterfaceStyle={aiChatInterfaceStyle} setAiChatInterfaceStyle={setAiChatInterfaceStyle} />}
-            {isNotificationsPanelOpen && <NotificationsPanel onMouseEnter={handleEnterPanel} onMouseLeave={handleLeavePanel} onGoToFullscreen={() => { handleNavigate('notifications'); }} />}
-            {isTeamPanelOpen && <TeamPanel 
-                onMouseEnter={handleEnterPanel}
-                onMouseLeave={handleLeavePanel}
+            {activeHeaderPanel === 'user' && <UserPanel ref={userPanelRef} position={panelPosition} onGoToFullscreen={() => { setViewedProfileId(null); handleNavigate('profile'); }} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} setIsKpiSentimentColoringEnabled={setIsKpiSentimentColoringEnabled} aiChatInterfaceStyle={aiChatInterfaceStyle} setAiChatInterfaceStyle={setAiChatInterfaceStyle} />}
+            {activeHeaderPanel === 'notifications' && <NotificationsPanel ref={notificationsPanelRef} position={panelPosition} onGoToFullscreen={() => { handleNavigate('notifications'); }} />}
+            {activeHeaderPanel === 'team' && <TeamPanel 
+                ref={teamPanelRef}
+                position={panelPosition}
                 activeTeamId={activeTeamId}
                 setActiveTeamId={setActiveTeamId}
                 onGoToFullscreen={() => { handleNavigate('team-management'); }}
@@ -653,7 +739,7 @@ export default function Layout({
                 onViewProfile={handleViewProfile}
                 onStartDm={onStartDm}
              />}
-            {isConversationsPanelOpen && <ConversationsPanel onMouseEnter={handleEnterPanel} onMouseLeave={handleLeavePanel} onGoToFullscreen={handleGoToConversations} onOpenConversationToast={handleOpenToastAndClosePanel} />}
+            {activeHeaderPanel === 'conversations' && <ConversationsPanel ref={conversationsPanelRef} position={panelPosition} onGoToFullscreen={handleGoToConversations} onOpenConversationToast={handleOpenToastAndClosePanel} />}
         </div>
         
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
