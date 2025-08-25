@@ -7,14 +7,14 @@ import { WidgetHeader } from './ProductStockWidget';
 
 const COLORS = [PALETTE.super.base, PALETTE.current.base, PALETTE.super.light, PALETTE.current.light, '#71717a'];
 
-export const PieChartWidget: React.FC<GenericWidgetProps> = ({ instance, onConfigure, data = [] }) => {
+export const PieChartWidget: React.FC<GenericWidgetProps> = ({ instance, onConfigure, data = [], onCite }) => {
     const { title, dataSourceKey } = instance.config;
 
     if (!dataSourceKey) {
         return (
              <Card className="h-full">
                 <CardHeader>
-                    <WidgetHeader title={title} onConfigure={onConfigure} />
+                    <WidgetHeader title={title} onConfigure={onConfigure} onCite={onCite} />
                 </CardHeader>
                 <CardContent className="flex items-center justify-center h-48 text-zinc-500">
                     Click the settings icon to configure this widget.
@@ -26,7 +26,7 @@ export const PieChartWidget: React.FC<GenericWidgetProps> = ({ instance, onConfi
     return (
         <Card className="h-full flex flex-col">
             <CardHeader>
-                <WidgetHeader title={title} onConfigure={onConfigure} />
+                <WidgetHeader title={title} onConfigure={onConfigure} onCite={onCite} />
             </CardHeader>
             <CardContent className="flex-1">
                 <ResponsiveContainer width="100%" height="100%">

@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { UsersIcon, SmileIcon, PieChartIcon } from './components/Icons';
@@ -38,9 +37,10 @@ interface InternalDashboardProps {
     page: Page;
     setPage: (page: Page) => void;
     isKpiSentimentColoringEnabled?: boolean;
+    onCiteWidget: (instance: WidgetInstance, data: any) => void;
 }
 
-export default function InternalDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled }: InternalDashboardProps) {
+export default function InternalDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled, onCiteWidget }: InternalDashboardProps) {
   const [sections, setSections] = useState<DashboardSection[]>([
       { id: 'kpis', title: 'Key Metrics' },
       { id: 'main', title: 'Dashboard Widgets' },
@@ -94,6 +94,7 @@ export default function InternalDashboard({ globalTimeConfig, setGlobalTimeConfi
         page={page}
         setPage={setPage}
         isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
+        onCiteWidget={onCiteWidget}
     />
   );
 }

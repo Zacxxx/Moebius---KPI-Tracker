@@ -5,14 +5,19 @@ import { SendIcon, PaperclipIcon } from './Icons';
 import { slashCommands, SlashCommand } from './chat/slashCommands';
 import { SlashCommandSuggestions } from './chat/SlashCommandSuggestions';
 import { AttachedContext } from './chat/AttachedContext';
+import type { WidgetContext } from '../types';
 
 interface ChatInputProps {
     onSend: (message: string) => void;
     isLoading: boolean;
+    isMessageQueued: boolean;
     getAppContextData?: (command: string) => string;
+    widgetContexts: WidgetContext[];
+    onRemoveWidgetContext: (id: string) => void;
+    onClearWidgetContexts: () => void;
 }
 
-export const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, getAppContextData }) => {
+export const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, isMessageQueued, getAppContextData, widgetContexts, onRemoveWidgetContext, onClearWidgetContexts }) => {
     const [inputValue, setInputValue] = useState('');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     
@@ -87,16 +92,22 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, getAppC
     };
 
     const handleSend = () => {
-        if ((inputValue.trim() || attachedContexts.length > 0) && !isLoading) {
+        const allContexts = [
+            ...attachedContexts.map(c => ({ title: c.command.title, data: c.data })),
+            ...widgetContexts.map(c => ({ title: c.title, data: c.data }))
+        ];
+
+        if (inputValue.trim() || allContexts.length > 0) {
             let messageToSend = inputValue.trim();
-            if (attachedContexts.length > 0) {
-                const contextHeader = `Using context from: ${attachedContexts.map(c => `"${c.command.title}"`).join(', ')}.`;
-                const allContextData = attachedContexts.map(c => `--- Context: ${c.command.title} ---\n${c.data}`).join('\n\n');
+            if (allContexts.length > 0) {
+                const contextHeader = `Using context from: ${allContexts.map(c => `"${c.title}"`).join(', ')}.`;
+                const allContextData = allContexts.map(c => `--- Context: ${c.title} ---\n${c.data}`).join('\n\n');
                  messageToSend = `${contextHeader}\n\n${allContextData}\n\n---\n\n${inputValue.trim()}`;
             }
             onSend(messageToSend);
             setInputValue('');
-            setAttachedContexts([]);
+            setAttachedContexts([]); // clear local slash command contexts
+            onClearWidgetContexts(); // clear parent widget contexts
             setShowSuggestions(false);
             setCommandPath([]);
             setCommandQuery('');
@@ -118,7 +129,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, getAppC
                 e.preventDefault();
                 setShowSuggestions(false);
             }
-        } else if (e.key === 'Enter' && !e.shiftKey) {
+        } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
             e.preventDefault();
             handleSend();
         } else if (e.key === 'Backspace' && inputValue === '/' && commandPath.length > 0) {
@@ -139,13 +150,22 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, getAppC
                 />
             )}
             <div className="bg-zinc-800/50 border border-zinc-700 rounded-xl p-2 flex flex-col gap-2">
-                {attachedContexts.length > 0 && (
+                {(attachedContexts.length > 0 || widgetContexts.length > 0) && (
                     <div className="px-1 pt-1 flex flex-wrap gap-2">
                         {attachedContexts.map(ctx => (
                             <AttachedContext
                                 key={ctx.command.id}
-                                command={ctx.command}
-                                onRemove={handleRemoveContext}
+                                title={ctx.command.title}
+                                icon={ctx.command.icon}
+                                onRemove={() => handleRemoveContext(ctx.command.id)}
+                            />
+                        ))}
+                        {widgetContexts.map(ctx => (
+                            <AttachedContext
+                                key={ctx.id}
+                                title={ctx.title}
+                                icon={ctx.icon}
+                                onRemove={() => onRemoveWidgetContext(ctx.id)}
                             />
                         ))}
                     </div>
@@ -157,18 +177,18 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, getAppC
                     <textarea
                         ref={textareaRef}
                         rows={1}
-                        placeholder={isLoading ? "Generating response..." : "Type your message or / for commands..."}
+                        placeholder={isMessageQueued ? "Message queued..." : isLoading ? "Generating response..." : "Type your message... (Ctrl+Enter to send)"}
                         className="w-full resize-none bg-transparent text-sm text-zinc-100 placeholder:text-zinc-500 py-2 px-1 focus:outline-none max-h-[130px]"
                         value={inputValue}
                         onChange={handleInputChange}
                         onKeyDown={handleKeyDown}
-                        disabled={isLoading}
+                        disabled={isMessageQueued}
                     />
                     <Button 
                         size="icon" 
                         className="h-9 w-9 flex-shrink-0 bg-zinc-700 hover:bg-zinc-600 disabled:bg-zinc-800"
                         onClick={handleSend}
-                        disabled={(!inputValue.trim() && attachedContexts.length === 0) || isLoading}
+                        disabled={(!inputValue.trim() && attachedContexts.length === 0 && widgetContexts.length === 0) || isMessageQueued}
                         aria-label="Send message"
                     >
                         <SendIcon className="h-5 w-5" />

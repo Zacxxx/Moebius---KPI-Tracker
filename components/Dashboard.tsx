@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { EditIcon } from './Icons';
 import type { SelectableKpi, WidgetInstance, DashboardSection, ShowcaseKpi, TimeConfig, Page } from '../types';
@@ -29,6 +28,7 @@ interface DashboardProps {
     page: Page;
     setPage: (page: Page) => void;
     isKpiSentimentColoringEnabled?: boolean;
+    onCiteWidget?: (instance: WidgetInstance, data: any) => void;
 }
 
 const versions = [
@@ -52,6 +52,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     page,
     setPage,
     isKpiSentimentColoringEnabled,
+    onCiteWidget,
 }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [configuringWidget, setConfiguringWidget] = useState<WidgetInstance | null>(null);
@@ -125,7 +126,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             activePage={page}
                             onSelect={setPage}
                         />
-                        <p className="text-zinc-400 mt-1">{description}</p>
+                        {description && <p className="text-zinc-400 mt-1">{description}</p>}
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                         <TimeRangeControl timeConfig={globalTimeConfig} setTimeConfig={setGlobalTimeConfig} />
@@ -173,6 +174,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                         iconColorMap: iconColorMap,
                                         globalTimeConfig: globalTimeConfig,
                                         onOpenChart: setViewingChartKpi,
+                                        onCite: onCiteWidget ? () => onCiteWidget(widgetInstance, data) : undefined,
                                         isKpiSentimentColoringEnabled: isKpiSentimentColoringEnabled,
                                     };
 

@@ -308,13 +308,22 @@ export interface GenericWidgetProps {
   instance: WidgetInstance;
   onConfigure: () => void;
   onConfigChange: (newConfig: Partial<WidgetConfig>) => void;
+  onCite?: () => void;
   // data is resolved in Dashboard.tsx and passed directly
   data?: any; 
   globalTimeConfig?: TimeConfig;
   isKpiSentimentColoringEnabled?: boolean;
 }
+
 export interface BaseWidgetConfigFormProps {
     config: WidgetInstance['config'];
     onConfigChange: (newConfig: Partial<WidgetInstance['config']>) => void;
     widgetType: GenericWidgetType;
+}
+
+export interface WidgetContext {
+    id: string; // widget instance id
+    title: string;
+    icon: React.FC<{ className?: string }>;
+    data: string;
 }

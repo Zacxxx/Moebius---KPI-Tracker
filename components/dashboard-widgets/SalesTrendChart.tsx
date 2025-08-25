@@ -41,7 +41,7 @@ interface TrendGraphicWidgetProps extends GenericWidgetProps {
   onConfigChange: (newConfig: Partial<WidgetConfig>) => void;
 }
 
-export const TrendGraphicWidget: React.FC<TrendGraphicWidgetProps> = ({ instance, onConfigure, data = [], onConfigChange, globalTimeConfig }) => {
+export const TrendGraphicWidget: React.FC<TrendGraphicWidgetProps> = ({ instance, onConfigure, data = [], onConfigChange, globalTimeConfig, onCite }) => {
     const { title, dataSourceKey, timeConfig: localTimeConfig, isTimeLocked } = instance.config;
 
     const activeTimeConfig = isTimeLocked 
@@ -160,7 +160,7 @@ export const TrendGraphicWidget: React.FC<TrendGraphicWidgetProps> = ({ instance
         return (
              <Card>
                 <CardHeader>
-                    <WidgetHeader title={title} onConfigure={onConfigure} />
+                    <WidgetHeader title={title} onConfigure={onConfigure} onCite={onCite} />
                 </CardHeader>
                 <CardContent className="flex items-center justify-center h-48 text-zinc-500">
                     Click the settings icon to configure this widget.
@@ -174,7 +174,7 @@ export const TrendGraphicWidget: React.FC<TrendGraphicWidgetProps> = ({ instance
             <CardHeader>
                 <div className="flex items-start justify-between">
                     <div className="flex flex-col">
-                        <WidgetHeader title={title} onConfigure={onConfigure} />
+                        <WidgetHeader title={title} onConfigure={onConfigure} onCite={onCite} />
                          {showLocalTimeInfo && (
                             <span className="text-xs text-zinc-400 -mt-2 ml-1">{dateRange}</span>
                         )}

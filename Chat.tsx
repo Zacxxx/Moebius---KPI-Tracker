@@ -1,8 +1,10 @@
+
+
 import React, { useRef, useEffect, useState } from 'react';
-import type { ChatSession, Message, Bookmark } from './types';
+import type { ChatSession, Message, Bookmark, WidgetContext } from './types';
 import { ChatMessage, TypingIndicator } from './components/MessageBubble';
 import { ChatInput } from './components/ChatInput';
-import { MessageSquareIcon, SparklesIcon, UserIcon, PlusCircleIcon, PaperclipIcon, BookmarkIcon, ClipboardIcon, FolderIcon, SettingsIcon, UsersIcon } from './components/Icons';
+import { MessageSquareIcon, SparklesIcon, PlusCircleIcon, PaperclipIcon, BookmarkIcon, ClipboardIcon, FolderIcon, SettingsIcon, UsersIcon, WifiIcon, ClockIcon, LightningBoltIcon } from './components/Icons';
 import { Button } from './components/ui/Button';
 import { ActionButton } from './components/chat/ActionButton';
 import { BookmarksPanel } from './components/chat/BookmarksPanel';
@@ -28,15 +30,19 @@ const useClickOutside = (ref: React.RefObject<HTMLElement>, handler: (event: Mou
 interface ChatProps {
     session?: ChatSession & { messages: (Message & { isBookmarked?: boolean })[] };
     isLoading: boolean;
+    isMessageQueued: boolean;
     onSend: (message: string) => void;
     onRegenerate: (messageId: number) => void;
     bookmarks: Bookmark[];
     onToggleBookmark: (message: Message) => void;
     setActiveChatId: (id: string) => void;
     getAppContextData?: (command: string) => string;
+    attachedWidgetContexts: WidgetContext[];
+    onRemoveWidgetContext: (id: string) => void;
+    onClearWidgetContexts: () => void;
 }
 
-export default function Chat({ session, isLoading, onSend, onRegenerate, bookmarks, onToggleBookmark, setActiveChatId, getAppContextData }: ChatProps) {
+export default function Chat({ session, isLoading, isMessageQueued, onSend, onRegenerate, bookmarks, onToggleBookmark, setActiveChatId, getAppContextData, attachedWidgetContexts, onRemoveWidgetContext, onClearWidgetContexts }: ChatProps) {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [activePanel, setActivePanel] = useState<string | null>(null);
     const panelContainerRef = useRef<HTMLDivElement>(null);
@@ -61,6 +67,13 @@ export default function Chat({ session, isLoading, onSend, onRegenerate, bookmar
 
     return (
         <div className="h-full flex flex-col bg-zinc-900/50">
+            <div className="px-3 py-1.5 border-b border-zinc-700/50 text-xs text-zinc-400 flex items-center justify-between gap-2 flex-wrap flex-shrink-0">
+                <div className="flex items-center gap-1 text-emerald-400 font-medium"><WifiIcon className="h-4 w-4" /> Connected</div>
+                <div className="flex items-center gap-1"><UsersIcon className="h-4 w-4" /> 1 online</div>
+                <div className="flex items-center gap-1"><MessageSquareIcon className="h-4 w-4" /> {session.messages.length} messages</div>
+                <div className="flex items-center gap-1"><LightningBoltIcon className="h-4 w-4 text-emerald-400" /> AI Ready <span className="text-zinc-500">(1.2s avg)</span></div>
+                <ClockIcon className="h-4 w-4" />
+            </div>
             <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 space-y-6">
                 {session.messages.map(msg => (
                     <ChatMessage key={msg.id} message={msg} onRegenerate={onRegenerate} onToggleBookmark={onToggleBookmark} />
@@ -116,7 +129,15 @@ export default function Chat({ session, isLoading, onSend, onRegenerate, bookmar
                         <ActionButton label="Users" onClick={() => setActivePanel(p => p === 'users' ? null : 'users')}><UsersIcon className="h-4 w-4"/></ActionButton>
                     </div>
                 </div>
-                <ChatInput onSend={onSend} isLoading={isLoading} getAppContextData={getAppContextData} />
+                <ChatInput 
+                    onSend={onSend} 
+                    isLoading={isLoading} 
+                    isMessageQueued={isMessageQueued}
+                    getAppContextData={getAppContextData}
+                    widgetContexts={attachedWidgetContexts}
+                    onRemoveWidgetContext={onRemoveWidgetContext}
+                    onClearWidgetContexts={onClearWidgetContexts}
+                />
             </div>
         </div>
     );

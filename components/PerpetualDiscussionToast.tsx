@@ -1,10 +1,12 @@
+
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardHeader, CardContent, CardTitle } from './ui/Card';
 import { Button } from './ui/Button';
 import { XIcon, Maximize2Icon, MinusIcon, SparklesIcon, ChevronUpIcon, PlusCircleIcon, PaperclipIcon, BookmarkIcon, ClipboardIcon, FolderIcon, SettingsIcon, UsersIcon } from './Icons';
 import { ChatMessage, TypingIndicator } from './MessageBubble';
 import { ChatInput } from './ChatInput';
-import type { Message, ChatSession, Bookmark } from '../types';
+import type { Message, ChatSession, Bookmark, WidgetContext } from '../types';
 import { BookmarksPanel } from './chat/BookmarksPanel';
 import { ActionButton } from './chat/ActionButton';
 import { ActionPanel } from './chat/ActionPanel';
@@ -12,6 +14,7 @@ import { ActionPanel } from './chat/ActionPanel';
 interface PerpetualDiscussionToastProps {
     session: ChatSession & { messages: (Message & { isBookmarked?: boolean })[] };
     isLoading: boolean;
+    isMessageQueued: boolean;
     onSend: (message: string) => void;
     onRegenerate: (messageId: number) => void;
     onClose: () => void;
@@ -22,6 +25,9 @@ interface PerpetualDiscussionToastProps {
     onToggleBookmark: (message: Message) => void;
     setActiveChatId: (id: string) => void;
     getAppContextData?: (command: string) => string;
+    attachedWidgetContexts: WidgetContext[];
+    onRemoveWidgetContext: (id: string) => void;
+    onClearWidgetContexts: () => void;
 }
 
 const useClickOutside = (ref: React.RefObject<HTMLElement>, handler: (event: MouseEvent | TouchEvent) => void) => {
@@ -44,6 +50,7 @@ const useClickOutside = (ref: React.RefObject<HTMLElement>, handler: (event: Mou
 export const PerpetualDiscussionToast: React.FC<PerpetualDiscussionToastProps> = ({
     session,
     isLoading,
+    isMessageQueued,
     onSend,
     onRegenerate,
     onClose,
@@ -54,6 +61,9 @@ export const PerpetualDiscussionToast: React.FC<PerpetualDiscussionToastProps> =
     onToggleBookmark,
     setActiveChatId,
     getAppContextData,
+    attachedWidgetContexts,
+    onRemoveWidgetContext,
+    onClearWidgetContexts,
 }) => {
     const [isClosing, setIsClosing] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -155,7 +165,15 @@ export const PerpetualDiscussionToast: React.FC<PerpetualDiscussionToastProps> =
                         </div>
                     </div>
 
-                    <ChatInput onSend={onSend} isLoading={isLoading} getAppContextData={getAppContextData} />
+                    <ChatInput 
+                        onSend={onSend} 
+                        isLoading={isLoading} 
+                        isMessageQueued={isMessageQueued}
+                        getAppContextData={getAppContextData}
+                        widgetContexts={attachedWidgetContexts}
+                        onRemoveWidgetContext={onRemoveWidgetContext}
+                        onClearWidgetContexts={onClearWidgetContexts}
+                    />
                 </div>
             </Card>
         </div>

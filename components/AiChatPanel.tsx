@@ -1,9 +1,10 @@
 
+
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import type { Message, ChatSession, Bookmark } from '../types';
+import type { Message, ChatSession, Bookmark, WidgetContext } from '../types';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/Card';
 import { Button } from './ui/Button';
-import { XIcon, Maximize2Icon, SparklesIcon, MessageSquareIcon, WifiIcon, UsersIcon, ClockIcon, LightningBoltIcon, PlusCircleIcon, PaperclipIcon, BookmarkIcon, ClipboardIcon, FolderIcon, SettingsIcon } from './Icons';
+import { XIcon, Maximize2Icon, SparklesIcon, MessageSquareIcon, WifiIcon, UsersIcon, ClockIcon, LightningBoltIcon, PlusCircleIcon, PaperclipIcon, BookmarkIcon, ClipboardIcon, FolderIcon, SettingsIcon, RefreshCwIcon } from './Icons';
 import { ChatMessage, TypingIndicator } from './MessageBubble';
 import { ChatInput } from './ChatInput';
 import { BookmarksPanel } from './chat/BookmarksPanel';
@@ -13,8 +14,10 @@ import { ActionPanel } from './chat/ActionPanel';
 interface AiChatPanelProps {
     session?: ChatSession & { messages: (Message & { isBookmarked?: boolean })[] };
     isLoading: boolean;
+    isMessageQueued: boolean;
     onSend: (message: string) => void;
     onRegenerate: (messageId: number) => void;
+    onReload: () => void;
     onClose: () => void;
     onMaximize: () => void;
     bookmarks: Bookmark[];
@@ -24,6 +27,9 @@ interface AiChatPanelProps {
     width: number;
     onResize: (newWidth: number) => void;
     setIsResizing: (isResizing: boolean) => void;
+    attachedWidgetContexts: WidgetContext[];
+    onRemoveWidgetContext: (id: string) => void;
+    onClearWidgetContexts: () => void;
 }
 
 const useClickOutside = (ref: React.RefObject<HTMLElement>, handler: (event: MouseEvent | TouchEvent) => void) => {
@@ -46,8 +52,10 @@ const useClickOutside = (ref: React.RefObject<HTMLElement>, handler: (event: Mou
 export const AiChatPanel: React.FC<AiChatPanelProps> = ({
     session,
     isLoading,
+    isMessageQueued,
     onSend,
     onRegenerate,
+    onReload,
     onClose,
     onMaximize,
     bookmarks,
@@ -57,6 +65,9 @@ export const AiChatPanel: React.FC<AiChatPanelProps> = ({
     width,
     onResize,
     setIsResizing,
+    attachedWidgetContexts,
+    onRemoveWidgetContext,
+    onClearWidgetContexts,
 }) => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [activePanel, setActivePanel] = useState<string | null>(null);
@@ -107,11 +118,19 @@ export const AiChatPanel: React.FC<AiChatPanelProps> = ({
             </div>
             <div className="flex flex-col h-full">
                 <div className="flex items-center justify-between h-16 px-4 border-b border-zinc-700/50 flex-shrink-0">
-                    <h2 className="font-bold text-lg text-white flex items-center gap-2">
-                        <SparklesIcon className="h-6 w-6 text-violet-400" />
-                        AI Assistant
-                    </h2>
+                    <div className="flex items-center gap-2 text-lg font-bold text-white min-w-0">
+                        <button onClick={() => alert('Project manager not implemented yet.')} className="hover:text-zinc-300 transition-colors">
+                            ...
+                        </button>
+                        <span className="text-zinc-500">/</span>
+                        <button onClick={() => alert('Conversation manager not implemented yet.')} className="hover:text-zinc-300 transition-colors truncate">
+                            {session?.title || 'New Chat'}
+                        </button>
+                    </div>
                     <div>
+                         <Button variant="ghost" size="icon" onClick={onReload} className="h-8 w-8" aria-label="Reload chat">
+                            <RefreshCwIcon className="h-4 w-4"/>
+                        </Button>
                          <Button variant="ghost" size="icon" onClick={onMaximize} className="h-8 w-8" aria-label="Maximize chat">
                             <Maximize2Icon className="h-4 w-4"/>
                         </Button>
@@ -123,7 +142,7 @@ export const AiChatPanel: React.FC<AiChatPanelProps> = ({
                  <div className="px-3 py-1.5 border-b border-zinc-700/50 text-xs text-zinc-400 flex items-center justify-between gap-2 flex-wrap">
                     <div className="flex items-center gap-1 text-emerald-400 font-medium"><WifiIcon className="h-4 w-4" /> Connected</div>
                     <div className="flex items-center gap-1"><UsersIcon className="h-4 w-4" /> 1 online</div>
-                    <div className="flex items-center gap-1"><MessageSquareIcon className="h-4 w-4" /> 3 messages</div>
+                    <div className="flex items-center gap-1"><MessageSquareIcon className="h-4 w-4" /> {session?.messages?.length || 0} messages</div>
                     <div className="flex items-center gap-1"><LightningBoltIcon className="h-4 w-4 text-emerald-400" /> AI Ready <span className="text-zinc-500">(1.2s avg)</span></div>
                     <ClockIcon className="h-4 w-4" />
                 </div>
@@ -195,7 +214,15 @@ export const AiChatPanel: React.FC<AiChatPanelProps> = ({
                             </div>
                         </div>
                     )}
-                    <ChatInput onSend={onSend} isLoading={isLoading || !session} getAppContextData={getAppContextData} />
+                    <ChatInput 
+                        onSend={onSend} 
+                        isLoading={isLoading || !session} 
+                        isMessageQueued={isMessageQueued}
+                        getAppContextData={getAppContextData} 
+                        widgetContexts={attachedWidgetContexts}
+                        onRemoveWidgetContext={onRemoveWidgetContext}
+                        onClearWidgetContexts={onClearWidgetContexts}
+                    />
                 </div>
             </div>
         </aside>

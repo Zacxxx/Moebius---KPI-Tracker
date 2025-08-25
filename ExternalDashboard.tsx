@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { MegaphoneIcon, TrendingUpIcon, SearchIcon, UsersIcon } from './components/Icons';
 import type { ShowcaseKpi, SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page } from './types';
@@ -45,9 +44,10 @@ interface ExternalDashboardProps {
     page: Page;
     setPage: (page: Page) => void;
     isKpiSentimentColoringEnabled?: boolean;
+    onCiteWidget: (instance: WidgetInstance, data: any) => void;
 }
 
-export default function ExternalDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled }: ExternalDashboardProps) {
+export default function ExternalDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled, onCiteWidget }: ExternalDashboardProps) {
     const [sections, setSections] = useState<DashboardSection[]>([
         { id: 'kpis', title: 'Key Metrics' },
         { id: 'main', title: 'Dashboard Widgets' },
@@ -106,6 +106,7 @@ export default function ExternalDashboard({ globalTimeConfig, setGlobalTimeConfi
         page={page}
         setPage={setPage}
         isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
+        onCiteWidget={onCiteWidget}
     />
   );
 }

@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { ClockIcon, TrendingDownIcon, TrendingUpIcon, PieChartIcon } from './components/Icons';
@@ -53,9 +52,10 @@ interface SimulationDashboardProps {
     page: Page;
     setPage: (page: Page) => void;
     isKpiSentimentColoringEnabled?: boolean;
+    onCiteWidget: (instance: WidgetInstance, data: any) => void;
 }
 
-export default function SimulationDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled }: SimulationDashboardProps) {
+export default function SimulationDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled, onCiteWidget }: SimulationDashboardProps) {
   const [sections, setSections] = useState<DashboardSection[]>([
       { id: 'kpis', title: 'Key Metrics' },
       { id: 'main', title: 'Dashboard Widgets' },
@@ -96,6 +96,7 @@ export default function SimulationDashboard({ globalTimeConfig, setGlobalTimeCon
         page={page}
         setPage={setPage}
         isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
+        onCiteWidget={onCiteWidget}
     />
   );
 }

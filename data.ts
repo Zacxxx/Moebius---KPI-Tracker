@@ -41,6 +41,7 @@ import type {
     ColumnDef,
     DataSourceKey,
     GenericWidgetType,
+    SelectableKpi,
 } from './types';
 import { FileTextIcon, MegaphoneIcon, MessageSquareIcon, SearchIcon, TrendingUpIcon, UsersIcon } from './components/Icons';
 
@@ -418,3 +419,19 @@ export const ALL_DATA_SOURCES: Record<DataSourceKey, { data: any[], schema?: Col
     'activity_feed_home': { data: initialActivityFeed, section: 'Home', name: 'Home Activity Feed', compatibleWidgets: ['ACTIVITY_FEED'] },
     'activity_feed_external': { data: initialExternalActivityFeed, section: 'External', name: 'External Activity Feed', compatibleWidgets: ['ACTIVITY_FEED'] },
 };
+
+export const getAllKpis = (): SelectableKpi[] => [
+    ...initialKpiMetrics.map(k => ({ ...k, source: 'Home' })),
+    ...initialCustomerMetrics.map(k => ({ ...k, source: 'Customer' })),
+    ...initialOperationalMetrics.map(k => ({ ...k, source: 'Operational' })),
+    ...initialProductMetrics.map(k => ({ ...k, source: 'Product Analytics' })),
+    ...initialMarketingMetrics.map(k => ({ ...k, source: 'Marketing' })),
+    ...initialCapTableMetrics.map(k => ({ ...k, source: 'Cap Table' })),
+    ...initialCoordinationMetrics.map(k => ({ ...k, source: 'Coordination' })),
+    ...initialEcommerceMetrics.map(k => ({ ...k, source: 'E-commerce' })),
+    ...initialContentMetrics.map(k => ({...k, source: 'Content'})),
+    ...initialSeoMetrics.map(k => ({...k, source: 'SEO'})),
+    ...initialPartnerMetrics.map(k => ({...k, source: 'Partners'})),
+    ...initialPrMetrics.map(k => ({...k, source: 'PR'})),
+    ...initialBrandingMetrics.map(k => ({...k, source: 'Branding'})),
+];

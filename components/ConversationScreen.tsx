@@ -1,26 +1,35 @@
 
+
 import React, { useEffect, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/Card';
 import { Button } from './ui/Button';
 import { XIcon, SparklesIcon } from './Icons';
 import { ChatMessage, TypingIndicator } from './MessageBubble';
 import { ChatInput } from './ChatInput';
-import type { Message } from '../types';
+import type { Message, WidgetContext } from '../types';
 
 interface ConversationScreenProps {
     messages: Message[];
     isLoading: boolean;
+    isMessageQueued: boolean;
     onSend: (message: string) => void;
     onRegenerate: (messageId: number) => void;
     onClose: () => void;
+    widgetContexts: WidgetContext[];
+    onRemoveWidgetContext: (id: string) => void;
+    onClearWidgetContexts: () => void;
 }
 
 export const ConversationScreen: React.FC<ConversationScreenProps> = ({
     messages,
     isLoading,
+    isMessageQueued,
     onSend,
     onRegenerate,
     onClose,
+    widgetContexts,
+    onRemoveWidgetContext,
+    onClearWidgetContexts,
 }) => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -59,7 +68,14 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
                     {isLoading && <TypingIndicator />}
                     <div ref={messagesEndRef} />
                 </CardContent>
-                <ChatInput onSend={onSend} isLoading={isLoading} />
+                <ChatInput 
+                    onSend={onSend} 
+                    isLoading={isLoading}
+                    isMessageQueued={isMessageQueued}
+                    widgetContexts={widgetContexts}
+                    onRemoveWidgetContext={onRemoveWidgetContext}
+                    onClearWidgetContexts={onClearWidgetContexts}
+                />
             </Card>
         </div>
     );

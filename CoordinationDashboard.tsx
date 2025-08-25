@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { UsersIcon, ClockIcon, TrendingUpIcon, PackageIcon } from './components/Icons';
@@ -18,9 +17,10 @@ interface CoordinationDashboardProps {
     page: Page;
     setPage: (page: Page) => void;
     isKpiSentimentColoringEnabled?: boolean;
+    onCiteWidget: (instance: WidgetInstance, data: any) => void;
 }
 
-export default function CoordinationDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled }: CoordinationDashboardProps) {
+export default function CoordinationDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled, onCiteWidget }: CoordinationDashboardProps) {
   const [sections, setSections] = useState<DashboardSection[]>([
     { id: 'kpis', title: 'Key Metrics' }
   ]);
@@ -57,6 +57,7 @@ export default function CoordinationDashboard({ globalTimeConfig, setGlobalTimeC
         page={page}
         setPage={setPage}
         isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
+        onCiteWidget={onCiteWidget}
     />
   );
 }

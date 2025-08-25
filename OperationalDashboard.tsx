@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { TrendingUpIcon, ClockIcon, TrendingDownIcon } from './components/Icons';
@@ -23,9 +22,10 @@ interface OperationalDashboardProps {
     page: Page;
     setPage: (page: Page) => void;
     isKpiSentimentColoringEnabled?: boolean;
+    onCiteWidget: (instance: WidgetInstance, data: any) => void;
 }
 
-export default function OperationalDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled }: OperationalDashboardProps) {
+export default function OperationalDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled, onCiteWidget }: OperationalDashboardProps) {
   const [sections, setSections] = useState<DashboardSection[]>([
     { id: 'kpis', title: 'Key Metrics' }
   ]);
@@ -63,6 +63,7 @@ export default function OperationalDashboard({ globalTimeConfig, setGlobalTimeCo
         page={page}
         setPage={setPage}
         isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
+        onCiteWidget={onCiteWidget}
     />
   );
 }

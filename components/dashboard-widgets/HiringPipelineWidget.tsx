@@ -17,7 +17,7 @@ const renderCell = (row: any, column: ColumnDef<any>) => {
     return String(value);
 };
 
-export const TableViewWidget: React.FC<GenericWidgetProps> = ({ instance, onConfigure, data = [] }) => {
+export const TableViewWidget: React.FC<GenericWidgetProps> = ({ instance, onConfigure, data = [], onCite }) => {
     const { title, dataSourceKey } = instance.config;
 
     // In a real app, columns would be derived from the data source schema
@@ -27,7 +27,7 @@ export const TableViewWidget: React.FC<GenericWidgetProps> = ({ instance, onConf
         return (
              <Card className="h-full">
                 <CardHeader>
-                    <WidgetHeader title={title} onConfigure={onConfigure} />
+                    <WidgetHeader title={title} onConfigure={onConfigure} onCite={onCite} />
                 </CardHeader>
                 <CardContent className="flex items-center justify-center h-48 text-zinc-500">
                     Click the settings icon to configure this widget.
@@ -39,7 +39,7 @@ export const TableViewWidget: React.FC<GenericWidgetProps> = ({ instance, onConf
     return (
         <Card className="h-full">
             <CardHeader>
-                <WidgetHeader title={title} onConfigure={onConfigure} />
+                <WidgetHeader title={title} onConfigure={onConfigure} onCite={onCite} />
             </CardHeader>
             <CardContent className="!p-0">
                 <div className="overflow-x-auto">

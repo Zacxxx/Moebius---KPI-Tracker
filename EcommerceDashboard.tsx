@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from 'react';
 import type { EcommerceMetric, SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page } from './types';
 import { BarChartIcon, TrendingDownIcon, TrendingUpIcon, WalletIcon } from './components/Icons';
@@ -39,9 +38,10 @@ interface SalesDashboardProps {
     page: Page;
     setPage: (page: Page) => void;
     isKpiSentimentColoringEnabled?: boolean;
+    onCiteWidget: (instance: WidgetInstance, data: any) => void;
 }
 
-export default function SalesDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled }: SalesDashboardProps) {
+export default function SalesDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled, onCiteWidget }: SalesDashboardProps) {
     const [sections, setSections] = useState<DashboardSection[]>([
         { id: 'kpis', title: 'Key Metrics' },
         { id: 'main', title: 'Dashboard Widgets' },
@@ -82,6 +82,7 @@ export default function SalesDashboard({ globalTimeConfig, setGlobalTimeConfig, 
             page={page}
             setPage={setPage}
             isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
+            onCiteWidget={onCiteWidget}
         />
     );
 }

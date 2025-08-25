@@ -9,7 +9,7 @@ import { GenericWidgetProps } from '../../types';
 import { WidgetHeader } from './ProductStockWidget';
 import { initialRevenueStreams, initialExpenses } from '../../data';
 
-export const ProjectionGraphic: React.FC<GenericWidgetProps> = ({ instance, onConfigure }) => {
+export const ProjectionGraphic: React.FC<GenericWidgetProps> = ({ instance, onConfigure, onCite }) => {
     const { title } = instance.config;
 
     // Note: In a real app, this data would come from the configured dataSourceKey
@@ -50,7 +50,7 @@ export const ProjectionGraphic: React.FC<GenericWidgetProps> = ({ instance, onCo
     return (
         <Card className="h-full flex flex-col">
             <CardHeader>
-                 <WidgetHeader title={title} onConfigure={onConfigure} />
+                 <WidgetHeader title={title} onConfigure={onConfigure} onCite={onCite} />
             </CardHeader>
             <CardContent className="flex-1">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full">

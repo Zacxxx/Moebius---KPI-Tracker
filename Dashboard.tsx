@@ -1,5 +1,3 @@
-
-
 import React, { useMemo, useState } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { initialKpiMetrics } from './data';
@@ -31,9 +29,10 @@ interface HomeDashboardProps {
     page: Page;
     setPage: (page: Page) => void;
     isKpiSentimentColoringEnabled?: boolean;
+    onCiteWidget: (instance: WidgetInstance, data: any) => void;
 }
 
-export default function HomeDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled }: HomeDashboardProps) {
+export default function HomeDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled, onCiteWidget }: HomeDashboardProps) {
     const [sections, setSections] = useState<DashboardSection[]>([
         { id: 'kpis', title: 'Key Metrics' },
         { id: 'main', title: 'Dashboard Widgets' },
@@ -63,7 +62,7 @@ export default function HomeDashboard({ globalTimeConfig, setGlobalTimeConfig, p
     return (
         <Dashboard
             title="Home Dashboard"
-            description="A comprehensive overview of your business's key performance indicators."
+            description=""
             allKpisForModal={allKpisForModal}
             iconMap={iconMap}
             widgets={widgets}
@@ -75,6 +74,7 @@ export default function HomeDashboard({ globalTimeConfig, setGlobalTimeConfig, p
             page={page}
             setPage={setPage}
             isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
+            onCiteWidget={onCiteWidget}
         />
     );
 }

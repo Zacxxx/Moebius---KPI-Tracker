@@ -36,6 +36,27 @@ const NavItem: React.FC<{
     setPage(page);
   };
   
+  if (!isSidebarOpen) {
+    return (
+      <div className="h-full relative group">
+        <button
+          onClick={handleClick}
+          className={`flex items-center w-full rounded-lg text-left transition-colors duration-200 ${
+            isActive
+              ? 'bg-violet-500/20 text-violet-300'
+              : 'text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200'
+          } h-full flex-col flex-1 justify-center py-2`}
+          aria-current={isActive ? 'page' : undefined}
+        >
+          <Icon className="h-6 w-6 flex-shrink-0" />
+        </button>
+        <div className="absolute top-1/2 -translate-y-1/2 left-full ml-3 px-2 py-1 bg-zinc-700 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+          {label}
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <button
       onClick={handleClick}
@@ -43,12 +64,12 @@ const NavItem: React.FC<{
         isActive
           ? 'bg-violet-500/20 text-violet-300'
           : 'text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200'
-      } ${isSidebarOpen ? 'h-12 px-4' : 'h-full justify-center'}`}
+      } ${isSidebarOpen ? 'h-12 px-4' : 'h-full flex-col flex-1 justify-center py-2'}`}
       aria-current={isActive ? 'page' : undefined}
     >
       <Icon className="h-6 w-6 flex-shrink-0" />
       <span className={`overflow-hidden text-sm font-medium transition-all duration-300 whitespace-nowrap ${
-        isSidebarOpen ? 'w-auto opacity-100 ml-4' : 'w-0 opacity-0'
+        isSidebarOpen ? 'w-auto opacity-100 ml-4' : 'w-0 opacity-0 h-0'
       }`}>
         {label}
       </span>
@@ -65,6 +86,7 @@ const CollapsibleNavItem: React.FC<{
 }> = ({ item, activePage, setPage, isSidebarOpen, setIsSidebarOpen }) => {
     const isParentActive = item.page === activePage || (item.subItems || []).some(sub => sub.page === activePage);
     const [isOpen, setIsOpen] = useState(isParentActive);
+    const [isHovered, setIsHovered] = useState(false);
     
     useEffect(() => {
         if (isParentActive && isSidebarOpen) {
@@ -81,17 +103,61 @@ const CollapsibleNavItem: React.FC<{
         }
     };
 
+    if (!isSidebarOpen) {
+      return (
+          <div 
+              className="h-full relative group"
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+          >
+              <button
+                  onClick={handleParentClick}
+                  className={`flex items-center w-full rounded-lg text-left transition-colors duration-200 ${
+                      isParentActive ? 'text-violet-300' : 'text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200'
+                  } h-full flex-col flex-1 justify-center py-2`}
+              >
+                  <item.icon className="h-6 w-6 flex-shrink-0" />
+              </button>
+              <div className="absolute top-1/2 -translate-y-1/2 left-full ml-3 px-2 py-1 bg-zinc-700 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                {item.label}
+              </div>
+              {isHovered && item.subItems && (
+                  <div className="absolute left-full ml-2 top-0 py-2 w-52 bg-zinc-800 rounded-lg shadow-xl border border-zinc-700 z-50">
+                      <div className="px-4 py-1 text-sm font-semibold text-white">{item.label}</div>
+                      <div className="mt-1">
+                          {(item.subItems || []).map(subItem => {
+                               const isActive = subItem.page === activePage;
+                               return (
+                                  <button
+                                      key={subItem.page}
+                                      onClick={() => setPage(subItem.page)}
+                                      className={`flex items-center w-full px-4 py-2 text-left text-sm transition-colors duration-200 ${
+                                          isActive ? 'text-violet-300' : 'text-zinc-300 hover:text-white hover:bg-zinc-700/50'
+                                      }`}
+                                      aria-current={isActive ? 'page' : undefined}
+                                  >
+                                      {subItem.label}
+                                  </button>
+                               )
+                          })}
+                      </div>
+                  </div>
+              )}
+          </div>
+      )
+    }
+
     return (
         <div className={!isSidebarOpen ? 'h-full' : ''}>
             <button
                 onClick={handleParentClick}
                 className={`flex items-center w-full rounded-lg text-left transition-colors duration-200 ${
                     isParentActive ? 'text-violet-300' : 'text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200'
-                } ${isSidebarOpen ? 'h-12 px-4' : 'h-full justify-center'}`}
+                } ${isSidebarOpen ? 'h-12 px-4' : 'h-full flex-col flex-1 justify-center py-2'}`}
             >
                 <item.icon className="h-6 w-6 flex-shrink-0" />
                 <span className={`overflow-hidden text-sm font-medium transition-all duration-300 whitespace-nowrap ${
-                    isSidebarOpen ? 'flex-1 w-auto opacity-100 ml-4' : 'w-0 opacity-0'
+                    isSidebarOpen ? 'flex-1 w-auto opacity-100 ml-4' : 'w-0 opacity-0 h-0'
                 }`}>
                     {item.label}
                 </span>
@@ -147,15 +213,15 @@ const CollapsibleCategory: React.FC<{
   };
 
   return (
-    <div className={!isSidebarOpen ? 'h-full' : ''}>
+    <div className={!isSidebarOpen ? 'h-full relative group' : ''}>
       <div className={`flex items-center w-full rounded-lg text-left transition-colors duration-200 text-zinc-400 hover:bg-zinc-800/60 ${isSidebarOpen ? 'h-12 px-4' : 'h-full'}`}>
         <button
           onClick={handleToggleCategory}
-          className={`flex items-center flex-1 h-full min-w-0 ${isSidebarOpen ? '' : 'justify-center'}`}
+          className={`flex items-center flex-1 h-full min-w-0 ${isSidebarOpen ? '' : 'flex-col flex-1 justify-center py-2'}`}
           aria-expanded={isOpen}
         >
           <Icon className="h-6 w-6 flex-shrink-0" />
-          <span className={`overflow-hidden text-sm font-medium transition-all duration-300 whitespace-nowrap ${isSidebarOpen ? 'flex-1 w-auto opacity-100 ml-4' : 'w-0 opacity-0'}`}>
+          <span className={`overflow-hidden text-sm font-medium transition-all duration-300 whitespace-nowrap ${isSidebarOpen ? 'flex-1 w-auto opacity-100 ml-4' : 'w-0 opacity-0 h-0'}`}>
             {label}
           </span>
         </button>
@@ -170,6 +236,11 @@ const CollapsibleCategory: React.FC<{
           </button>
         )}
       </div>
+      {!isSidebarOpen && (
+        <div className="absolute top-1/2 -translate-y-1/2 left-full ml-3 px-2 py-1 bg-zinc-700 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+            {label}
+        </div>
+      )}
       {isOpen && isSidebarOpen && (
         <div className="pl-6 pt-1 space-y-1">
           {children}
@@ -235,7 +306,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <ChevronLeftIcon className={`h-6 w-6 transition-transform duration-300 ${isSidebarOpen ? '' : 'rotate-180'}`} />
           </button>
         </div>
-        <nav className={`flex-1 p-2 sidebar-nav ${isSidebarOpen ? 'overflow-y-auto space-y-2' : 'flex flex-col justify-around'}`}>
+        <nav className={`flex-1 p-2 sidebar-nav ${isSidebarOpen ? 'overflow-y-auto space-y-2' : 'flex flex-col'}`}>
             <CollapsibleCategory
                 icon={FolderIcon}
                 label="Projects"
@@ -351,22 +422,18 @@ const Header: React.FC<{
   isRightPanelOpen: boolean;
   aiChatInterfaceStyle: 'panel' | 'toast';
 }> = ({ onToggleSidebar, onMouseEnterButton, onMouseLeaveButton, onNavigate, onToggleAiChat, onSearchClick, isRightPanelOpen, aiChatInterfaceStyle }) => {
-  const showPanel = isRightPanelOpen && aiChatInterfaceStyle === 'panel';
-
-  const movableButtons = (isCentered: boolean) => (
+  
+  const ActionIcons: React.FC = () => (
     <>
-      <button onMouseEnter={() => onMouseEnterButton('team')} onMouseLeave={onMouseLeaveButton} onClick={() => onNavigate('team-management')} className={`relative p-2 rounded-full text-zinc-400 hover:text-zinc-200 transition-colors ${isCentered ? 'hover:bg-zinc-700' : 'hover:bg-zinc-800/60'}`} aria-label="Team">
-        <UsersIcon className="h-6 w-6" />
-      </button>
-      <button onMouseEnter={() => onMouseEnterButton('conversations')} onMouseLeave={onMouseLeaveButton} onClick={() => onNavigate('conversations')} className={`relative p-2 rounded-full text-zinc-400 hover:text-zinc-200 transition-colors ${isCentered ? 'hover:bg-zinc-700' : 'hover:bg-zinc-800/60'}`} aria-label="Conversations">
-        <MessageSquareIcon className="h-6 w-6" />
-      </button>
-      <button onClick={onToggleAiChat} className={`relative p-2 rounded-full text-zinc-400 hover:text-zinc-200 transition-colors ${isCentered ? 'hover:bg-zinc-700' : 'hover:bg-zinc-800/60'}`} aria-label="Open AI Assistant">
-        <SparklesIcon className="h-6 w-6" />
-      </button>
-      <button onMouseEnter={() => onMouseEnterButton('notifications')} onMouseLeave={onMouseLeaveButton} onClick={() => onNavigate('notifications')} className={`relative p-2 rounded-full text-zinc-400 hover:text-zinc-200 transition-colors ${isCentered ? 'hover:bg-zinc-700' : 'hover:bg-zinc-800/60'}`} aria-label="Notifications">
-        <BellIcon className="h-6 w-6" />
-      </button>
+        <button onMouseEnter={() => onMouseEnterButton('team')} onMouseLeave={onMouseLeaveButton} onClick={() => onNavigate('team-management')} className="relative p-2 rounded-full text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 transition-colors" aria-label="Team">
+            <UsersIcon className="h-6 w-6" />
+        </button>
+        <button onMouseEnter={() => onMouseEnterButton('conversations')} onMouseLeave={onMouseLeaveButton} onClick={() => onNavigate('conversations')} className="relative p-2 rounded-full text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 transition-colors" aria-label="Conversations">
+            <MessageSquareIcon className="h-6 w-6" />
+        </button>
+        <button onMouseEnter={() => onMouseEnterButton('notifications')} onMouseLeave={onMouseLeaveButton} onClick={() => onNavigate('notifications')} className="relative p-2 rounded-full text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 transition-colors" aria-label="Notifications">
+            <BellIcon className="h-6 w-6" />
+        </button>
     </>
   );
 
@@ -375,32 +442,36 @@ const Header: React.FC<{
       <button onClick={onToggleSidebar} className="p-2 rounded-full hover:bg-zinc-800/60 text-zinc-400 hover:text-zinc-200 lg:hidden" aria-label="Toggle sidebar">
         <MenuIcon className="h-6 w-6" />
       </button>
-      <div className="relative flex-1 min-w-0 max-w-2xl ml-4 lg:ml-0">
+
+      {/* Main search bar */}
+      <div className={`relative flex-1 min-w-0 max-w-2xl ml-2 sm:ml-4 lg:ml-0 transition-opacity duration-300 ${isRightPanelOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
           <button onClick={onSearchClick} className="w-full h-10 rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm text-zinc-500 flex items-center gap-3 hover:border-zinc-600 transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-zinc-900">
               <SearchIcon className="h-5 w-5" />
-              Search KPIs, reports...
+              <span className="hidden sm:inline">Search KPIs, reports...</span>
               <kbd className="ml-auto pointer-events-none hidden h-6 select-none items-center gap-1 rounded border border-zinc-700 bg-zinc-900 px-1.5 font-mono text-xs font-medium text-zinc-400 opacity-100 sm:flex">
                   <span className="text-lg">⌘</span>K
               </kbd>
           </button>
       </div>
-
-      {/* Centered container for buttons */}
-      <div className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${showPanel ? 'opacity-100' : 'opacity-0 -translate-y-4 pointer-events-none'}`}>
-        <div className="flex items-center gap-1 p-1 bg-zinc-800/80 backdrop-blur-sm rounded-full border border-zinc-700/50">
-          {movableButtons(true)}
-        </div>
+      
+      {/* Centered icons when panel is open */}
+      <div className={`absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 flex items-center gap-1 sm:gap-2 transition-opacity duration-300 ${isRightPanelOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+          <button onClick={onSearchClick} className="p-2 rounded-full text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 transition-colors" aria-label="Search">
+              <SearchIcon className="h-6 w-6" />
+          </button>
+          <ActionIcons />
       </div>
       
-      <div className="flex items-center gap-2 ml-4">
-        {/* Original movable buttons container */}
-        <div className={`flex items-center gap-2 transition-opacity duration-300 ${showPanel ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-          {movableButtons(false)}
+      {/* Right-aligned icons */}
+      <div className="flex items-center gap-1 sm:gap-2 ml-2 sm:ml-4">
+        {/* Regular icon group, hidden when panel is open */}
+        <div className={`items-center gap-1 sm:gap-2 transition-opacity duration-300 ${isRightPanelOpen ? 'hidden' : 'flex'}`}>
+            <ActionIcons />
         </div>
-
-        {/* These stay on the right */}
+        
+        {/* Always visible right-side icons */}
         <button onMouseEnter={() => onMouseEnterButton('user')} onMouseLeave={onMouseLeaveButton} onClick={() => onNavigate('profile')} className="p-1 rounded-full hover:bg-zinc-800/60" aria-label="User menu">
-            <UserIcon className="h-8 w-8 text-zinc-400 bg-zinc-700 rounded-full p-1" />
+            <UserIcon className="h-7 w-7 sm:h-8 sm:w-8 text-zinc-400 bg-zinc-700 rounded-full p-1" />
         </button>
         {aiChatInterfaceStyle === 'panel' && (
           <button onClick={onToggleAiChat} className="p-2 -ml-2 rounded-full hover:bg-zinc-800/60 text-zinc-400 hover:text-zinc-200">

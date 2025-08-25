@@ -3,14 +3,14 @@ import { Card, CardHeader, CardContent } from '../ui/Card';
 import { GenericWidgetProps } from '../../types';
 import { WidgetHeader } from './ProductStockWidget';
 
-export const ListViewWidget: React.FC<GenericWidgetProps> = ({ instance, onConfigure, data = [] }) => {
+export const ListViewWidget: React.FC<GenericWidgetProps> = ({ instance, onConfigure, data = [], onCite }) => {
     const { title, dataSourceKey } = instance.config;
 
     if (!dataSourceKey) {
         return (
              <Card className="h-full">
                 <CardHeader>
-                    <WidgetHeader title={title} onConfigure={onConfigure} />
+                    <WidgetHeader title={title} onConfigure={onConfigure} onCite={onCite} />
                 </CardHeader>
                 <CardContent className="flex items-center justify-center h-48 text-zinc-500">
                     Click the settings icon to configure this widget.
@@ -22,7 +22,7 @@ export const ListViewWidget: React.FC<GenericWidgetProps> = ({ instance, onConfi
     return (
         <Card className="h-full">
             <CardHeader>
-                <WidgetHeader title={title} onConfigure={onConfigure} />
+                <WidgetHeader title={title} onConfigure={onConfigure} onCite={onCite} />
             </CardHeader>
             <CardContent>
                 <ul className="space-y-3">

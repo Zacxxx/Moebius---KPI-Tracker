@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Layout from './Layout';
 import HomeDashboard from './Dashboard';
@@ -33,13 +34,13 @@ import Conversations from './Conversations';
 import TeamManagement from './TeamManagement';
 import Profile from './Profile';
 import Notifications from './Notifications';
-import type { Page, ChatSession, Message, Bookmark, ConversationMessage, ConversationChannel, DmToastState, TimeConfig } from './types';
+import type { Page, ChatSession, Message, Bookmark, ConversationMessage, ConversationChannel, DmToastState, TimeConfig, WidgetContext, WidgetInstance } from './types';
 import { GoogleGenAI } from '@google/genai';
 import PlaceholderPage from './PlaceholderPage';
 import { PerpetualDiscussionToast } from './components/PerpetualDiscussionToast';
 import { Command, CommandPalette } from './components/CommandPalette';
 import { platformNavItems } from './navigation';
-import { DatabaseIcon, MessageSquareIcon, SparklesIcon, ChevronUpIcon } from './components/Icons';
+import { DatabaseIcon, MessageSquareIcon, SparklesIcon, ChevronUpIcon, LineChartIcon, TrendingUpIcon, ClockIcon, LightningBoltIcon } from './components/Icons';
 import Content from './Content';
 import Seo from './Seo';
 import Partners from './Partners';
@@ -50,7 +51,7 @@ import ExternalDashboard from './ExternalDashboard';
 import { initialConversationChannels, initialConversationMessages, initialConversationUsers, initialKpiMetrics, initialRevenueStreams, initialExpenses, initialEcommerceMetrics, initialCustomerMetrics, initialHiringPipeline, initialMarketingMetrics, initialOperationalMetrics, initialCrmData, initialFeedbackData, initialRequestData } from './data';
 import { PersonChatToast } from './components/PersonChatToast';
 import { AiChatPanel } from './components/AiChatPanel';
-import { fmtEuro } from './utils';
+import { fmtEuro, formatWidgetDataForAI } from './utils';
 import { DEFAULTS as simulationDefaults } from './constants';
 
 
@@ -74,14 +75,21 @@ export default function App() {
   const [viewedProfileId, setViewedProfileId] = useState<number | null>(null);
   const [isKpiSentimentColoringEnabled, setIsKpiSentimentColoringEnabled] = useState(true);
   const [aiChatInterfaceStyle, setAiChatInterfaceStyle] = useState<'panel' | 'toast'>('panel');
-  const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
-  const [rightPanelWidth, setRightPanelWidth] = useState(384);
+  const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
+  const [rightPanelWidth, setRightPanelWidth] = useState(() => {
+    const minWidth = 320; // w-80
+    const maxWidth = 800; // custom max width
+    const fiftyPercent = window.innerWidth / 2;
+    return Math.max(minWidth, Math.min(maxWidth, fiftyPercent));
+  });
   const [isResizing, setIsResizing] = useState(false);
+  const [attachedWidgetContexts, setAttachedWidgetContexts] = useState<WidgetContext[]>([]);
 
   // AI Chat state
   const [aiChatSessions, setAiChatSessions] = useState<ChatSession[]>([]);
   const [activeAiChatId, setActiveAiChatId] = useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const [queuedAiMessage, setQueuedAiMessage] = useState<string | null>(null);
   const [isAiChatToastOpen, setIsAiChatToastOpen] = useState(false);
   const [isAiChatToastMinimized, setIsAiChatToastMinimized] = useState(false);
 
@@ -174,50 +182,65 @@ export default function App() {
     }
   };
 
-  const handleSendAiMessage = async (messageText: string) => {
-    if (!activeAiChatId) return;
-    
-    const sessionBeforeUpdate = aiChatSessions.find(s => s.id === activeAiChatId);
-    const isFirstUserMessage = sessionBeforeUpdate?.messages.filter(m => m.sender === 'user').length === 0;
-
-    setIsAiLoading(true);
-
-    const userMessage: Message = { id: Date.now(), text: messageText, sender: 'user', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
-    
-    setAiChatSessions(prevSessions =>
-      prevSessions.map(s => {
-        if (s.id === activeAiChatId) {
-          return { ...s, messages: [...s.messages, userMessage] };
-        }
-        return s;
-      })
+  const handleReloadChat = (sessionId: string) => {
+    if (!sessionId) return;
+    setAiChatSessions(prev =>
+        prev.map(s => {
+            if (s.id === sessionId) {
+                // Return a new session object with initial messages and a new gemini chat instance.
+                return {
+                    ...s,
+                    messages: [{ id: 1, text: "Hello! How can I assist with your business data today?", sender: 'ai', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }],
+                    geminiChat: ai.chats.create({ model: 'gemini-2.5-flash' }),
+                };
+            }
+            return s;
+        })
     );
-    
-    const currentSession = aiChatSessions.find(s => s.id === activeAiChatId) || 
-                           (aiChatSessions.length > 0 && aiChatSessions[0].id === activeAiChatId ? aiChatSessions[0] : null);
+  };
 
-    if (!currentSession) {
+  const handleSendAiMessage = async (messageText: string) => {
+    if (isAiLoading) {
+      setQueuedAiMessage(messageText);
+      return;
+    }
+    if (!activeAiChatId) return;
+
+    const sessionToUpdate = aiChatSessions.find(s => s.id === activeAiChatId);
+    if (!sessionToUpdate) {
+      console.error("Could not find active chat session to send message.");
       setIsAiLoading(false);
       return;
     }
 
-    if (isFirstUserMessage) {
-        generateChatTitle(activeAiChatId, messageText);
-    }
-    
-    const geminiChat = currentSession.geminiChat;
+    const { geminiChat } = sessionToUpdate;
     if (!geminiChat) {
       console.error("Gemini chat not initialized for session");
       setIsAiLoading(false);
       return;
     }
+    
+    const isFirstUserMessage = sessionToUpdate.messages.filter(m => m.sender === 'user').length === 0;
 
+    setIsAiLoading(true);
+
+    const userMessage: Message = { id: Date.now(), text: messageText, sender: 'user', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
     const aiMessageId = Date.now() + 1;
     const aiMessagePlaceholder: Message = { id: aiMessageId, text: '', sender: 'ai', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
-    setAiChatSessions(prev =>
-      prev.map(s => (s.id === activeAiChatId ? { ...s, messages: [...s.messages, aiMessagePlaceholder] } : s))
+
+    setAiChatSessions(prevSessions =>
+      prevSessions.map(s => {
+        if (s.id === activeAiChatId) {
+          return { ...s, messages: [...s.messages, userMessage, aiMessagePlaceholder] };
+        }
+        return s;
+      })
     );
 
+    if (isFirstUserMessage) {
+        generateChatTitle(activeAiChatId, messageText);
+    }
+    
     try {
         const stream = await geminiChat.sendMessageStream({ message: messageText });
 
@@ -250,6 +273,13 @@ export default function App() {
         );
     } finally {
         setIsAiLoading(false);
+        setQueuedAiMessage(currentQueuedMessage => {
+            if (currentQueuedMessage) {
+                setTimeout(() => handleSendAiMessage(currentQueuedMessage), 0);
+                return null;
+            }
+            return null;
+        });
     }
   };
   
@@ -435,6 +465,53 @@ export default function App() {
     setPage('conversations');
   };
 
+  const handleCiteWidget = useCallback((instance: WidgetInstance, data: any) => {
+    // Prevent adding duplicates
+    if (attachedWidgetContexts.some(ctx => ctx.id === instance.id)) return;
+
+    // A map to get an icon based on widget type
+    const widgetIconMap: Record<string, React.FC<{className?: string}>> = {
+        'KPI_VIEW': TrendingUpIcon,
+        'TABLE_VIEW': DatabaseIcon,
+        'TREND_GRAPHIC': LineChartIcon,
+        'LIST_VIEW': DatabaseIcon,
+        'PROJECTION_GRAPHIC': LineChartIcon,
+        'FUNNEL_GRAPHIC': DatabaseIcon,
+        'PIE_CHART': DatabaseIcon,
+        'ACTIVITY_FEED': ClockIcon,
+        'STATIC_QUICK_ACTIONS': LightningBoltIcon,
+    };
+
+    const formattedData = formatWidgetDataForAI(instance, data);
+    
+    const newContext: WidgetContext = {
+        id: instance.id,
+        title: instance.config.title,
+        icon: widgetIconMap[instance.widgetType] || SparklesIcon,
+        data: formattedData,
+    };
+    
+    setAttachedWidgetContexts(prev => [...prev, newContext]);
+
+    // Also, open the chat panel/toast
+    if (aiChatInterfaceStyle === 'toast') {
+        if (!isAiChatToastOpen || isAiChatToastMinimized) {
+            setIsAiChatToastOpen(true);
+            setIsAiChatToastMinimized(false);
+        }
+    } else {
+        setIsRightPanelOpen(true);
+    }
+}, [attachedWidgetContexts, aiChatInterfaceStyle, isAiChatToastOpen, isAiChatToastMinimized]);
+
+const handleRemoveWidgetContext = (id: string) => {
+    setAttachedWidgetContexts(prev => prev.filter(ctx => ctx.id !== id));
+};
+
+const handleClearWidgetContexts = () => {
+    setAttachedWidgetContexts([]);
+};
+
   const getAppContextData = useCallback((command: string): string => {
     let context = 'No data found for this command.';
     const parts = command.split('.');
@@ -561,9 +638,9 @@ export default function App() {
   const renderPage = () => {
     switch (page) {
       case 'dashboard':
-        return <HomeDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
+        return <HomeDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} onCiteWidget={handleCiteWidget} />;
       case 'simulation-dashboard':
-        return <SimulationDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
+        return <SimulationDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} onCiteWidget={handleCiteWidget} />;
       case 'simulation-revenue':
         return <FinancialSimulations />;
       case 'simulation-pnl':
@@ -571,7 +648,7 @@ export default function App() {
       case 'simulation-balance-sheet':
         return <BalanceSheet isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'financial-dashboard':
-        return <FinancialPlanning page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
+        return <FinancialPlanning page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} onCiteWidget={handleCiteWidget} />;
       case 'financial-revenue':
         return <Revenue />;
       case 'financial-expenses':
@@ -587,9 +664,9 @@ export default function App() {
       case 'product-analytics':
         return <ProductAnalytics isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'marketing':
-        return <Marketing page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
+        return <Marketing page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} onCiteWidget={handleCiteWidget} />;
       case 'operational-dashboard':
-        return <OperationalDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
+        return <OperationalDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} onCiteWidget={handleCiteWidget} />;
       case 'operational-efficiency':
         return <Operational isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'operational-status':
@@ -597,13 +674,13 @@ export default function App() {
       case 'operational-costs':
         return <CostAnalysis />;
       case 'internal-dashboard':
-        return <InternalDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
+        return <InternalDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} onCiteWidget={handleCiteWidget} />;
       case 'internal-people':
         return <Internal page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'internal-cap-table':
         return <CapTable isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'sales-dashboard':
-        return <SalesDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
+        return <SalesDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} onCiteWidget={handleCiteWidget} />;
       case 'sales-orders':
         return <OrderFulfillment />;
       case 'sales-inventory':
@@ -620,6 +697,7 @@ export default function App() {
           messages={conversationMessages}
           activeChannelId={activeConversationChannelId}
           setActiveChannelId={setActiveConversationChannelId}
+          onSendMessage={handleSendDmMessage}
         />;
       case 'team-management':
         return <TeamManagement 
@@ -637,6 +715,7 @@ export default function App() {
             session={activeChatWithBookmarks} 
             onSend={handleSendAiMessage} 
             isLoading={isAiLoading} 
+            isMessageQueued={!!queuedAiMessage}
             onRegenerate={handleRegenerate}
             bookmarks={bookmarks}
             onToggleBookmark={handleToggleBookmark}
@@ -645,10 +724,13 @@ export default function App() {
               setPage('chat');
             }}
             getAppContextData={getAppContextData}
+            attachedWidgetContexts={attachedWidgetContexts}
+            onRemoveWidgetContext={handleRemoveWidgetContext}
+            onClearWidgetContexts={handleClearWidgetContexts}
           />
         );
       case 'coordination-dashboard':
-        return <CoordinationDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
+        return <CoordinationDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} onCiteWidget={handleCiteWidget} />;
       case 'coordination-contractors':
         return <PlaceholderPage title="Contractors" description="Manage and coordinate with your organization's contractors." />;
       case 'coordination-agents':
@@ -680,7 +762,7 @@ export default function App() {
       case 'internal-culture':
         return <PlaceholderPage title="Culture" description="Monitor and foster company culture." />;
       case 'external-dashboard':
-        return <ExternalDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
+        return <ExternalDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} onCiteWidget={handleCiteWidget} />;
       case 'external-content':
         return <Content isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
       case 'external-seo':
@@ -694,7 +776,7 @@ export default function App() {
       case 'external-competition':
         return <Competition />;
       default:
-        return <FinancialPlanning page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
+        return <FinancialPlanning page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} onCiteWidget={handleCiteWidget} />;
     }
   };
 
@@ -769,8 +851,10 @@ export default function App() {
           <AiChatPanel
               session={activeChatWithBookmarks}
               isLoading={isAiLoading}
+              isMessageQueued={!!queuedAiMessage}
               onSend={handleSendAiMessage}
               onRegenerate={handleRegenerate}
+              onReload={() => activeAiChatId && handleReloadChat(activeAiChatId)}
               onClose={() => setIsRightPanelOpen(false)}
               onMaximize={handleMaximizeAiChat}
               bookmarks={bookmarks}
@@ -783,6 +867,9 @@ export default function App() {
               width={rightPanelWidth}
               onResize={handleRightPanelResize}
               setIsResizing={setIsResizing}
+              attachedWidgetContexts={attachedWidgetContexts}
+              onRemoveWidgetContext={handleRemoveWidgetContext}
+              onClearWidgetContexts={handleClearWidgetContexts}
           />
       )}
 
@@ -790,6 +877,7 @@ export default function App() {
         <PerpetualDiscussionToast
             session={activeChatWithBookmarks}
             isLoading={isAiLoading}
+            isMessageQueued={!!queuedAiMessage}
             onSend={handleSendAiMessage}
             onRegenerate={handleRegenerate}
             onClose={() => setIsAiChatToastOpen(false)}
@@ -803,6 +891,9 @@ export default function App() {
               setPage('chat');
             }}
             getAppContextData={getAppContextData}
+            attachedWidgetContexts={attachedWidgetContexts}
+            onRemoveWidgetContext={handleRemoveWidgetContext}
+            onClearWidgetContexts={handleClearWidgetContexts}
         />
       )}
       

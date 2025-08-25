@@ -1,3 +1,5 @@
+
+
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { initialConversationUsers, initialTeams } from './data';
 import type { ConversationChannel, ConversationUser, ConversationMessage } from './types';
@@ -146,18 +148,46 @@ const Message: React.FC<{ message: ConversationMessage }> = ({ message }) => {
     )
 }
 
-const ChatWindow: React.FC<{ 
+interface ChatWindowProps {
     channel: ConversationChannel | undefined;
     messages: Record<string, ConversationMessage[]>;
-}> = ({ channel, messages }) => {
+    onSendMessage: (channelId: string, text: string) => void;
+}
+
+const ChatWindow: React.FC<ChatWindowProps> = ({ channel, messages, onSendMessage }) => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const [inputValue, setInputValue] = useState('');
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
     const activeMessages = channel ? messages[channel.id] || [] : [];
     
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [activeMessages]);
     
+    useEffect(() => {
+        const textarea = textareaRef.current;
+        if (textarea) {
+            textarea.style.height = 'auto';
+            const scrollHeight = textarea.scrollHeight;
+            textarea.style.height = `${Math.min(scrollHeight, 160)}px`; // Corresponds to max-h-40
+        }
+    }, [inputValue]);
+    
     if (!channel) return <div className="flex-1 flex items-center justify-center text-zinc-500">Select a channel to start talking</div>;
+
+    const handleSend = () => {
+        if (inputValue.trim() && channel) {
+            onSendMessage(channel.id, inputValue.trim());
+            setInputValue('');
+        }
+    };
+    
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
+        }
+    };
 
     const channelIcon = channel.type === 'dm' ? <UserAvatar user={initialConversationUsers.find(u => u.id === channel.members?.[0])} size="sm" /> : <ChannelIcon type={channel.type} />;
 
@@ -179,12 +209,23 @@ const ChatWindow: React.FC<{
                         <PaperclipIcon className="h-5 w-5 text-zinc-400"/>
                     </Button>
                     <textarea
+                        ref={textareaRef}
                         rows={1}
                         placeholder={`Message ${channel.type === 'dm' ? '' : '#'}${channel.name}`}
                         className="w-full resize-none bg-transparent text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none max-h-40"
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        onKeyDown={handleKeyDown}
                     />
-                    <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0" aria-label="Send Message">
-                        <SendIcon className="h-5 w-5 text-zinc-400" />
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-9 w-9 flex-shrink-0" 
+                        aria-label="Send Message"
+                        onClick={handleSend}
+                        disabled={!inputValue.trim()}
+                    >
+                        <SendIcon className={`h-5 w-5 transition-colors ${inputValue.trim() ? 'text-violet-400' : 'text-zinc-500'}`} />
                     </Button>
                 </div>
             </footer>
@@ -199,9 +240,10 @@ interface ConversationsProps {
     messages: Record<string, ConversationMessage[]>;
     activeChannelId: string;
     setActiveChannelId: (id: string) => void;
+    onSendMessage: (channelId: string, text: string) => void;
 }
 
-export default function Conversations({ activeTeamId, setActiveTeamId, channels, messages, activeChannelId, setActiveChannelId }: ConversationsProps) {
+export default function Conversations({ activeTeamId, setActiveTeamId, channels, messages, activeChannelId, setActiveChannelId, onSendMessage }: ConversationsProps) {
     const activeChannel = channels.find(c => c.id === activeChannelId);
 
     return (
@@ -213,7 +255,7 @@ export default function Conversations({ activeTeamId, setActiveTeamId, channels,
                 activeTeamId={activeTeamId}
                 setActiveTeamId={setActiveTeamId}
             />
-            <ChatWindow channel={activeChannel} messages={messages} />
+            <ChatWindow channel={activeChannel} messages={messages} onSendMessage={onSendMessage} />
         </div>
     );
 }

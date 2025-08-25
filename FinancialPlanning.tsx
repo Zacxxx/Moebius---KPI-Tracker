@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { ClockIcon, TrendingDownIcon, WalletIcon, ScaleIcon } from './components/Icons';
 import { fmtEuro } from './utils';
@@ -24,9 +23,10 @@ interface FinancialPlanningProps {
     page: Page;
     setPage: (page: Page) => void;
     isKpiSentimentColoringEnabled?: boolean;
+    onCiteWidget: (instance: WidgetInstance, data: any) => void;
 }
 
-export default function FinancialPlanning({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled }: FinancialPlanningProps) {
+export default function FinancialPlanning({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled, onCiteWidget }: FinancialPlanningProps) {
   const [sections, setSections] = useState<DashboardSection[]>([
       { id: 'kpis', title: 'Key Metrics' },
       { id: 'main', title: 'Dashboard Widgets' },
@@ -95,6 +95,7 @@ export default function FinancialPlanning({ globalTimeConfig, setGlobalTimeConfi
         page={page}
         setPage={setPage}
         isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
+        onCiteWidget={onCiteWidget}
     />
   );
 }

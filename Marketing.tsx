@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from 'react';
 import { MegaphoneIcon, TrendingUpIcon, WalletIcon, UsersIcon, BarChartIcon } from './components/Icons';
 import type { SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page } from './types';
@@ -36,9 +35,10 @@ interface MarketingProps {
     page: Page;
     setPage: (page: Page) => void;
     isKpiSentimentColoringEnabled?: boolean;
+    onCiteWidget: (instance: WidgetInstance, data: any) => void;
 }
 
-export default function Marketing({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled }: MarketingProps) {
+export default function Marketing({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled, onCiteWidget }: MarketingProps) {
   const [sections, setSections] = useState<DashboardSection[]>([
       { id: 'kpis', title: 'Key Metrics' },
       { id: 'main', title: 'Dashboard Widgets' },
@@ -78,6 +78,7 @@ export default function Marketing({ globalTimeConfig, setGlobalTimeConfig, page,
         page={page}
         setPage={setPage}
         isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
+        onCiteWidget={onCiteWidget}
     />
   );
 }

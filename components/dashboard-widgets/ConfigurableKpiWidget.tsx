@@ -1,9 +1,7 @@
-
-
 import React, { useMemo } from 'react';
 import type { GenericWidgetProps, SelectableKpi } from '../../types';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
-import { PlusCircleIcon, TrendingUpIcon, ArrowUpIcon, ArrowDownIcon, SettingsIcon, ChartBarIcon } from '../Icons';
+import { PlusCircleIcon, TrendingUpIcon, ArrowUpIcon, ArrowDownIcon, SettingsIcon, ChartBarIcon, MessageSquareIcon } from '../Icons';
 import { Button } from '../ui/Button';
 import { fmtEuro } from '../../utils';
 import { Gauge } from '../ui/Gauge';
@@ -37,7 +35,7 @@ const getNumericValue = (valueString: string): number => {
     return isNaN(numeric) ? 0 : numeric;
 };
 
-export const ConfigurableKpiWidget: React.FC<ConfigurableKpiWidgetProps> = ({ instance, onConfigure, allKpis, iconMap, iconColorMap, onConfigChange, globalTimeConfig, onOpenChart, isKpiSentimentColoringEnabled = true }) => {
+export const ConfigurableKpiWidget: React.FC<ConfigurableKpiWidgetProps> = ({ instance, onConfigure, allKpis, iconMap, iconColorMap, onConfigChange, globalTimeConfig, onOpenChart, onCite, isKpiSentimentColoringEnabled = true }) => {
     const { title, selectedKpiId, selectedKpiSource, timeConfig: localTimeConfig, isTimeLocked, style = 'default', form = 'default' } = instance.config;
     
     const activeTimeConfig = isTimeLocked 
@@ -230,6 +228,11 @@ export const ConfigurableKpiWidget: React.FC<ConfigurableKpiWidgetProps> = ({ in
                 <div className="flex justify-between items-start relative">
                     <CardTitle className="pr-20">{title || selectedKpi.metric}</CardTitle>
                     <div className="absolute top-0 right-0 flex items-center -mt-2 -mr-2">
+                        {onCite && (
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onCite} aria-label="Cite KPI in chat">
+                                <MessageSquareIcon className="h-4 w-4" />
+                            </Button>
+                        )}
                         {selectedKpi.series && selectedKpi.series.length > 0 && (
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onOpenChart(selectedKpi)} aria-label="View chart">
                                 <ChartBarIcon className="h-4 w-4" />
