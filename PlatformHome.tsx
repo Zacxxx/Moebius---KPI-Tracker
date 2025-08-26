@@ -1,22 +1,27 @@
 import React, { useMemo, useState } from 'react';
-import type { SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page } from './types';
-import { initialCapTableMetrics } from './data';
 import { Dashboard } from './components/Dashboard';
-import { UsersIcon, SmileIcon, PieChartIcon } from './components/Icons';
+import { TrendingUpIcon, UsersIcon, ShoppingCartIcon } from './components/Icons';
+import { initialKpiMetrics, initialEcommerceMetrics } from './data';
+import type { SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page } from './types';
 import { PREMADE_WIDGETS } from './data-widgets';
 
 const internalKpis = [
     { id: 201, metric: 'Headcount', value: '42', change: '+2 this month' },
-    { id: 202, metric: 'eNPS', value: '75', change: 'Last surveyed in Q2' },
-    { id: 203, metric: 'Avg. Time to Hire', value: '38 days', change: '-5 days vs last quarter', inverse: true },
-    { id: 204, metric: 'Quarterly Turnover', value: '3.1%', change: '+0.5% vs last quarter', inverse: true },
 ];
 
+const platformHomeKpis: SelectableKpi[] = [
+    initialKpiMetrics.find(k => k.metric === 'Annual Recurring Revenue')!,
+    internalKpis[0],
+    initialEcommerceMetrics.find(k => k.metric === 'Gross Merchandise Volume')!,
+    initialKpiMetrics.find(k => k.metric === 'Active Users')!,
+].filter(Boolean).map(k => ({ ...k, source: 'Platform' }));
+
+
 const iconMap: { [key: string]: React.FC<{ className?: string }> } = {
+    'Annual Recurring Revenue': TrendingUpIcon,
     'Headcount': UsersIcon,
-    'eNPS': SmileIcon,
-    'Total Shares Outstanding': PieChartIcon,
-    'Founder Ownership %': UsersIcon,
+    'Gross Merchandise Volume': ShoppingCartIcon,
+    'Active Users': UsersIcon,
 };
 
 const createInitialWidgets = (premadeIds: string[], sectionId: string): WidgetInstance[] => {
@@ -32,7 +37,7 @@ const createInitialWidgets = (premadeIds: string[], sectionId: string): WidgetIn
     }).filter((w): w is WidgetInstance => w !== null);
 };
 
-interface InternalProps {
+interface PlatformHomeProps {
     globalTimeConfig: TimeConfig;
     setGlobalTimeConfig: (config: TimeConfig) => void;
     page: Page;
@@ -41,36 +46,34 @@ interface InternalProps {
     onCiteWidget?: (instance: WidgetInstance, data: any) => void;
 }
 
-export default function Internal({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled, onCiteWidget }: InternalProps) {
+export default function PlatformHome({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled, onCiteWidget }: PlatformHomeProps) {
     const [sections, setSections] = useState<DashboardSection[]>([
-        { id: 'kpis', title: 'Key Metrics' },
-        { id: 'main', title: 'Dashboard Widgets' },
+        { id: 'kpis', title: 'Platform KPIs' },
+        { id: 'main', title: 'Overview' },
     ]);
-
     const [widgets, setWidgets] = useState<WidgetInstance[]>(() => {
-        const kpiWidgets: WidgetInstance[] = internalKpis.map(kpi => ({
-            id: `kpi-internal-${kpi.id}`,
-            widgetType: 'KPI_VIEW',
+        const kpiWidgets = platformHomeKpis.map(kpi => ({
+            id: `kpi-platform-${kpi.id}`,
+            widgetType: 'KPI_VIEW' as const,
             sectionId: 'kpis',
             config: {
                 title: kpi.metric,
                 selectedKpiId: kpi.id,
-                selectedKpiSource: 'People',
+                selectedKpiSource: 'Platform',
                 gridWidth: 1,
             }
         }));
-        const otherWidgets = createInitialWidgets(['premade_hiring_pipeline'], 'main');
+        const otherWidgets = createInitialWidgets(['premade_sales_trend', 'premade_activity_feed', 'premade_hiring_pipeline'], 'main');
         return [...kpiWidgets, ...otherWidgets];
     });
     
-    const allKpisForModal = useMemo<SelectableKpi[]>(() => [
-        ...internalKpis.map(k => ({...k, source: 'People'})),
-        ...initialCapTableMetrics.map(k => ({...k, source: 'Cap Table'})),
-    ], []);
+    const allKpisForModal = useMemo<SelectableKpi[]>(() => 
+      platformHomeKpis
+    , []);
 
     return (
         <Dashboard
-            title="People"
+            title="Platform Home"
             allKpisForModal={allKpisForModal}
             iconMap={iconMap}
             widgets={widgets}

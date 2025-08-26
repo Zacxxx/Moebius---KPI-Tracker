@@ -1,13 +1,12 @@
-
-
-import type { Page } from './types';
-import { HomeIcon, LineChartIcon, MegaphoneIcon, SlidersIcon, UsersIcon, BriefcaseIcon, ShapesIcon, RocketIcon, ShoppingCartIcon, SparklesIcon, TagIcon, BarChartIcon, FolderIcon } from './components/Icons';
+import type { Page, ContentSection } from './types';
+import { HomeIcon, LineChartIcon, MegaphoneIcon, SlidersIcon, UsersIcon, BriefcaseIcon, ShapesIcon, RocketIcon, ShoppingCartIcon, SparklesIcon, TagIcon, BarChartIcon, FolderIcon, FileTextIcon, CubeIcon, WifiIcon, LibraryIcon, LightningBoltIcon, TrendingUpIcon, CheckSquareIcon, TargetIcon } from './components/Icons';
 
 export type NavItemData = {
-  icon: React.FC<{className?: string}>;
+  icon?: React.FC<{className?: string}>;
   label: string;
   page: Page;
-  subItems?: Omit<NavItemData, 'icon' | 'subItems'>[];
+  subItems?: NavItemData[];
+  isMenuOnly?: boolean;
 }
 
 export type NavSection = {
@@ -17,147 +16,194 @@ export type NavSection = {
   icon?: React.FC<{className?: string}>;
 };
 
-export const navStructure: NavSection[] = [
+const platformNav: NavSection[] = [
     {
         items: [
-            { icon: HomeIcon, label: "Home Dashboard", page: "dashboard" }
-        ]
-    },
-    {
-        label: "Dashboards",
-        collapsible: true,
-        icon: FolderIcon,
-        items: [
-            { 
-                icon: RocketIcon, 
-                label: "Financial", 
-                page: "financial-dashboard",
+            { icon: HomeIcon, label: "Home", page: "platform-home" },
+            {
+                icon: LibraryIcon,
+                label: "Dashboards",
+                page: "dashboard",
+                isMenuOnly: true,
                 subItems: [
-                    { label: "Dashboard", page: "financial-dashboard"},
-                    { label: "Revenue", page: "financial-revenue"},
-                    { label: "Expenses", page: "financial-expenses"},
-                ]
-            },
-            { 
-                icon: LineChartIcon, 
-                label: "Simulation", 
-                page: "simulation-dashboard",
-                subItems: [
-                    { label: "Dashboard", page: "simulation-dashboard"},
-                    { label: "Revenue & Valuation", page: "simulation-revenue"},
-                    { label: "P&L Statement", page: "simulation-pnl"},
-                    { label: "Balance Sheet", page: "simulation-balance-sheet"},
-                ]
-            },
-            { 
-                icon: ShoppingCartIcon, 
-                label: "Sales",
-                page: "sales-dashboard",
-                subItems: [
-                    { label: "Dashboard", page: "sales-dashboard"},
-                    { label: "Orders", page: "sales-orders"},
-                    { label: "Inventory", page: "sales-inventory"},
-                    { label: "Promotions", page: "sales-promotions"},
-                ]
-            },
-            { 
-                icon: UsersIcon, 
-                label: "Customer", 
-                page: "customer-dashboard",
-                subItems: [
-                    { label: "Dashboard", page: "customer-dashboard"},
-                    { label: "CRM", page: "customer-crm"},
-                    { label: "Requests", page: "customer-requests"},
-                    { label: "Feedback", page: "customer-feedback"},
-                ]
-            },
-            { 
-                icon: BriefcaseIcon, 
-                label: "Internal", 
-                page: "internal-dashboard",
-                subItems: [
-                    { label: "Dashboard", page: "internal-dashboard"},
-                    { label: "People", page: "internal-people"},
-                    { label: "Culture", page: "internal-culture"},
-                    { label: "Cap Table", page: "internal-cap-table"},
-                ]
-            },
-            { 
-                icon: MegaphoneIcon, 
-                label: "External", 
-                page: "external-dashboard",
-                subItems: [
-                    { label: "Dashboard", page: "external-dashboard"},
-                    { label: "Product Analytics", page: "product-analytics"},
-                    { label: "Marketing", page: "marketing"},
-                    { label: "Content", page: "external-content"},
-                    { label: "SEO", page: "external-seo"},
-                    { label: "Partners", page: "external-partners"},
-                    { label: "PR", page: "external-pr"},
-                    { label: "Branding", page: "external-branding"},
-                    { label: "Competition", page: "external-competition"},
-                ]
-            },
-            { 
-                icon: SlidersIcon, 
-                label: "Operational", 
-                page: "operational-dashboard",
-                subItems: [
-                    { label: "Dashboard", page: "operational-dashboard"},
-                    { label: "Efficiency", page: "operational-efficiency"},
-                    { label: "System Status", page: "operational-status"},
-                    { label: "Cost Analysis", page: "operational-costs"},
-                ]
-            },
-        ]
-    },
-    {
-        label: "Control Room",
-        items: [
-             {
-                icon: ShapesIcon,
-                label: "Coordination",
-                page: "coordination-dashboard",
-                subItems: [
-                    { label: "Dashboard", page: "coordination-dashboard"},
-                    { label: "Contractors", page: "coordination-contractors"},
-                    { label: "Agents", page: "coordination-agents"},
-                    { label: "Services", page: "coordination-services"},
-                ]
-            },
-            { 
-                icon: SparklesIcon, 
-                label: "Studio", 
-                page: "studio-dashboard",
-                subItems: [
-                    { label: "Dashboard", page: "studio-dashboard"},
-                    { label: "Projects", page: "studio-projects"},
-                    { label: "Tasks", page: "studio-tasks"},
-                    { label: "Entities", page: "studio-entities"},
-                    { label: "Systems", page: "studio-systems"},
-                    { label: "Essences", page: "studio-essences"},
+                    {
+                        icon: BriefcaseIcon,
+                        label: "Platform",
+                        page: "dashboard",
+                        subItems: [
+                            { icon: HomeIcon, label: "Home", page: "dashboard" },
+                            {
+                                icon: RocketIcon,
+                                label: "Simulation",
+                                page: "simulation-dashboard",
+                                subItems: [
+                                    { label: "Dashboard", page: "simulation-dashboard" },
+                                    { label: "Revenue & Valuation", page: "simulation-revenue" },
+                                    { label: "P&L Statement", page: "simulation-pnl" },
+                                    { label: "Balance Sheet", page: "simulation-balance-sheet" },
+                                ]
+                            },
+                            {
+                                icon: LineChartIcon,
+                                label: "Financial",
+                                page: "financial-dashboard",
+                                subItems: [
+                                    { label: "Dashboard", page: "financial-dashboard" },
+                                    { label: "Revenue", page: "financial-revenue" },
+                                    { label: "Expenses", page: "financial-expenses" },
+                                ]
+                            },
+                            {
+                                icon: ShoppingCartIcon,
+                                label: "Sales",
+                                page: "sales-dashboard",
+                                subItems: [
+                                    { label: "Dashboard", page: "sales-dashboard" },
+                                    { label: "Orders", page: "sales-orders" },
+                                    { label: "Inventory", page: "sales-inventory" },
+                                    { label: "Promotions", page: "sales-promotions" },
+                                ]
+                            },
+                            {
+                                icon: UsersIcon,
+                                label: "Customer",
+                                page: "customer-dashboard",
+                                subItems: [
+                                    { label: "Dashboard", page: "customer-dashboard" },
+                                    { label: "CRM", page: "customer-crm" },
+                                    { label: "Requests", page: "customer-requests" },
+                                    { label: "Feedback", page: "customer-feedback" },
+                                ]
+                            },
+                            {
+                                icon: CubeIcon,
+                                label: "Product",
+                                page: "product-analytics",
+                                subItems: [
+                                    { label: "Analytics", page: "product-analytics" },
+                                ]
+                            },
+                            {
+                                icon: MegaphoneIcon,
+                                label: "External",
+                                page: "external-dashboard",
+                                subItems: [
+                                    { label: "Dashboard", page: "external-dashboard" },
+                                    { label: "Marketing", page: "marketing" },
+                                    { label: "Content", page: "external-content" },
+                                    { label: "SEO", page: "external-seo" },
+                                    { label: "Partners", page: "external-partners" },
+                                    { label: "Public Relations", page: "external-pr" },
+                                    { label: "Branding", page: "external-branding" },
+                                    { label: "Competition", page: "external-competition" },
+                                ]
+                            },
+                            {
+                                icon: SlidersIcon,
+                                label: "Operational",
+                                page: "operational-dashboard",
+                                subItems: [
+                                    { label: "Dashboard", page: "operational-dashboard" },
+                                    { label: "Efficiency", page: "operational-efficiency" },
+                                    { label: "System Status", page: "operational-status" },
+                                    { label: "Cost Analysis", page: "operational-costs" },
+                                ]
+                            },
+                            {
+                                icon: BriefcaseIcon,
+                                label: "Internal",
+                                page: "internal-dashboard",
+                                subItems: [
+                                    { label: "Dashboard", page: "internal-dashboard" },
+                                    { label: "People", page: "internal-people" },
+                                    { label: "Cap Table", page: "internal-cap-table" },
+                                    { label: "Culture", page: "internal-culture" },
+                                ]
+                            },
+                        ]
+                    },
+                    { icon: ShapesIcon, label: "Coordination", page: "coordination-dashboard" },
+                    { icon: SparklesIcon, label: "Studio", page: "studio-dashboard" },
+                    { icon: TagIcon, label: "Marketplace", page: "marketplace-dashboard" },
                 ]
             },
             {
-                icon: TagIcon,
-                label: "Marketplace",
-                page: "marketplace-dashboard",
+                icon: BarChartIcon,
+                label: "Monitoring",
+                page: "monitoring-dashboard",
                 subItems: [
-                    { label: "Dashboard", page: "marketplace-dashboard"},
-                    { label: "Performances", page: "marketplace-performances"},
-                    { label: "Requests", page: "marketplace-requests"},
-                    { label: "Contracts", page: "marketplace-contracts"},
-                    { label: "Prospection", page: "marketplace-prospection"},
+                    { label: "Overview", page: "monitoring-dashboard" },
+                    { icon: UsersIcon, label: "Agents", page: "monitoring-agents" },
+                    { icon: LightningBoltIcon, label: "Actions", page: "monitoring-actions" },
+                    { icon: FileTextIcon, label: "Reports", page: "monitoring-reports" },
+                    { icon: TrendingUpIcon, label: "Progress", page: "monitoring-progress" },
+                    { icon: BriefcaseIcon, label: "Teams", page: "monitoring-teams" },
+                    { icon: SlidersIcon, label: "Systems", page: "monitoring-systems" },
+                    { icon: CheckSquareIcon, label: "Surveys", page: "monitoring-surveys" },
+                    { icon: CubeIcon, label: "Entities", page: "monitoring-entities" },
                 ]
             },
-        ]
-    },
-    {
-        label: "Monitoring",
-        items: [
-            { icon: BarChartIcon, label: "Monitoring Dashboard", page: "monitoring-dashboard" }
+            {
+                icon: TargetIcon,
+                label: "Action Center",
+                page: "monitoring-action-center",
+                subItems: [
+                    {
+                        icon: SparklesIcon,
+                        label: "Generation",
+                        page: "monitoring-generation",
+                        subItems: [
+                            { label: "Metric", page: "monitoring-generation-metric" },
+                            { label: "Deliverables", page: "monitoring-generation-deliverables" },
+                            { label: "Workflows", page: "monitoring-generation-workflows" },
+                            { label: "Surveys", page: "monitoring-generation-surveys" },
+                        ]
+                    },
+                    {
+                        icon: CubeIcon,
+                        label: "Entities",
+                        page: "monitoring-entities-overview",
+                        subItems: [
+                            { label: "Overview", page: "monitoring-entities-overview" },
+                            { label: "Manager", page: "monitoring-entities-manager" },
+                            { label: "Actions", page: "monitoring-entities-actions" },
+                        ]
+                    }
+                ]
+            }
         ]
     }
 ];
 
-export const platformNavItems: NavItemData[] = navStructure.flatMap(section => section.items);
+const coordinationNav: NavSection[] = [
+    {
+        label: 'Coordination',
+        items: []
+    }
+];
+
+const studioNav: NavSection[] = [
+    {
+        label: 'Studio',
+        items: []
+    }
+];
+
+const marketplaceNav: NavSection[] = [
+    {
+        label: 'Marketplace',
+        items: []
+    }
+];
+
+
+export const navigationData: Record<ContentSection, NavSection[]> = {
+  platform: platformNav,
+  coordination: coordinationNav,
+  studio: studioNav,
+  marketplace: marketplaceNav,
+};
+
+export const allNavItems: NavItemData[] = (Object.values(navigationData) as NavSection[][])
+    .flat()
+    .flatMap(section => section.items);

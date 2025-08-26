@@ -13,7 +13,10 @@ export interface DashboardSection {
   title: string;
 }
 
+export type ContentSection = 'platform' | 'coordination' | 'studio' | 'marketplace';
+
 export type Page = 
+  'platform-home' |
   'dashboard' | 
   'simulation-dashboard' |
   'simulation-revenue' |
@@ -68,6 +71,24 @@ export type Page =
   'profile' |
   'notifications' |
   'monitoring-dashboard' |
+  'monitoring-agents' |
+  'monitoring-actions' |
+  'monitoring-reports' |
+  'monitoring-progress' |
+  'monitoring-teams' |
+  'monitoring-systems' |
+  'monitoring-surveys' |
+  'monitoring-entities' |
+  'monitoring-action-center' |
+  'monitoring-generation' |
+  'monitoring-generation-metric' |
+  'monitoring-generation-deliverables' |
+  'monitoring-generation-workflows' |
+  'monitoring-generation-surveys' |
+  'monitoring-entities-overview' |
+  'monitoring-entities-manager' |
+  'monitoring-entities-actions' |
+  'control-room' |
   'chat';
 
 export interface Message {

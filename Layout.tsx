@@ -1,13 +1,14 @@
 
 
+
 import React, { useState, useEffect, useRef, forwardRef } from 'react';
-import type { Page, ChatSession } from './types';
-import { MenuIcon, BellIcon, UserIcon, UsersIcon, SearchIcon, MoebiusIcon, ChevronLeftIcon, ChevronDownIcon, DatabaseIcon, MessageSquareIcon, EditIcon, FolderIcon, FolderPlusIcon, Trash2Icon, SparklesIcon, LaptopIcon, ShoppingCartIcon, ShapesIcon } from './components/Icons';
+import type { Page, ChatSession, ContentSection } from './types';
+import { MenuIcon, BellIcon, UserIcon, UsersIcon, SearchIcon, MoebiusIcon, ChevronLeftIcon, ChevronDownIcon, DatabaseIcon, MessageSquareIcon, EditIcon, FolderIcon, FolderPlusIcon, Trash2Icon, SparklesIcon, BriefcaseIcon, ShapesIcon, TagIcon, PaletteIcon, LibraryIcon, ChevronRightIcon } from './components/Icons';
 import UserPanel from './components/UserPanel';
 import NotificationsPanel from './components/NotificationsPanel';
 import TeamPanel from './components/TeamPanel';
 import ConversationsPanel from './components/ConversationsPanel';
-import { NavItemData, navStructure } from './navigation';
+import { NavItemData, navigationData } from './navigation';
 
 // Helper hook to get the previous value of a state or prop
 function usePrevious<T>(value: T): T | undefined {
@@ -18,8 +19,71 @@ function usePrevious<T>(value: T): T | undefined {
   return ref.current;
 }
 
+const FlyoutMenuItem: React.FC<{
+  item: NavItemData;
+  activePage: Page;
+  setPage: (page: Page) => void;
+  closeAllFlyouts: () => void;
+}> = ({ item, activePage, setPage, closeAllFlyouts }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const isActive = item.page === activePage || (item.subItems || []).some(sub => sub.page === activePage);
+
+  const handleClick = () => {
+    if (!item.subItems || (item.subItems && item.page)) {
+      setPage(item.page);
+    }
+    closeAllFlyouts();
+  };
+
+  if (!item.subItems) {
+    return (
+      <button
+        onClick={handleClick}
+        className={`flex items-center w-full px-3 py-2 text-left text-sm rounded-md transition-colors ${
+          isActive ? 'text-violet-300 bg-zinc-700' : 'text-zinc-300 hover:text-white hover:bg-zinc-700/50'
+        }`}
+      >
+        {item.label}
+      </button>
+    );
+  }
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <button
+        onClick={handleClick}
+        className={`flex items-center justify-between w-full px-3 py-2 text-left text-sm rounded-md transition-colors ${
+          isActive ? 'text-violet-300 bg-zinc-700' : 'text-zinc-300 hover:text-white hover:bg-zinc-700/50'
+        }`}
+      >
+        <span>{item.label}</span>
+        <ChevronRightIcon className="h-4 w-4 ml-2" />
+      </button>
+      {isHovered && (
+        <div className="absolute left-full -top-1 w-52 bg-zinc-800 rounded-lg shadow-xl border border-zinc-700 z-50 animate-fade-in-fast">
+          <div className="p-1">
+            {item.subItems.map(sub => (
+              <FlyoutMenuItem
+                key={sub.page}
+                item={sub}
+                activePage={activePage}
+                setPage={setPage}
+                closeAllFlyouts={closeAllFlyouts}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const NavItem: React.FC<{
-  icon: React.FC<{className?: string}>;
+  icon?: React.FC<{className?: string}>;
   label: string;
   page: Page;
   activePage: Page;
@@ -48,7 +112,7 @@ const NavItem: React.FC<{
           } h-full flex-col flex-1 justify-center py-2`}
           aria-current={isActive ? 'page' : undefined}
         >
-          <Icon className="h-5 w-5 flex-shrink-0" />
+          {Icon && <Icon className="h-5 w-5 flex-shrink-0" />}
         </button>
         <div className="absolute top-1/2 -translate-y-1/2 left-full ml-3 px-2 py-1 bg-zinc-700 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
           {label}
@@ -67,9 +131,9 @@ const NavItem: React.FC<{
       } ${isSidebarOpen ? 'h-12 px-4' : 'h-full flex-col flex-1 justify-center py-2'}`}
       aria-current={isActive ? 'page' : undefined}
     >
-      <Icon className="h-5 w-5 flex-shrink-0" />
+      {Icon && <Icon className="h-5 w-5 flex-shrink-0" />}
       <span className={`overflow-hidden text-sm font-medium transition-all duration-300 whitespace-nowrap ${
-        isSidebarOpen ? 'w-auto opacity-100 ml-4' : 'w-0 opacity-0 h-0'
+        isSidebarOpen ? `w-auto opacity-100 ${Icon ? 'ml-4' : ''}` : 'w-0 opacity-0 h-0'
       }`}>
         {label}
       </span>
@@ -85,8 +149,9 @@ const CollapsibleNavItem: React.FC<{
   setIsSidebarOpen: (open: boolean) => void;
   openCollapsedMenu: Page | null;
   setOpenCollapsedMenu: (page: Page | null) => void;
-}> = ({ item, activePage, setPage, isSidebarOpen, setIsSidebarOpen, openCollapsedMenu, setOpenCollapsedMenu }) => {
-    const isParentActive = item.page === activePage || (item.subItems || []).some(sub => sub.page === activePage);
+  level?: number;
+}> = ({ item, activePage, setPage, isSidebarOpen, setIsSidebarOpen, openCollapsedMenu, setOpenCollapsedMenu, level = 0 }) => {
+    const isParentActive = item.page === activePage || (item.subItems || []).some(sub => sub.page === activePage || (sub.subItems || []).some(s => s.page === activePage));
     const [isOpen, setIsOpen] = useState(isParentActive);
     
     useEffect(() => {
@@ -103,6 +168,16 @@ const CollapsibleNavItem: React.FC<{
         }
     };
 
+    const handleMainButtonClick = () => {
+        if (item.isMenuOnly) {
+            setIsOpen(!isOpen);
+        } else {
+            setPage(item.page);
+        }
+    };
+    
+    const Icon = item.icon;
+
     if (!isSidebarOpen) {
       return (
           <div 
@@ -114,7 +189,7 @@ const CollapsibleNavItem: React.FC<{
                       isParentActive ? 'text-violet-300' : 'text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200'
                   } h-full flex-col flex-1 justify-center py-2`}
               >
-                  <item.icon className="h-5 w-5 flex-shrink-0" />
+                  {Icon && <Icon className="h-5 w-5 flex-shrink-0" />}
               </button>
               <div className="absolute top-1/2 -translate-y-1/2 left-full ml-3 px-2 py-1 bg-zinc-700 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
                 {item.label}
@@ -122,25 +197,16 @@ const CollapsibleNavItem: React.FC<{
               {openCollapsedMenu === item.page && item.subItems && (
                   <div className="absolute left-full ml-2 top-0 py-2 w-52 bg-zinc-800 rounded-lg shadow-xl border border-zinc-700 z-50 animate-fade-in-fast">
                       <div className="px-4 py-1 text-sm font-semibold text-white">{item.label}</div>
-                      <div className="mt-1">
-                          {(item.subItems || []).map(subItem => {
-                               const isActive = subItem.page === activePage;
-                               return (
-                                  <button
-                                      key={subItem.page}
-                                      onClick={() => {
-                                        setPage(subItem.page)
-                                        setOpenCollapsedMenu(null);
-                                      }}
-                                      className={`flex items-center w-full px-4 py-2 text-left text-sm transition-colors duration-200 ${
-                                          isActive ? 'text-violet-300' : 'text-zinc-300 hover:text-white hover:bg-zinc-700/50'
-                                      }`}
-                                      aria-current={isActive ? 'page' : undefined}
-                                  >
-                                      {subItem.label}
-                                  </button>
-                               )
-                          })}
+                      <div className="mt-1 p-1">
+                          {(item.subItems || []).map(subItem => (
+                               <FlyoutMenuItem
+                                  key={subItem.page}
+                                  item={subItem}
+                                  activePage={activePage}
+                                  setPage={setPage}
+                                  closeAllFlyouts={() => setOpenCollapsedMenu(null)}
+                               />
+                          ))}
                       </div>
                   </div>
               )}
@@ -149,39 +215,63 @@ const CollapsibleNavItem: React.FC<{
     }
 
     return (
-        <div className={!isSidebarOpen ? 'h-full' : ''}>
-            <button
-                onClick={handleParentClick}
-                className={`flex items-center w-full rounded-lg text-left transition-colors duration-200 ${
-                    isParentActive ? 'text-violet-300' : 'text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200'
-                } ${isSidebarOpen ? 'h-12 px-4' : 'h-full flex-col flex-1 justify-center py-2'}`}
+        <div style={level > 0 ? { paddingLeft: '1rem' } : {}}>
+            <div
+                className={`flex items-center w-full h-12 rounded-lg text-left transition-colors duration-200 
+                    ${isParentActive ? 'bg-zinc-800/50 text-violet-300' : 'text-zinc-400'}`}
             >
-                <item.icon className="h-5 w-5 flex-shrink-0" />
-                <span className={`overflow-hidden text-sm font-medium transition-all duration-300 whitespace-nowrap ${
-                    isSidebarOpen ? 'flex-1 w-auto opacity-100 ml-4' : 'w-0 opacity-0 h-0'
-                }`}>
-                    {item.label}
-                </span>
-                {isSidebarOpen && <ChevronDownIcon className={`h-5 w-5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />}
-            </button>
+                <button
+                    onClick={handleMainButtonClick}
+                    className="flex items-center flex-1 min-w-0 h-full text-left px-4 rounded-l-lg hover:bg-zinc-700/30 transition-colors"
+                    aria-label={item.label}
+                >
+                    {Icon && <Icon className="h-5 w-5 flex-shrink-0" />}
+                    <span className={`flex-1 w-auto opacity-100 ${Icon ? 'ml-4' : ''} overflow-hidden text-sm font-medium whitespace-nowrap`}>
+                        {item.label}
+                    </span>
+                </button>
+                <button
+                    onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
+                    className="p-1 h-full px-2 rounded-r-lg hover:bg-zinc-700/50 transition-colors"
+                    aria-label={`Toggle ${item.label} section`}
+                    aria-expanded={isOpen}
+                >
+                    <ChevronDownIcon className={`h-5 w-5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                </button>
+            </div>
             {isOpen && isSidebarOpen && (
-                <div className="pl-8 pt-1 space-y-1">
-                    {(item.subItems || []).map(subItem => {
-                         const isActive = subItem.page === activePage;
-                         return (
-                            <button
-                                key={subItem.page}
-                                onClick={() => setPage(subItem.page)}
-                                className={`flex items-center w-full h-9 px-4 rounded-md text-left text-sm transition-colors duration-200 ${
-                                    isActive ? 'text-white bg-zinc-800/70' : 'text-zinc-400 hover:text-zinc-200'
-                                }`}
-                                aria-current={isActive ? 'page' : undefined}
-                            >
-                                <span className="w-1.5 h-1.5 rounded-full bg-current mr-4"></span>
-                                {subItem.label}
-                            </button>
-                         )
-                    })}
+                <div className="pt-1 space-y-1">
+                    {(item.subItems || []).map(subItem => (
+                      subItem.subItems ? (
+                        <CollapsibleNavItem 
+                            key={subItem.page} 
+                            item={subItem} 
+                            activePage={activePage} 
+                            setPage={setPage} 
+                            isSidebarOpen={isSidebarOpen} 
+                            setIsSidebarOpen={setIsSidebarOpen}
+                            openCollapsedMenu={openCollapsedMenu}
+                            setOpenCollapsedMenu={setOpenCollapsedMenu}
+                            level={level + 1}
+                        />
+                      ) : (
+                         <button
+                            key={subItem.page}
+                            onClick={() => setPage(subItem.page)}
+                            className={`flex items-center w-full h-9 px-4 rounded-md text-left text-sm transition-colors duration-200 ${
+                                activePage === subItem.page ? 'text-white bg-zinc-800/70' : 'text-zinc-400 hover:text-zinc-200'
+                            }`}
+                            style={{ paddingLeft: `${1 + (level + 1) * 1}rem` }}
+                            aria-current={activePage === subItem.page ? 'page' : undefined}
+                          >
+                            {subItem.icon 
+                                ? <subItem.icon className="h-5 w-5 mr-4 flex-shrink-0" />
+                                : <span className="w-1.5 h-1.5 rounded-full bg-current mr-4 flex-shrink-0"></span>
+                            }
+                            {subItem.label}
+                        </button>
+                      )
+                    ))}
                 </div>
             )}
         </div>
@@ -261,6 +351,8 @@ interface SidebarProps {
   setActiveChatId: (id: string) => void;
   onNewChat: () => void;
   onDeleteChat: (id: string) => void;
+  activeContentSection: ContentSection;
+  setActiveContentSection: (section: ContentSection) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -273,14 +365,11 @@ const Sidebar: React.FC<SidebarProps> = ({
   setActiveChatId,
   onNewChat,
   onDeleteChat,
+  activeContentSection,
+  setActiveContentSection,
 }) => {
   const [openCollapsedMenu, setOpenCollapsedMenu] = useState<Page | null>(null);
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({ "Dashboards": true });
   const sidebarRef = useRef<HTMLElement>(null);
-
-  const toggleSection = (label: string) => {
-    setOpenSections(prev => ({ ...prev, [label]: !prev[label] }));
-  };
   
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -304,6 +393,13 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   }, [isSidebarOpen]);
 
+  const contentSections = [
+    { id: 'platform', icon: BriefcaseIcon, label: 'Platform' },
+    { id: 'coordination', icon: ShapesIcon, label: 'Coordination' },
+    { id: 'studio', icon: SparklesIcon, label: 'Studio' },
+    { id: 'marketplace', icon: TagIcon, label: 'Marketplace' },
+  ] as const;
+
   return (
     <aside ref={sidebarRef} className={`fixed top-0 left-0 h-full bg-zinc-900/70 backdrop-blur-xl border-r border-zinc-700/50 z-30 w-64 transition-transform duration-300 ease-in-out lg:transition-all ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 ${isSidebarOpen ? 'lg:w-64' : 'lg:w-20'}`}>
       <div className="flex flex-col h-full">
@@ -316,6 +412,27 @@ const Sidebar: React.FC<SidebarProps> = ({
             <ChevronLeftIcon className={`h-5 w-5 transition-transform duration-300 ${isSidebarOpen ? '' : 'rotate-180'}`} />
           </button>
         </div>
+        
+        <div className={`p-2 border-b border-zinc-700/50 flex ${isSidebarOpen ? 'flex-col gap-2' : 'flex-col gap-2'}`}>
+            <div className={`flex ${isSidebarOpen ? 'gap-2' : 'flex-col gap-2'}`}>
+              {contentSections.map(section => (
+                  <button
+                      key={section.id}
+                      onClick={() => setActiveContentSection(section.id)}
+                      title={isSidebarOpen ? '' : section.label}
+                      className={`flex-1 flex items-center justify-center p-2.5 rounded-lg transition-colors duration-200 ${
+                          activeContentSection === section.id
+                              ? 'bg-violet-500/20 text-violet-300'
+                              : 'text-zinc-400 hover:bg-zinc-800/60'
+                      }`}
+                  >
+                      <section.icon className="h-5 w-5" />
+                  </button>
+              ))}
+            </div>
+        </div>
+
+
         <nav className={`flex-1 p-2 sidebar-nav ${isSidebarOpen ? 'overflow-y-auto space-y-1' : 'flex flex-col'}`}>
             <CollapsibleCategory
                 icon={FolderIcon}
@@ -374,58 +491,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <div className={`border-t border-zinc-700/50 ${isSidebarOpen ? 'mx-4' : 'mx-2'}`}></div>
             </div>
 
-            {navStructure.map((section, sectionIndex) => {
-              if (section.collapsible && section.label && section.icon) {
-                const Icon = section.icon;
-                const isOpen = openSections[section.label] ?? false;
-                const isAnyChildActive = section.items.some(item => 
-                    item.page === activePage || (item.subItems || []).some(sub => sub.page === activePage)
-                );
-
-                if (!isSidebarOpen) {
-                  return (
-                    <React.Fragment key={`${section.label}-collapsed`}>
-                      {section.items.map(item => (
-                        item.subItems ? (
-                          <CollapsibleNavItem key={item.page} item={item} activePage={activePage} setPage={setPage} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} openCollapsedMenu={openCollapsedMenu} setOpenCollapsedMenu={setOpenCollapsedMenu} />
-                        ) : (
-                          <NavItem key={item.page} {...item} activePage={activePage} setPage={setPage} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-                        )
-                      ))}
-                    </React.Fragment>
-                  );
-                }
-
-                return (
-                  <div key={section.label}>
-                    <button
-                      onClick={() => toggleSection(section.label!)}
-                      className={`flex items-center w-full h-12 px-4 rounded-lg text-left transition-colors duration-200 ${
-                        isAnyChildActive ? 'text-violet-300' : 'text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200'
-                      }`}
-                    >
-                      <Icon className="h-5 w-5 flex-shrink-0" />
-                      <span className="flex-1 w-auto opacity-100 ml-4 text-sm font-medium">
-                        {section.label}
-                      </span>
-                      <ChevronDownIcon className={`h-5 w-5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-                    </button>
-                    {isOpen && (
-                      <div className="pl-6 pt-1 space-y-1">
-                        {section.items.map(item => (
-                          item.subItems ? (
-                            <CollapsibleNavItem key={item.page} item={item} activePage={activePage} setPage={setPage} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} openCollapsedMenu={openCollapsedMenu} setOpenCollapsedMenu={setOpenCollapsedMenu} />
-                          ) : (
-                            <NavItem key={item.page} {...item} activePage={activePage} setPage={setPage} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-                          )
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              }
-
-              return (
+            {(navigationData[activeContentSection] || []).map((section, sectionIndex) => (
                 <div key={section.label || `section-${sectionIndex}`}>
                   {section.label && isSidebarOpen && (
                     <h3 className="px-4 pt-4 pb-1 text-xs font-semibold text-zinc-500 uppercase tracking-wider">{section.label}</h3>
@@ -440,8 +506,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     ))}
                   </div>
                 </div>
-              );
-            })}
+            ))}
 
         </nav>
         <div className="p-2 border-t border-zinc-700/50">
@@ -564,6 +629,8 @@ interface LayoutProps {
   setIsRightPanelOpen: (isOpen: boolean) => void;
   rightPanelWidth: number;
   isResizing: boolean;
+  activeContentSection: ContentSection;
+  setActiveContentSection: (section: ContentSection) => void;
 }
 
 export default function Layout({ 
@@ -590,6 +657,8 @@ export default function Layout({
   setIsRightPanelOpen,
   rightPanelWidth,
   isResizing,
+  activeContentSection,
+  setActiveContentSection
 }: LayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeHeaderPanel, setActiveHeaderPanel] = useState<'user' | 'notifications' | 'team' | 'conversations' | null>(null);
@@ -706,6 +775,8 @@ export default function Layout({
         setActiveChatId={setActiveChatId}
         onNewChat={onNewChat}
         onDeleteChat={onDeleteChat}
+        activeContentSection={activeContentSection}
+        setActiveContentSection={setActiveContentSection}
       />
       <div 
         className={`main-content-wrapper flex-1 flex flex-col min-w-0 overflow-x-hidden ${isSidebarOpen ? 'lg:ml-64' : 'lg:ml-20'} ${isRightPanelOpen && aiChatInterfaceStyle === 'panel' ? 'panel-open' : ''} ${isResizing ? '' : 'transition-all duration-300 ease-in-out'}`}

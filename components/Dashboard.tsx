@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { EditIcon } from './Icons';
 import type { SelectableKpi, WidgetInstance, DashboardSection, ShowcaseKpi, TimeConfig, Page } from '../types';
@@ -11,8 +10,13 @@ import { BaseWidgetConfigForm } from './forms/BaseWidgetConfigForm';
 import { VersionSelector } from './ui/VersionSelector';
 import { TimeRangeControl } from './ui/TimeRangeControl';
 import { DashboardBreadcrumb } from './ui/DashboardBreadcrumb';
-import { platformNavItems } from '../navigation';
+import { allNavItems, navigationData, type NavItemData } from '../navigation';
 import { KpiChartModal } from './KpiChartModal';
+
+interface BreadcrumbSection {
+    title?: string;
+    items: { label: string; page: Page }[];
+}
 
 interface DashboardProps {
     title: string;
@@ -58,27 +62,75 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const [activeVersion, setActiveVersion] = useState('live');
     const [viewingChartKpi, setViewingChartKpi] = useState<SelectableKpi | null>(null);
 
-    const breadcrumbItems = useMemo(() => {
-        if (page === 'dashboard') { // Home Dashboard
-            return platformNavItems
-                .filter(item => item.page.endsWith('-dashboard') && item.page !== 'dashboard')
-                .map(item => ({ label: item.label, page: item.page }));
-        } else { // Individual Dashboard
-            const navItem = platformNavItems.find(item => item.page === page || (item.subItems || []).some(sub => sub.page === page));
-            if (navItem?.page === page) { // It's a top-level dashboard page
-                 return navItem?.subItems || [];
-            }
-            // It's a sub-page, find the parent
-            const parentItem = platformNavItems.find(item => (item.subItems || []).some(sub => sub.page === page));
-            return parentItem?.subItems || [];
-        }
-    }, [page]);
+    const breadcrumbItems = useMemo<BreadcrumbSection[]>(() => {
+        const allDashboardsRoot = navigationData.platform[0].items.find(i => i.label === "Dashboards");
+        if (!allDashboardsRoot || !allDashboardsRoot.subItems) return [];
     
-    const activeDashboardTitle = useMemo(() => {
-       if (page === 'dashboard') return title;
+        const breadcrumbSections: BreadcrumbSection[] = [];
+        const otherItems: { label: string; page: Page }[] = [];
+    
+        allDashboardsRoot.subItems.forEach(item => {
+            if (item.subItems) { // This is a category with sub-items, e.g., "Platform"
+                breadcrumbSections.push({
+                    title: item.label,
+                    items: item.subItems.map(sub => ({ label: sub.label, page: sub.page }))
+                });
+            } else { // This is a direct dashboard link
+                otherItems.push({ label: item.label, page: item.page });
+            }
+        });
+    
+        if (otherItems.length > 0) {
+            const untitledSection = breadcrumbSections.find(s => !s.title);
+            if (untitledSection) {
+                untitledSection.items.push(...otherItems);
+            } else {
+                breadcrumbSections.push({ items: otherItems });
+            }
+        }
+        
+        return breadcrumbSections;
+    }, []);
 
-       const parentItem = platformNavItems.find(item => item.page === page || (item.subItems || []).some(sub => sub.page === page));
-       return parentItem?.label || title;
+    const activeDashboardTitle = useMemo(() => {
+        // This function will find the NavItemData for the given page.
+        const findItem = (pageToFind: Page, items: NavItemData[]): NavItemData | null => {
+            for (const item of items) {
+                if (item.page === pageToFind) return item;
+                if (item.subItems) {
+                    const found = findItem(pageToFind, item.subItems);
+                    if (found) return found;
+                }
+            }
+            return null;
+        };
+        
+        // This function will find the direct parent of a given item.
+        const findParent = (itemToFind: NavItemData, items: NavItemData[]): NavItemData | null => {
+            for (const item of items) {
+                if (item.subItems?.some(sub => sub.page === itemToFind.page)) {
+                    return item;
+                }
+                if (item.subItems) {
+                    const found = findParent(itemToFind, item.subItems);
+                    if (found) return found;
+                }
+            }
+            return null;
+        };
+        
+        const currentItem = findItem(page, allNavItems);
+        if (!currentItem) return title;
+    
+        // A dashboard page is one that ends with '-dashboard' or is 'dashboard'
+        const isDashboardPage = currentItem.page.endsWith('-dashboard') || currentItem.page === 'dashboard';
+        if (isDashboardPage) {
+            return currentItem.label;
+        }
+    
+        // It's a sub-page, so find its dashboard parent.
+        const parent = findParent(currentItem, allNavItems);
+        return parent ? parent.label : currentItem.label;
     }, [page, title]);
 
 

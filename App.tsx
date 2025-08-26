@@ -34,12 +34,12 @@ import Conversations from './Conversations';
 import TeamManagement from './TeamManagement';
 import Profile from './Profile';
 import Notifications from './Notifications';
-import type { Page, ChatSession, Message, Bookmark, ConversationMessage, ConversationChannel, DmToastState, TimeConfig, WidgetContext, WidgetInstance } from './types';
+import type { Page, ChatSession, Message, Bookmark, ConversationMessage, ConversationChannel, DmToastState, TimeConfig, WidgetContext, WidgetInstance, ContentSection } from './types';
 import { GoogleGenAI, Chat as GeminiChat } from '@google/genai';
 import PlaceholderPage from './PlaceholderPage';
 import { PerpetualDiscussionToast } from './components/PerpetualDiscussionToast';
 import { Command, CommandPalette } from './components/CommandPalette';
-import { navStructure } from './navigation';
+import { allNavItems } from './navigation';
 import { DatabaseIcon, MessageSquareIcon, SparklesIcon, ChevronUpIcon, LineChartIcon, TrendingUpIcon, ClockIcon, LightningBoltIcon } from './components/Icons';
 import Content from './Content';
 import Seo from './Seo';
@@ -53,6 +53,7 @@ import { PersonChatToast } from './components/PersonChatToast';
 import { AiChatPanel } from './components/AiChatPanel';
 import { fmtEuro, formatWidgetDataForAI } from './utils';
 import { DEFAULTS as simulationDefaults } from './constants';
+import PlatformHome from './PlatformHome';
 
 
 // Helper hook to get the previous value of a state or prop
@@ -67,7 +68,8 @@ function usePrevious<T>(value: T): T | undefined {
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export default function App() {
-  const [page, setPage] = useState<Page>('dashboard');
+  const [page, setPage] = useState<Page>('platform-home');
+  const [activeContentSection, setActiveContentSection] = useState<ContentSection>('platform');
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [activeTeamId, setActiveTeamId] = useState<string>('eng');
@@ -335,536 +337,210 @@ export default function App() {
         }
     }
 
-    if (!lastUserMessage) {
-        console.error("Could not find a user message to regenerate response from.");
-        return;
-    }
-    
-    setIsAiLoading(true);
+    if (!lastUserMessage) return;
 
-    // Replace the old AI message with a new placeholder
-    setAiChatSessions(prev => prev.map(s => {
-      if (s.id === activeAiChatId) {
-        const newMessages = s.messages.filter(m => m.id !== messageId);
-        newMessages.push({ id: messageId, text: '', sender: 'ai', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
-        return { ...s, messages: newMessages };
-      }
-      return s;
-    }));
+    const messagesToResend = session.messages.slice(0, messageIndex);
 
-     try {
-        const stream = await session.geminiChat.sendMessageStream({ message: lastUserMessage.text });
+    setAiChatSessions(prev =>
+        prev.map(s => s.id === activeAiChatId ? { ...s, messages: messagesToResend } : s)
+    );
 
-        for await (const chunk of stream) {
-            const chunkText = chunk.text;
-            setAiChatSessions(prev =>
-                prev.map(s => {
-                    if (s.id === activeAiChatId) {
-                        const newMessages = s.messages.map(m =>
-                            m.id === messageId ? { ...m, text: m.text + chunkText } : m
-                        );
-                        return { ...s, messages: newMessages };
-                    }
-                    return s;
-                })
-            );
-        }
-    } catch (error) {
-         console.error("Error regenerating response:", error);
-    } finally {
-        setIsAiLoading(false);
-    }
+    setTimeout(() => handleSendAiMessage(lastUserMessage!.text), 0);
   };
 
-  const handleToggleAiChat = () => {
-    const ensureChatExists = () => {
-      if (!activeAiChatId) {
-          if (aiChatSessions.length > 0) {
-              setActiveAiChatId(aiChatSessions[0].id);
-          } else {
-              const newChatSession: ChatSession = {
-                  id: Date.now().toString(),
-                  title: 'New Chat',
-                  messages: [{ id: 1, text: "Hello! How can I assist with your business data today?", sender: 'ai', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }],
-                  geminiChat: ai.chats.create({ model: 'gemini-2.5-flash' }),
-              };
-              setAiChatSessions(prev => [newChatSession, ...prev]);
-              setActiveAiChatId(newChatSession.id);
-          }
-      }
-    };
-
-    if (aiChatInterfaceStyle === 'toast') {
-        if (isAiChatToastOpen) {
-            setIsAiChatToastOpen(false);
-            return;
-        }
-        ensureChatExists();
-        setIsAiChatToastOpen(true);
-        setIsAiChatToastMinimized(false);
-    } else { // 'panel' style
-        if (!isRightPanelOpen) {
-          ensureChatExists();
-        }
-        setIsRightPanelOpen(prev => !prev);
-    }
-  };
-  
-  const handleMaximizeAiChat = () => {
-      setIsAiChatToastOpen(false);
-      setIsRightPanelOpen(false);
-      setPage('chat');
-  };
-  
-  const handleToggleBookmark = (messageToToggle: Message) => {
-    const session = aiChatSessions.find(s => s.id === activeAiChatId);
-    if (!session) return;
-
-    const bookmarkExists = bookmarks.some(b => b.message.id === messageToToggle.id);
-
-    if (bookmarkExists) {
-        setBookmarks(prev => prev.filter(b => b.message.id !== messageToToggle.id));
-    } else {
-        const { isBookmarked, ...message } = messageToToggle;
-        const newBookmark: Bookmark = {
-            message,
-            sessionId: session.id,
-            sessionTitle: session.title,
+    const handleCiteWidget = (widgetInstance: WidgetInstance, widgetData: any) => {
+        const newContext: WidgetContext = {
+            id: widgetInstance.id,
+            title: widgetInstance.config.title,
+            icon: DatabaseIcon, // Default icon
+            data: formatWidgetDataForAI(widgetInstance, widgetData),
         };
-        setBookmarks(prev => [newBookmark, ...prev]);
-    }
-  };
 
-  const handleOpenConversation = useCallback((channelId: string) => {
-    setOpenDmToasts(prev => {
-        const MAX_OPEN_CHATS = 2;
-        const alreadyOpen = prev.find(t => t.channelId === channelId);
+        if (attachedWidgetContexts.some(ctx => ctx.id === newContext.id)) return;
 
-        if (alreadyOpen) {
-            // If it exists and is minimized, maximize it.
-            return prev.map(t => t.channelId === channelId ? { ...t, isMinimized: false } : t);
-        }
-        
-        // If too many are open, don't add a new one.
-        if (prev.filter(t => !t.isMinimized).length >= MAX_OPEN_CHATS) {
-            // TODO: In a future iteration, maybe add a small visual indicator/alert here
-            return prev;
-        }
-        
-        // Add new toast
-        return [...prev, { channelId, isMinimized: false }];
-    });
-  }, []);
+        setAttachedWidgetContexts(prev => [...prev, newContext]);
 
-  const handleStartDm = useCallback((memberId: number) => {
-    const channel = conversationChannels.find(c => c.type === 'dm' && c.members?.includes(memberId));
-    if (channel) {
-        handleOpenConversation(channel.id);
-    } else {
-        console.error(`DM channel for member ${memberId} not found.`);
-    }
-  }, [conversationChannels, handleOpenConversation]);
-
-  const handleCloseDmToast = (channelId: string) => {
-    setOpenDmToasts(prev => prev.filter(t => t.channelId !== channelId));
-  };
-
-  const handleSetDmToastMinimized = (channelId: string, isMinimized: boolean) => {
-    setOpenDmToasts(prev => prev.map(t => t.channelId === channelId ? { ...t, isMinimized } : t));
-  };
-  
-  const handleSendDmMessage = (channelId: string, text: string) => {
-    const currentUser = initialConversationUsers.find(u => u.id === 1); // Assume current user is John Doe
-    if (!currentUser) return;
-
-    const newMessage: ConversationMessage = {
-        id: `m-${Date.now()}`,
-        text,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        userId: currentUser.id,
-        userName: currentUser.name,
-    };
-
-    setConversationMessages(prev => {
-        const newMessages = { ...prev };
-        const channelMessages = newMessages[channelId] || [];
-        newMessages[channelId] = [...channelMessages, newMessage];
-        return newMessages;
-    });
-  };
-
-  const handleMaximizeDm = (channelId: string) => {
-    setActiveConversationChannelId(channelId);
-    handleCloseDmToast(channelId);
-    setPage('conversations');
-  };
-
-  const handleCiteWidget = useCallback((instance: WidgetInstance, data: any) => {
-    // Prevent adding duplicates
-    if (attachedWidgetContexts.some(ctx => ctx.id === instance.id)) return;
-
-    // A map to get an icon based on widget type
-    const widgetIconMap: Record<string, React.FC<{className?: string}>> = {
-        'KPI_VIEW': TrendingUpIcon,
-        'TABLE_VIEW': DatabaseIcon,
-        'TREND_GRAPHIC': LineChartIcon,
-        'LIST_VIEW': DatabaseIcon,
-        'PROJECTION_GRAPHIC': LineChartIcon,
-        'FUNNEL_GRAPHIC': DatabaseIcon,
-        'PIE_CHART': DatabaseIcon,
-        'ACTIVITY_FEED': ClockIcon,
-        'STATIC_QUICK_ACTIONS': LightningBoltIcon,
-    };
-
-    const formattedData = formatWidgetDataForAI(instance, data);
-    
-    const newContext: WidgetContext = {
-        id: instance.id,
-        title: instance.config.title,
-        icon: widgetIconMap[instance.widgetType] || SparklesIcon,
-        data: formattedData,
-    };
-    
-    setAttachedWidgetContexts(prev => [...prev, newContext]);
-
-    // Also, open the chat panel/toast
-    if (aiChatInterfaceStyle === 'toast') {
-        if (!isAiChatToastOpen || isAiChatToastMinimized) {
+        if (aiChatInterfaceStyle === 'panel' && !isRightPanelOpen) {
+            setIsRightPanelOpen(true);
+        } else if (aiChatInterfaceStyle === 'toast' && !isAiChatToastOpen) {
             setIsAiChatToastOpen(true);
             setIsAiChatToastMinimized(false);
         }
-    } else {
-        setIsRightPanelOpen(true);
-    }
-}, [attachedWidgetContexts, aiChatInterfaceStyle, isAiChatToastOpen, isAiChatToastMinimized]);
+    };
 
-const handleRemoveWidgetContext = (id: string) => {
-    setAttachedWidgetContexts(prev => prev.filter(ctx => ctx.id !== id));
-};
+    const handleToggleBookmark = (message: Message) => {
+        const session = aiChatSessions.find(s => s.messages.some(m => m.id === message.id));
+        if (!session) return;
 
-const handleClearWidgetContexts = () => {
-    setAttachedWidgetContexts([]);
-};
-
-  const getAppContextData = useCallback((command: string): string => {
-    let context = 'No data found for this command.';
-    const parts = command.split('.');
-    const mainCommand = parts[0];
-    const subCommand = parts[1];
-
-    try {
-        switch (mainCommand) {
-            case 'dashboard':
-                context = `## Home Dashboard KPIs\n${initialKpiMetrics.map(k => `- **${k.metric}**: ${k.value} (${k.change})`).join('\n')}`;
-                break;
-            case 'financial': {
-                const totalRevenue = initialRevenueStreams.reduce((sum, item) => sum + item.mrr, 0);
-                const totalExpenses = initialExpenses.reduce((sum, item) => sum + item.cost, 0);
-
-                if (subCommand === 'revenue') {
-                    context = `## Revenue Streams\n${initialRevenueStreams.map(r => `- **${r.stream}**: ${fmtEuro(r.mrr)}/month`).join('\n')}`;
-                } else if (subCommand === 'expenses') {
-                    context = `## Expense Breakdown\n${initialExpenses.map(e => `- **${e.category}**: ${fmtEuro(e.cost)}/month`).join('\n')}`;
-                } else {
-                    context = `## Key Financial Metrics
-- **Total Monthly Revenue**: ${fmtEuro(totalRevenue)}
-- **Total Monthly Expenses**: ${fmtEuro(totalExpenses)}
-- **Net Monthly Income**: ${fmtEuro(totalRevenue - totalExpenses)}`;
-                }
-                break;
-            }
-            case 'simulation':
-                context = `## Current Simulation Parameters
-- **ARPU Current**: ${fmtEuro(simulationDefaults.arpuCurrent)}/year
-- **ARPU Supernova**: ${fmtEuro(simulationDefaults.arpuSuper)}/year
-- **User Range**: ${simulationDefaults.usersMin.toLocaleString()} - ${simulationDefaults.usersMax.toLocaleString()}
-- **Valuation Multiplier (Low Band)**: ${simulationDefaults.lowBand.min}x - ${simulationDefaults.lowBand.max}x
-- **Valuation Multiplier (High Band)**: ${simulationDefaults.highBand.min}x - ${simulationDefaults.highBand.max}x`;
-                break;
-            case 'sales':
-                context = `## E-commerce Sales KPIs\n${initialEcommerceMetrics.map(k => `- **${k.metric}**: ${k.value} (${k.change})`).join('\n')}`;
-                break;
-            case 'customer': {
-                 if (subCommand === 'crm') {
-                    context = `## CRM Pipeline\n${initialCrmData.slice(0, 5).map(c => `- **${c.company} (${c.name})**: ${fmtEuro(c.value)} - ${c.status}`).join('\n')}`;
-                } else if (subCommand === 'feedback') {
-                    const promoters = initialFeedbackData.filter(f => f.type === 'promoter').length;
-                    const total = initialFeedbackData.length;
-                    context = `## Customer Feedback Summary\n- Total Feedback entries: ${total}\n- Promoters: ${promoters} (${((promoters/total)*100).toFixed(0)}%)`;
-                } else if (subCommand === 'requests') {
-                    context = `## Top Feature Requests\n${initialRequestData.slice(0, 5).map(r => `- **${r.title}**: ${r.votes} votes - ${r.status}`).join('\n')}`;
-                } else {
-                    context = `## Customer KPIs\n${initialCustomerMetrics.map(k => `- **${k.metric}**: ${k.value} (${k.change})`).join('\n')}`;
-                }
-                break;
-            }
-            case 'internal': {
-                if (subCommand === 'hiring') {
-                    context = `## Hiring Pipeline Summary\n- **Open Roles**: ${initialHiringPipeline.length}\n- **Total Candidates**: ${initialHiringPipeline.reduce((sum, item) => sum + item.candidates, 0)}\n${initialHiringPipeline.map(r => `  - ${r.role}: ${r.candidates} candidates`).join('\n')}`;
-                } else {
-                     context = `## Internal KPIs\n- **Headcount**: 42 (+2 this month)\n- **eNPS**: 75 (Last surveyed in Q2)`;
-                }
-                break;
-            }
-            case 'marketing':
-                context = `## Marketing KPIs\n${initialMarketingMetrics.map(k => `- **${k.metric}**: ${k.value} (${k.change})`).join('\n')}`;
-                break;
-            case 'operational':
-                context = `## Operational KPIs\n${initialOperationalMetrics.map(k => `- **${k.metric}**: ${k.value} (${k.change})`).join('\n')}`;
-                break;
-        }
-    } catch (error) {
-        console.error("Error gathering context data:", error);
-        context = "An error occurred while fetching data.";
-    }
-    return context.trim();
-  }, []);
-
-  const activeAiChat = aiChatSessions.find(c => c.id === activeAiChatId);
-  const bookmarkedMessageIds = new Set(bookmarks.map(b => b.message.id));
-  const activeChatWithBookmarks = activeAiChat ? {
-      ...activeAiChat,
-      messages: activeAiChat.messages.map(m => ({
-          ...m,
-          isBookmarked: bookmarkedMessageIds.has(m.id),
-      }))
-  } : undefined;
-
-  const commands = useMemo(() => {
-    const pageCommands: Command[] = [];
-    navStructure.forEach(section => {
-        section.items.forEach(item => {
-            if (item.subItems) {
-                item.subItems.forEach(sub => {
-                  pageCommands.push({
-                    id: sub.page,
-                    title: `${item.label} → ${sub.label}`,
-                    icon: item.icon,
-                    action: () => { setPage(sub.page); setIsCommandPaletteOpen(false); }
-                  });
-                });
+        setBookmarks(prev => {
+            const isBookmarked = prev.some(b => b.message.id === message.id);
+            if (isBookmarked) {
+                return prev.filter(b => b.message.id !== message.id);
             } else {
-                pageCommands.push({
-                  id: item.page,
-                  title: item.label,
-                  icon: item.icon,
-                  action: () => { setPage(item.page); setIsCommandPaletteOpen(false); }
-                });
+                return [...prev, { message, sessionId: session.id, sessionTitle: session.title }];
             }
         });
-    });
-
-    pageCommands.push({
-        id: 'data-sources',
-        title: 'Data Sources',
-        icon: DatabaseIcon,
-        action: () => { setPage('data-sources'); setIsCommandPaletteOpen(false); }
-    });
+    };
     
-    pageCommands.push({
-        id: 'new-chat',
-        title: 'Start New Chat',
-        icon: MessageSquareIcon,
-        action: () => { handleNewChat(); setIsCommandPaletteOpen(false); }
-    });
+    const handleSendDmMessage = (channelId: string, text: string) => {
+        const newMessage: ConversationMessage = {
+            id: Date.now().toString(),
+            text,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            userId: 1, // Current user
+            userName: 'John Doe',
+        };
+        setConversationMessages(prev => ({
+            ...prev,
+            [channelId]: [...(prev[channelId] || []), newMessage]
+        }));
+    };
+    
+    const handleOpenConversationToast = (channelId: string) => {
+        setOpenDmToasts(prev => {
+            if (prev.some(t => t.channelId === channelId)) {
+                return prev.map(t => t.channelId === channelId ? { ...t, isMinimized: false } : t);
+            }
+            return [...prev, { channelId, isMinimized: false }];
+        });
+    };
+    
+    const handleStartDm = (memberId: number) => {
+        const existingDm = conversationChannels.find(c => c.type === 'dm' && c.members?.includes(memberId));
+        if (existingDm) {
+            handleOpenConversationToast(existingDm.id);
+        } else {
+            const member = initialConversationUsers.find(u => u.id === memberId);
+            if (!member) return;
 
-    return pageCommands;
-  }, [handleNewChat]);
+            const newChannel: ConversationChannel = {
+                id: `dm-${memberId}`,
+                name: member.name,
+                type: 'dm',
+                unreadCount: 0,
+                members: [memberId],
+            };
+            setConversationChannels(prev => [...prev, newChannel]);
+            handleOpenConversationToast(newChannel.id);
+        }
+    };
 
   const renderPage = () => {
+    const dashboardProps = {
+        globalTimeConfig,
+        setGlobalTimeConfig,
+        page,
+        setPage,
+        isKpiSentimentColoringEnabled,
+        onCiteWidget: handleCiteWidget,
+    };
+    const simpleDashboardProps = { isKpiSentimentColoringEnabled };
+
     switch (page) {
-      case 'dashboard':
-        return <HomeDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} onCiteWidget={handleCiteWidget} />;
-      case 'simulation-dashboard':
-        return <SimulationDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} onCiteWidget={handleCiteWidget} />;
-      case 'simulation-revenue':
-        return <FinancialSimulations />;
-      case 'simulation-pnl':
-        return <PNLStatement isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
-      case 'simulation-balance-sheet':
-        return <BalanceSheet isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
-      case 'financial-dashboard':
-        return <FinancialPlanning page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} onCiteWidget={handleCiteWidget} />;
-      case 'financial-revenue':
-        return <Revenue />;
-      case 'financial-expenses':
-        return <Expenses />;
-      case 'customer-dashboard':
-        return <CustomerDashboard isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
-      case 'customer-crm':
-        return <CustomerCRM />;
-      case 'customer-requests':
-        return <CustomerRequests />;
-      case 'customer-feedback':
-        return <CustomerFeedback isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
-      case 'product-analytics':
-        return <ProductAnalytics isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
-      case 'marketing':
-        return <Marketing page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} onCiteWidget={handleCiteWidget} />;
-      case 'operational-dashboard':
-        return <OperationalDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} onCiteWidget={handleCiteWidget} />;
-      case 'operational-efficiency':
-        return <Operational isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
-      case 'operational-status':
-        return <SystemStatus />;
-      case 'operational-costs':
-        return <CostAnalysis />;
-      case 'internal-dashboard':
-        return <InternalDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} onCiteWidget={handleCiteWidget} />;
-      case 'internal-people':
-        return <Internal page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
-      case 'internal-cap-table':
-        return <CapTable isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
-      case 'sales-dashboard':
-        return <SalesDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} onCiteWidget={handleCiteWidget} />;
-      case 'sales-orders':
-        return <OrderFulfillment />;
-      case 'sales-inventory':
-        return <InventoryManagement />;
-      case 'sales-promotions':
-        return <Promotions />;
-      case 'data-sources':
-        return <DataSources />;
-      case 'conversations':
-        return <Conversations 
-          activeTeamId={activeTeamId}
-          setActiveTeamId={setActiveTeamId}
-          channels={conversationChannels}
-          messages={conversationMessages}
-          activeChannelId={activeConversationChannelId}
-          setActiveChannelId={setActiveConversationChannelId}
-          onSendMessage={handleSendDmMessage}
-        />;
-      case 'team-management':
-        return <TeamManagement 
-          activeTeamId={activeTeamId}
-          setActiveTeamId={setActiveTeamId}
-          setPage={setPage}
-        />;
-      case 'profile':
-        return <Profile viewedProfileId={viewedProfileId} setPage={setPage} />;
-      case 'notifications':
-        return <Notifications />;
-      case 'chat':
-        return (
-          <Chat 
-            session={activeChatWithBookmarks} 
-            onSend={handleSendAiMessage} 
-            isLoading={isAiLoading} 
-            isMessageQueued={!!queuedAiMessage}
-            onRegenerate={handleRegenerate}
-            bookmarks={bookmarks}
-            onToggleBookmark={handleToggleBookmark}
-            setActiveChatId={(id) => {
-              setActiveAiChatId(id);
-              setPage('chat');
-            }}
-            getAppContextData={getAppContextData}
-            attachedWidgetContexts={attachedWidgetContexts}
-            onRemoveWidgetContext={handleRemoveWidgetContext}
-            onClearWidgetContexts={handleClearWidgetContexts}
-          />
-        );
-      case 'coordination-dashboard':
-        return <CoordinationDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} onCiteWidget={handleCiteWidget} />;
-      case 'coordination-contractors':
-        return <PlaceholderPage title="Contractors" description="Manage and coordinate with your organization's contractors." />;
-      case 'coordination-agents':
-        return <PlaceholderPage title="Agents" description="Manage and coordinate with your organization's agents." />;
-      case 'coordination-services':
-        return <PlaceholderPage title="Services" description="Manage and coordinate with external services." />;
-      case 'studio-dashboard':
-        return <PlaceholderPage title="Studio Dashboard" description="An overview of your studio activities." />;
-      case 'studio-projects':
-        return <PlaceholderPage title="Studio Projects" description="Manage all your studio projects." />;
-      case 'studio-tasks':
-        return <PlaceholderPage title="Studio Tasks" description="Track tasks related to studio projects." />;
-      case 'studio-entities':
-        return <PlaceholderPage title="Studio Entities" description="Manage entities within your studio." />;
-      case 'studio-systems':
-        return <PlaceholderPage title="Studio Systems" description="Manage studio systems and workflows." />;
-      case 'studio-essences':
-        return <PlaceholderPage title="Studio Essences" description="Manage essences for your studio." />;
-      case 'marketplace-dashboard':
-        return <PlaceholderPage title="Marketplace Dashboard" description="An overview of your marketplace performance." />;
-      case 'marketplace-performances':
-        return <PlaceholderPage title="Marketplace Performances" description="Analyze marketplace performance metrics." />;
-      case 'marketplace-requests':
-        return <PlaceholderPage title="Marketplace Requests" description="Handle requests from the marketplace." />;
-      case 'marketplace-contracts':
-        return <PlaceholderPage title="Marketplace Contracts" description="Manage marketplace contracts." />;
-      case 'marketplace-prospection':
-        return <PlaceholderPage title="Marketplace Prospection" description="Tools for marketplace prospection." />;
-      case 'internal-culture':
-        return <PlaceholderPage title="Culture" description="Monitor and foster company culture." />;
-      case 'external-dashboard':
-        return <ExternalDashboard page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} onCiteWidget={handleCiteWidget} />;
-      case 'external-content':
-        return <Content isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
-      case 'external-seo':
-        return <Seo isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
-      case 'external-partners':
-        return <Partners isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
-      case 'external-pr':
-        return <PublicRelations isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
-      case 'external-branding':
-        return <Branding isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />;
-      case 'external-competition':
-        return <Competition />;
-      case 'monitoring-dashboard':
-        return <PlaceholderPage title="Monitoring Dashboard" description="An overview of system monitoring." />;
-      default:
-        return <FinancialPlanning page={page} setPage={setPage} globalTimeConfig={globalTimeConfig} setGlobalTimeConfig={setGlobalTimeConfig} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} onCiteWidget={handleCiteWidget} />;
+        case 'platform-home': return <PlatformHome {...dashboardProps} />;
+        case 'dashboard': return <HomeDashboard {...dashboardProps} />;
+        case 'simulation-dashboard': return <SimulationDashboard {...dashboardProps} />;
+        case 'simulation-revenue': return <FinancialSimulations />;
+        case 'financial-dashboard': return <FinancialPlanning {...dashboardProps} />;
+        case 'financial-revenue': return <Revenue />;
+        case 'financial-expenses': return <Expenses />;
+        case 'customer-dashboard': return <CustomerDashboard {...simpleDashboardProps} />;
+        case 'customer-crm': return <CustomerCRM />;
+        case 'customer-requests': return <CustomerRequests />;
+        case 'customer-feedback': return <CustomerFeedback {...simpleDashboardProps} />;
+        case 'product-analytics': return <ProductAnalytics {...simpleDashboardProps} />;
+        case 'marketing': return <Marketing {...dashboardProps} />;
+        case 'operational-dashboard': return <OperationalDashboard {...dashboardProps} />;
+        case 'operational-efficiency': return <Operational {...simpleDashboardProps} />;
+        case 'operational-status': return <SystemStatus />;
+        case 'operational-costs': return <CostAnalysis />;
+        case 'internal-dashboard': return <InternalDashboard {...dashboardProps} />;
+        case 'internal-people': return <Internal {...dashboardProps} />;
+        case 'internal-cap-table': return <CapTable {...simpleDashboardProps} />;
+        case 'data-sources': return <DataSources />;
+        case 'sales-dashboard': return <SalesDashboard {...dashboardProps} />;
+        case 'sales-orders': return <OrderFulfillment />;
+        case 'sales-inventory': return <InventoryManagement />;
+        case 'sales-promotions': return <Promotions />;
+        case 'coordination-dashboard': return <CoordinationDashboard {...dashboardProps} />;
+        case 'external-dashboard': return <ExternalDashboard {...dashboardProps} />;
+        case 'external-content': return <Content {...simpleDashboardProps} />;
+        case 'external-seo': return <Seo {...simpleDashboardProps} />;
+        case 'external-partners': return <Partners {...simpleDashboardProps} />;
+        case 'external-pr': return <PublicRelations {...simpleDashboardProps} />;
+        case 'external-branding': return <Branding {...simpleDashboardProps} />;
+        case 'external-competition': return <Competition />;
+        
+        case 'chat':
+            const activeSession = aiChatSessions.find(s => s.id === activeAiChatId);
+            return <Chat
+                session={activeSession ? { ...activeSession, messages: activeSession.messages.map(m => ({ ...m, isBookmarked: bookmarks.some(b => b.message.id === m.id)})) } : undefined}
+                isLoading={isAiLoading}
+                isMessageQueued={!!queuedAiMessage}
+                onSend={handleSendAiMessage}
+                onRegenerate={handleRegenerate}
+                bookmarks={bookmarks}
+                onToggleBookmark={handleToggleBookmark}
+                setActiveChatId={setActiveAiChatId}
+                getAppContextData={(command) => `Data for ${command}`}
+                attachedWidgetContexts={attachedWidgetContexts}
+                onRemoveWidgetContext={(id) => setAttachedWidgetContexts(p => p.filter(c => c.id !== id))}
+                onClearWidgetContexts={() => setAttachedWidgetContexts([])}
+            />;
+        case 'conversations':
+            return <Conversations
+                activeTeamId={activeTeamId}
+                setActiveTeamId={setActiveTeamId}
+                channels={conversationChannels}
+                messages={conversationMessages}
+                activeChannelId={activeConversationChannelId}
+                setActiveChannelId={setActiveConversationChannelId}
+                onSendMessage={handleSendDmMessage}
+            />;
+        case 'team-management':
+            return <TeamManagement activeTeamId={activeTeamId} setActiveTeamId={setActiveTeamId} setPage={setPage} />;
+        case 'profile':
+            return <Profile viewedProfileId={viewedProfileId} setPage={setPage} />;
+        case 'notifications':
+            return <Notifications />;
+
+        default:
+            return <PlaceholderPage title={String(page)} description={`This is a placeholder for the ${page} page.`} />;
     }
   };
 
-  const maximizedDmToasts = openDmToasts.filter(t => !t.isMinimized);
-  const minimizedDmToasts = openDmToasts.filter(t => t.isMinimized);
-  const isAiToastMaximized = isAiChatToastOpen && !isAiChatToastMinimized;
+  const commands = useMemo<Command[]>(() =>
+    allNavItems.filter(item => !item.subItems).map(item => ({
+        id: item.page,
+        title: `Go to ${item.label}`,
+        icon: item.icon || LineChartIcon,
+        action: () => { setPage(item.page); setIsCommandPaletteOpen(false); },
+    }))
+  , [setPage]);
 
-  // Constants for layout calculations
-  const baseOffsetRem = 1.5; // right-6
-  const aiToastWidthRem = 26; // from PerpetualDiscussionToast component
-  const personToastWidthRem = 24; // from PersonChatToast component
-  const gapRem = 1;
-  const rightPanelRemWidth = isRightPanelOpen && aiChatInterfaceStyle === 'panel' ? rightPanelWidth / 16 : 0;
-
-
-  // Calculate the position for the container of minimized toasts
-  let minimizedContainerRightOffset = baseOffsetRem + rightPanelRemWidth;
-  if (isAiToastMaximized) {
-    minimizedContainerRightOffset += aiToastWidthRem + gapRem;
-  }
-  minimizedContainerRightOffset += maximizedDmToasts.length * (personToastWidthRem + gapRem);
-
-  const minimizedContainerStyle = {
-    right: `${minimizedContainerRightOffset}rem`,
-  };
+  const activeAiSession = aiChatSessions.find(s => s.id === activeAiChatId);
+  const activeDmToasts = openDmToasts.map(toastState => {
+      const channel = conversationChannels.find(c => c.id === toastState.channelId);
+      return channel ? { ...toastState, channel } : null;
+  }).filter(Boolean) as (DmToastState & { channel: ConversationChannel })[];
 
   return (
-    <div className="relative min-h-screen w-full text-zinc-50 overflow-x-hidden">
-       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute top-0 left-0 h-full w-full bg-[radial-gradient(circle_400px_at_10%_20%,_rgba(124,58,237,0.2),_transparent)]" />
-        <div className="absolute bottom-0 right-0 h-full w-full bg-[radial-gradient(circle_500px_at_90%_80%,_rgba(16,185,129,0.15),_transparent)]" />
-      </div>
-      <Layout 
-        activePage={page} 
+    <>
+      <Layout
+        activePage={page}
         setPage={setPage}
         chatSessions={aiChatSessions}
         activeChatId={activeAiChatId}
-        setActiveChatId={(id) => {
-          setActiveAiChatId(id);
-          setPage('chat');
-        }}
-        onNewChat={handleNewChat}
+        setActiveChatId={setActiveAiChatId}
+        onNewChat={handleNewChatInPanel}
         onDeleteChat={handleDeleteChat}
-        onToggleAiChat={handleToggleAiChat}
+        onToggleAiChat={() => setIsRightPanelOpen(p => !p)}
         onSearchClick={() => setIsCommandPaletteOpen(true)}
         activeTeamId={activeTeamId}
         setActiveTeamId={setActiveTeamId}
         setViewedProfileId={setViewedProfileId}
         onStartDm={handleStartDm}
-        onOpenConversationToast={handleOpenConversation}
+        onOpenConversationToast={handleOpenConversationToast}
         isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
         setIsKpiSentimentColoringEnabled={setIsKpiSentimentColoringEnabled}
         aiChatInterfaceStyle={aiChatInterfaceStyle}
@@ -873,127 +549,83 @@ const handleClearWidgetContexts = () => {
         setIsRightPanelOpen={setIsRightPanelOpen}
         rightPanelWidth={rightPanelWidth}
         isResizing={isResizing}
+        activeContentSection={activeContentSection}
+        setActiveContentSection={setActiveContentSection}
       >
         {renderPage()}
       </Layout>
-      
-      <CommandPalette 
-        isOpen={isCommandPaletteOpen}
-        onClose={() => setIsCommandPaletteOpen(false)}
-        commands={commands}
-      />
-
-      {aiChatInterfaceStyle === 'panel' && isRightPanelOpen && (
-          <AiChatPanel
-              session={activeChatWithBookmarks}
-              isLoading={isAiLoading}
-              isMessageQueued={!!queuedAiMessage}
-              onSend={handleSendAiMessage}
-              onRegenerate={handleRegenerate}
-              onNewChat={handleNewChatInPanel}
-              onReload={() => activeAiChatId && handleReloadChat(activeAiChatId)}
-              onClose={() => setIsRightPanelOpen(false)}
-              onMaximize={handleMaximizeAiChat}
-              bookmarks={bookmarks}
-              onToggleBookmark={handleToggleBookmark}
-              setActiveChatId={(id) => {
-                setActiveAiChatId(id);
-                setPage('chat');
-              }}
-              getAppContextData={getAppContextData}
-              width={rightPanelWidth}
-              onResize={handleRightPanelResize}
-              setIsResizing={setIsResizing}
-              attachedWidgetContexts={attachedWidgetContexts}
-              onRemoveWidgetContext={handleRemoveWidgetContext}
-              onClearWidgetContexts={handleClearWidgetContexts}
-          />
+      {isRightPanelOpen && aiChatInterfaceStyle === 'panel' && (
+        <AiChatPanel
+            session={activeAiSession ? { ...activeAiSession, messages: activeAiSession.messages.map(m => ({ ...m, isBookmarked: bookmarks.some(b => b.message.id === m.id)})) } : undefined}
+            isLoading={isAiLoading}
+            isMessageQueued={!!queuedAiMessage}
+            onSend={handleSendAiMessage}
+            onRegenerate={handleRegenerate}
+            onNewChat={handleNewChatInPanel}
+            onReload={() => activeAiChatId && handleReloadChat(activeAiChatId)}
+            onClose={() => setIsRightPanelOpen(false)}
+            onMaximize={() => { if(activeAiChatId) setPage('chat'); }}
+            bookmarks={bookmarks}
+            onToggleBookmark={handleToggleBookmark}
+            setActiveChatId={setActiveAiChatId}
+            getAppContextData={(command) => `Data for ${command}`}
+            width={rightPanelWidth}
+            onResize={handleRightPanelResize}
+            setIsResizing={setIsResizing}
+            attachedWidgetContexts={attachedWidgetContexts}
+            onRemoveWidgetContext={(id) => setAttachedWidgetContexts(p => p.filter(c => c.id !== id))}
+            onClearWidgetContexts={() => setAttachedWidgetContexts([])}
+        />
       )}
-
-      {aiChatInterfaceStyle === 'toast' && isAiChatToastOpen && !isAiChatToastMinimized && activeChatWithBookmarks && (
-        <PerpetualDiscussionToast
-            session={activeChatWithBookmarks}
+      {isAiChatToastOpen && aiChatInterfaceStyle === 'toast' && activeAiSession && !isAiChatToastMinimized && (
+          <PerpetualDiscussionToast
+            session={{ ...activeAiSession, messages: activeAiSession.messages.map(m => ({ ...m, isBookmarked: bookmarks.some(b => b.message.id === m.id)})) }}
             isLoading={isAiLoading}
             isMessageQueued={!!queuedAiMessage}
             onSend={handleSendAiMessage}
             onRegenerate={handleRegenerate}
             onClose={() => setIsAiChatToastOpen(false)}
-            onMaximize={handleMaximizeAiChat}
+            onMaximize={() => setPage('chat')}
             isMinimized={isAiChatToastMinimized}
             setIsMinimized={setIsAiChatToastMinimized}
             bookmarks={bookmarks}
             onToggleBookmark={handleToggleBookmark}
-            setActiveChatId={(id) => {
-              setActiveAiChatId(id);
-              setPage('chat');
-            }}
-            getAppContextData={getAppContextData}
+            setActiveChatId={setActiveAiChatId}
+            getAppContextData={(command) => `Data for ${command}`}
             attachedWidgetContexts={attachedWidgetContexts}
-            onRemoveWidgetContext={handleRemoveWidgetContext}
-            onClearWidgetContexts={handleClearWidgetContexts}
-        />
+            onRemoveWidgetContext={(id) => setAttachedWidgetContexts(p => p.filter(c => c.id !== id))}
+            onClearWidgetContexts={() => setAttachedWidgetContexts([])}
+          />
       )}
-      
-      {maximizedDmToasts.map((toast, index) => {
-          const channel = conversationChannels.find(c => c.id === toast.channelId);
-          if (!channel) return null;
-          const messages = conversationMessages[toast.channelId] || [];
-
-          let rightOffsetRem = baseOffsetRem + rightPanelRemWidth;
-          if (isAiToastMaximized) {
-              rightOffsetRem += aiToastWidthRem + gapRem;
-          }
-          rightOffsetRem += index * (personToastWidthRem + gapRem);
-          
-          const style = { right: `${rightOffsetRem}rem`, transition: 'right 0.3s ease-in-out' };
-
-          return (
+      {isAiChatToastOpen && aiChatInterfaceStyle === 'toast' && isAiChatToastMinimized && (
+          <button onClick={() => setIsAiChatToastMinimized(false)} className="fixed bottom-6 right-6 z-40 h-16 w-16 rounded-full bg-violet-600 hover:bg-violet-700 shadow-lg flex items-center justify-center text-white">
+              <SparklesIcon className="h-8 w-8" />
+          </button>
+      )}
+      {activeDmToasts.map((toast, index) => (
+          !toast.isMinimized ? (
               <PersonChatToast
                   key={toast.channelId}
-                  channel={channel}
-                  messages={messages}
+                  style={{ right: `${6 + (index * 25)}rem` }}
+                  channel={toast.channel}
+                  messages={conversationMessages[toast.channelId] || []}
                   onSend={(text) => handleSendDmMessage(toast.channelId, text)}
-                  onClose={() => handleCloseDmToast(toast.channelId)}
-                  onMaximize={() => handleMaximizeDm(toast.channelId)}
+                  onClose={() => setOpenDmToasts(prev => prev.filter(t => t.channelId !== toast.channelId))}
+                  onMaximize={() => { setActiveConversationChannelId(toast.channelId); setPage('conversations'); }}
                   isMinimized={toast.isMinimized}
-                  setIsMinimized={(isMinimized) => handleSetDmToastMinimized(toast.channelId, isMinimized)}
-                  style={style}
+                  setIsMinimized={(minimized) => setOpenDmToasts(prev => prev.map(t => t.channelId === toast.channelId ? { ...t, isMinimized: minimized } : t))}
               />
-          );
-      })}
-
-      <div 
-        className="fixed bottom-6 z-40 flex flex-row-reverse items-center gap-2 transition-all duration-300 ease-in-out"
-        style={minimizedContainerStyle}
-      >
-          {aiChatInterfaceStyle === 'toast' && isAiChatToastOpen && isAiChatToastMinimized && (
-              <button
-                  onClick={() => setIsAiChatToastMinimized(false)}
-                  className="flex items-center gap-3 p-3 rounded-full bg-violet-600 hover:bg-violet-700 text-white shadow-2xl shadow-black/30 transition-all duration-200 hover:scale-105"
-                  aria-label="Maximize AI Assistant"
-              >
-                  <SparklesIcon className="h-6 w-6" />
-                  <span className="text-sm font-medium">AI Assistant</span>
-                  <ChevronUpIcon className="h-5 w-5" />
+          ) : (
+              <button key={toast.channelId} onClick={() => setOpenDmToasts(prev => prev.map(t => t.channelId === toast.channelId ? { ...t, isMinimized: false } : t))} className="fixed bottom-6 z-40 h-14 w-14 rounded-full bg-zinc-700 hover:bg-zinc-600 shadow-lg flex items-center justify-center text-white" style={{ right: `${6 + (index * 5)}rem` }}>
+                  <MessageSquareIcon className="h-7 w-7" />
               </button>
-          )}
-          {minimizedDmToasts.map(toast => {
-              const channel = conversationChannels.find(c => c.id === toast.channelId);
-              if (!channel) return null;
-              return (
-                  <button
-                      key={toast.channelId}
-                      onClick={() => handleSetDmToastMinimized(toast.channelId, false)}
-                      className="flex items-center gap-3 p-3 rounded-full bg-zinc-700 hover:bg-zinc-600 text-white shadow-2xl shadow-black/30 transition-all duration-200 hover:scale-105"
-                      aria-label={`Maximize chat with ${channel.name}`}
-                  >
-                      <MessageSquareIcon className="h-6 w-6" />
-                      <span className="text-sm font-medium">{channel.name}</span>
-                      <ChevronUpIcon className="h-5 w-5" />
-                  </button>
-              );
-          })}
-      </div>
-    </div>
+          )
+      ))}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        commands={commands}
+      />
+    </>
   );
 }
