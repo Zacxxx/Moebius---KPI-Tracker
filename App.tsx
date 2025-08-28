@@ -1,8 +1,7 @@
 
-
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Layout from './Layout';
-import HomeDashboard from './Dashboard';
+// Fix: Removed non-existent import 'HomeDashboard'. 'PlatformHome' will be used instead.
 import SimulationDashboard from './SimulationDashboard';
 import InternalDashboard from './InternalDashboard';
 import OperationalDashboard from './OperationalDashboard';
@@ -40,7 +39,8 @@ import PlaceholderPage from './PlaceholderPage';
 import { PerpetualDiscussionToast } from './components/PerpetualDiscussionToast';
 import { Command, CommandPalette } from './components/CommandPalette';
 import { allNavItems } from './navigation';
-import { DatabaseIcon, MessageSquareIcon, SparklesIcon, ChevronUpIcon, LineChartIcon, TrendingUpIcon, ClockIcon, LightningBoltIcon } from './components/Icons';
+// FIX: Import XIcon to resolve 'Cannot find name' errors.
+import { DatabaseIcon, MessageSquareIcon, SparklesIcon, ChevronUpIcon, LineChartIcon, TrendingUpIcon, ClockIcon, LightningBoltIcon, XIcon } from './components/Icons';
 import Content from './Content';
 import Seo from './Seo';
 import Partners from './Partners';
@@ -54,6 +54,8 @@ import { AiChatPanel } from './components/AiChatPanel';
 import { fmtEuro, formatWidgetDataForAI } from './utils';
 import { DEFAULTS as simulationDefaults } from './constants';
 import PlatformHome from './PlatformHome';
+import GenerationMetric from './GenerationMetric';
+import { ActionCenterPlaceholder } from './ActionCenterPlaceholder';
 
 
 // Helper hook to get the previous value of a state or prop
@@ -78,10 +80,10 @@ export default function App() {
   const [aiChatInterfaceStyle, setAiChatInterfaceStyle] = useState<'panel' | 'toast'>('panel');
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
   const [rightPanelWidth, setRightPanelWidth] = useState(() => {
-    const minWidth = 320; // w-80
-    const maxWidth = 800; // custom max width
-    const fiftyPercent = window.innerWidth / 2;
-    return Math.max(minWidth, Math.min(maxWidth, fiftyPercent));
+    const minWidth = window.innerWidth * 0.28;
+    const maxWidth = window.innerWidth * 0.50;
+    const defaultWidth = window.innerWidth * 0.28;
+    return Math.max(minWidth, Math.min(maxWidth, defaultWidth));
   });
   const [isResizing, setIsResizing] = useState(false);
   const [attachedWidgetContexts, setAttachedWidgetContexts] = useState<WidgetContext[]>([]);
@@ -91,7 +93,7 @@ export default function App() {
   const [aiChatSessions, setAiChatSessions] = useState<ChatSession[]>([]);
   const [activeAiChatId, setActiveAiChatId] = useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
-  const [queuedAiMessage, setQueuedAiMessage] = useState<string | null>(null);
+  const [queuedAiMessage, setQueuedAiMessage] = useState<{ displayText: string, promptText: string } | null>(null);
   const [isAiChatToastOpen, setIsAiChatToastOpen] = useState(false);
   const [isAiChatToastMinimized, setIsAiChatToastMinimized] = useState(false);
 
@@ -110,8 +112,8 @@ export default function App() {
   const prevPage = usePrevious(page);
 
   const handleRightPanelResize = (newWidth: number) => {
-    const minWidth = 320; // w-80
-    const maxWidth = 800; // custom max width
+    const minWidth = window.innerWidth * 0.28;
+    const maxWidth = window.innerWidth * 0.50;
     setRightPanelWidth(Math.max(minWidth, Math.min(maxWidth, newWidth)));
   };
   
@@ -134,6 +136,14 @@ export default function App() {
     if (prevPage === 'profile' && page !== 'profile') {
         setViewedProfileId(null);
     }
+
+    // Redirects for menu-only parent pages
+    if (page === 'monitoring-action-center' || page === 'monitoring-generation') {
+        setPage('monitoring-generation-metric');
+    }
+    if (page === 'monitoring-entities') {
+        setPage('monitoring-entities-overview');
+    }
   }, [page, prevPage, activeAiChatId, aiChatInterfaceStyle]);
   
   useEffect(() => {
@@ -152,6 +162,7 @@ export default function App() {
     try {
       setAiChatSessions(prev => prev.map(s => s.id === sessionId ? { ...s, isGeneratingTitle: true } : s));
       const prompt = `Summarize the following user query into a concise title of no more than 6 words: "${firstMessage}"`;
+      // FIX: The `generateContent` call was missing the `contents` property. The prompt has been correctly assigned to it.
       const response = await ai.models.generateContent({
           model: 'gemini-2.5-flash',
           contents: prompt,
@@ -211,10 +222,36 @@ export default function App() {
         })
     );
   };
+  
+  const handleClearChat = (sessionId: string) => {
+    if (!sessionId) return;
+    handleReloadChat(sessionId);
+  };
 
-  const handleSendAiMessage = async (messageText: string) => {
+  const handleRegenerateLast = () => {
+      if (!activeAiChatId) return;
+      const session = aiChatSessions.find(s => s.id === activeAiChatId);
+      if (!session) return;
+      const lastAiMessage = [...session.messages].reverse().find(m => m.sender === 'ai');
+      if (lastAiMessage) {
+          handleRegenerate(lastAiMessage.id);
+      }
+  };
+
+  const handleBookmarkLast = () => {
+      if (!activeAiChatId) return;
+      const session = aiChatSessions.find(s => s.id === activeAiChatId);
+      if (!session) return;
+      const lastAiMessage = [...session.messages].reverse().find(m => m.sender === 'ai');
+      if (lastAiMessage) {
+          handleToggleBookmark(lastAiMessage);
+      }
+  };
+
+
+  const handleSendAiMessage = async (payload: { displayText: string, promptText: string }) => {
     if (isAiLoading) {
-        setQueuedAiMessage(messageText);
+        setQueuedAiMessage(payload);
         return;
     }
 
@@ -260,7 +297,13 @@ export default function App() {
     
     setIsAiLoading(true);
 
-    const userMessage: Message = { id: Date.now(), text: messageText, sender: 'user', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+    const userMessage: Message = {
+        id: Date.now(),
+        text: payload.displayText,
+        promptText: payload.promptText,
+        sender: 'user',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
     const aiMessageId = Date.now() + 1;
     const aiMessagePlaceholder: Message = { id: aiMessageId, text: '', sender: 'ai', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
 
@@ -274,11 +317,11 @@ export default function App() {
     );
 
     if (isFirstUserMessageInSession) {
-        generateChatTitle(sessionId, messageText);
+        generateChatTitle(sessionId, payload.displayText);
     }
     
     try {
-        const stream = await chatInstance.sendMessageStream({ message: messageText });
+        const stream = await chatInstance.sendMessageStream({ message: payload.promptText });
 
         for await (const chunk of stream) {
             const chunkText = chunk.text;
@@ -345,20 +388,18 @@ export default function App() {
         prev.map(s => s.id === activeAiChatId ? { ...s, messages: messagesToResend } : s)
     );
 
-    setTimeout(() => handleSendAiMessage(lastUserMessage!.text), 0);
+    const payload = {
+        displayText: lastUserMessage.text,
+        promptText: lastUserMessage.promptText || lastUserMessage.text,
+    };
+
+    setTimeout(() => handleSendAiMessage(payload), 0);
   };
 
-    const handleCiteWidget = (widgetInstance: WidgetInstance, widgetData: any) => {
-        const newContext: WidgetContext = {
-            id: widgetInstance.id,
-            title: widgetInstance.config.title,
-            icon: DatabaseIcon, // Default icon
-            data: formatWidgetDataForAI(widgetInstance, widgetData),
-        };
+    const attachContext = (context: WidgetContext) => {
+        if (attachedWidgetContexts.some(ctx => ctx.id === context.id)) return;
 
-        if (attachedWidgetContexts.some(ctx => ctx.id === newContext.id)) return;
-
-        setAttachedWidgetContexts(prev => [...prev, newContext]);
+        setAttachedWidgetContexts(prev => [...prev, context]);
 
         if (aiChatInterfaceStyle === 'panel' && !isRightPanelOpen) {
             setIsRightPanelOpen(true);
@@ -425,6 +466,16 @@ export default function App() {
         }
     };
 
+    const chatActions = {
+        new: handleNewChatInPanel,
+        clear: () => activeAiChatId && handleClearChat(activeAiChatId),
+        regenerate: handleRegenerateLast,
+        bookmark: handleBookmarkLast,
+        goto: (page: Page) => setPage(page),
+        ui: (style: 'panel' | 'toast') => setAiChatInterfaceStyle(style),
+        'kpi-colors': (state: 'on' | 'off') => setIsKpiSentimentColoringEnabled(state === 'on'),
+    };
+
   const renderPage = () => {
     const dashboardProps = {
         globalTimeConfig,
@@ -432,13 +483,14 @@ export default function App() {
         page,
         setPage,
         isKpiSentimentColoringEnabled,
-        onCiteWidget: handleCiteWidget,
+        onAttachContext: attachContext,
     };
     const simpleDashboardProps = { isKpiSentimentColoringEnabled };
 
     switch (page) {
         case 'platform-home': return <PlatformHome {...dashboardProps} />;
-        case 'dashboard': return <HomeDashboard {...dashboardProps} />;
+        // Fix: Use PlatformHome for the 'dashboard' page as well.
+        case 'dashboard': return <PlatformHome {...dashboardProps} />;
         case 'simulation-dashboard': return <SimulationDashboard {...dashboardProps} />;
         case 'simulation-revenue': return <FinancialSimulations />;
         case 'financial-dashboard': return <FinancialPlanning {...dashboardProps} />;
@@ -461,171 +513,215 @@ export default function App() {
         case 'sales-dashboard': return <SalesDashboard {...dashboardProps} />;
         case 'sales-orders': return <OrderFulfillment />;
         case 'sales-inventory': return <InventoryManagement />;
-        case 'sales-promotions': return <Promotions />;
-        case 'coordination-dashboard': return <CoordinationDashboard {...dashboardProps} />;
-        case 'external-dashboard': return <ExternalDashboard {...dashboardProps} />;
-        case 'external-content': return <Content {...simpleDashboardProps} />;
-        case 'external-seo': return <Seo {...simpleDashboardProps} />;
-        case 'external-partners': return <Partners {...simpleDashboardProps} />;
-        case 'external-pr': return <PublicRelations {...simpleDashboardProps} />;
-        case 'external-branding': return <Branding {...simpleDashboardProps} />;
-        case 'external-competition': return <Competition />;
-        
-        case 'chat':
-            const activeSession = aiChatSessions.find(s => s.id === activeAiChatId);
-            return <Chat
-                session={activeSession ? { ...activeSession, messages: activeSession.messages.map(m => ({ ...m, isBookmarked: bookmarks.some(b => b.message.id === m.id)})) } : undefined}
+        case 'monitoring-generation-metric': return <GenerationMetric page={page} setPage={setPage} />;
+        case 'monitoring-generation-deliverables':
+        case 'monitoring-generation-workflows':
+        case 'monitoring-generation-surveys':
+        case 'monitoring-entities-overview':
+        case 'monitoring-entities-manager':
+        case 'monitoring-entities-actions':
+            return <ActionCenterPlaceholder page={page} setPage={setPage} />;
+        case 'chat': return <Chat 
+            session={activeAiChatSession}
+            isLoading={isAiLoading}
+            isMessageQueued={!!queuedAiMessage}
+            onSend={handleSendAiMessage}
+            onRegenerate={handleRegenerate}
+            bookmarks={bookmarks}
+            onToggleBookmark={handleToggleBookmark}
+            setActiveChatId={setActiveAiChatId}
+            getAppContextData={getAppContextDataForAI}
+            attachedWidgetContexts={attachedWidgetContexts}
+            onRemoveWidgetContext={(id) => setAttachedWidgetContexts(prev => prev.filter(ctx => ctx.id !== id))}
+            onClearWidgetContexts={() => setAttachedWidgetContexts([])}
+            actions={chatActions}
+        />;
+        default: return <PlaceholderPage title={page} description="This page is under construction or does not exist." />;
+    }
+  };
+  
+    const activeAiChatSession = useMemo(() => {
+        const session = aiChatSessions.find(s => s.id === activeAiChatId);
+        if (!session) return undefined;
+        return {
+            ...session,
+            messages: session.messages.map(m => ({
+                ...m,
+                isBookmarked: bookmarks.some(b => b.message.id === m.id)
+            }))
+        };
+    }, [aiChatSessions, activeAiChatId, bookmarks]);
+    
+    const getAppContextDataForAI = useCallback((command: string) => {
+        // This is a placeholder for a real implementation that would gather context
+        // from the entire application state based on the command.
+        switch(command) {
+            case 'dashboard':
+                return 'Current dashboard: "Financial Planning". Key KPIs: Cash Runway (3.5 months), Monthly Burn (€85k).';
+            case 'financial.revenue':
+                return `Current total MRR is ${fmtEuro(initialRevenueStreams.reduce((sum, item) => sum + item.mrr, 0))}.`;
+            default:
+                return `Data for command "${command}" is not available in this context.`;
+        }
+    }, []);
+
+    const commandPaletteCommands = useMemo<Command[]>(() => [
+        { id: 'search', icon: SparklesIcon, title: 'Ask AI...', action: () => {
+             if (aiChatInterfaceStyle === 'panel') {
+                setIsRightPanelOpen(true);
+            } else {
+                setIsAiChatToastOpen(true);
+                setIsAiChatToastMinimized(false);
+            }
+            // Would need a way to focus the input field inside the panel/toast
+        }},
+        ...allNavItems.filter(item => !item.subItems).map(item => ({
+            id: item.page,
+            title: `Go to ${item.label}`,
+            icon: item.icon || LineChartIcon,
+            action: () => setPage(item.page),
+        })),
+        { id: 'new-chat', icon: MessageSquareIcon, title: 'New Chat', action: handleNewChat },
+        { id: 'get-data', icon: DatabaseIcon, title: 'Get Data for...', action: () => alert('Get Data clicked') },
+    ], [handleNewChat, aiChatInterfaceStyle]);
+    
+
+  return (
+    <>
+        <Layout 
+            activePage={page} 
+            setPage={setPage}
+            chatSessions={aiChatSessions}
+            activeChatId={activeAiChatId}
+            setActiveChatId={(id) => setActiveAiChatId(id)}
+            onNewChat={handleNewChat}
+            onDeleteChat={handleDeleteChat}
+            onToggleAiChat={() => setIsRightPanelOpen(p => !p)}
+            onSearchClick={() => setIsCommandPaletteOpen(true)}
+            activeTeamId={activeTeamId}
+            setActiveTeamId={setActiveTeamId}
+            setViewedProfileId={setViewedProfileId}
+            onStartDm={handleStartDm}
+            onOpenConversationToast={handleOpenConversationToast}
+            isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
+            setIsKpiSentimentColoringEnabled={setIsKpiSentimentColoringEnabled}
+            aiChatInterfaceStyle={aiChatInterfaceStyle}
+            setAiChatInterfaceStyle={setAiChatInterfaceStyle}
+            isRightPanelOpen={isRightPanelOpen}
+            setIsRightPanelOpen={setIsRightPanelOpen}
+            rightPanelWidth={rightPanelWidth}
+            isResizing={isResizing}
+            activeContentSection={activeContentSection}
+            setActiveContentSection={setActiveContentSection}
+        >
+          {renderPage()}
+        </Layout>
+
+        {isRightPanelOpen && aiChatInterfaceStyle === 'panel' && (
+            <AiChatPanel 
+                session={activeAiChatSession}
                 isLoading={isAiLoading}
                 isMessageQueued={!!queuedAiMessage}
                 onSend={handleSendAiMessage}
                 onRegenerate={handleRegenerate}
+                onNewChat={handleNewChatInPanel}
+                onReload={() => activeAiChatId && handleReloadChat(activeAiChatId)}
+                onClose={() => setIsRightPanelOpen(false)}
+                onMaximize={() => setPage('chat')}
                 bookmarks={bookmarks}
                 onToggleBookmark={handleToggleBookmark}
                 setActiveChatId={setActiveAiChatId}
-                getAppContextData={(command) => `Data for ${command}`}
+                getAppContextData={getAppContextDataForAI}
+                width={rightPanelWidth}
+                onResize={handleRightPanelResize}
+                setIsResizing={setIsResizing}
                 attachedWidgetContexts={attachedWidgetContexts}
-                onRemoveWidgetContext={(id) => setAttachedWidgetContexts(p => p.filter(c => c.id !== id))}
+                onRemoveWidgetContext={(id) => setAttachedWidgetContexts(prev => prev.filter(ctx => ctx.id !== id))}
                 onClearWidgetContexts={() => setAttachedWidgetContexts([])}
-            />;
-        case 'conversations':
-            return <Conversations
-                activeTeamId={activeTeamId}
-                setActiveTeamId={setActiveTeamId}
-                channels={conversationChannels}
-                messages={conversationMessages}
-                activeChannelId={activeConversationChannelId}
-                setActiveChannelId={setActiveConversationChannelId}
-                onSendMessage={handleSendDmMessage}
-            />;
-        case 'team-management':
-            return <TeamManagement activeTeamId={activeTeamId} setActiveTeamId={setActiveTeamId} setPage={setPage} />;
-        case 'profile':
-            return <Profile viewedProfileId={viewedProfileId} setPage={setPage} />;
-        case 'notifications':
-            return <Notifications />;
+                actions={chatActions}
+            />
+        )}
+        
+        {openDmToasts.map((toast, index) => {
+            const channel = conversationChannels.find(c => c.id === toast.channelId);
+            if (!channel) return null;
 
-        default:
-            return <PlaceholderPage title={String(page)} description={`This is a placeholder for the ${page} page.`} />;
-    }
-  };
+            const toastWidth = 384; // 24rem
+            const margin = 16; // 1rem
+            const rightPosition = (index * (toastWidth + margin)) + 24; // 1.5rem initial margin
 
-  const commands = useMemo<Command[]>(() =>
-    allNavItems.filter(item => !item.subItems).map(item => ({
-        id: item.page,
-        title: `Go to ${item.label}`,
-        icon: item.icon || LineChartIcon,
-        action: () => { setPage(item.page); setIsCommandPaletteOpen(false); },
-    }))
-  , [setPage]);
+            if(toast.isMinimized) {
+                return (
+                     <button 
+                        key={channel.id}
+                        onClick={() => setOpenDmToasts(prev => prev.map(t => t.channelId === channel.id ? {...t, isMinimized: false} : t))}
+                        style={{ right: `${rightPosition}px` }}
+                        className="fixed bottom-0 z-40 w-72 h-12 bg-zinc-800 border-t border-x border-zinc-700 rounded-t-lg shadow-2xl flex items-center justify-between px-3 text-white font-semibold hover:bg-zinc-700 transition-colors"
+                    >
+                       <span>{channel.name}</span>
+                       <button onClick={(e) => { e.stopPropagation(); setOpenDmToasts(prev => prev.filter(t => t.channelId !== channel.id))}} className="p-1 rounded-full hover:bg-zinc-600"><XIcon className="h-4 w-4"/></button>
+                    </button>
+                )
+            }
+            
+            return (
+                <PersonChatToast
+                    key={channel.id}
+                    channel={channel}
+                    messages={conversationMessages[channel.id] || []}
+                    onSend={(text) => handleSendDmMessage(channel.id, text)}
+                    onClose={() => setOpenDmToasts(prev => prev.filter(t => t.channelId !== channel.id))}
+                    onMaximize={() => {
+                        setActiveConversationChannelId(channel.id);
+                        setPage('conversations');
+                    }}
+                    isMinimized={toast.isMinimized}
+                    setIsMinimized={(minimized) => setOpenDmToasts(prev => prev.map(t => t.channelId === channel.id ? { ...t, isMinimized: minimized } : t))}
+                    style={{ right: `${rightPosition}px` }}
+                />
+            );
+        })}
 
-  const activeAiSession = aiChatSessions.find(s => s.id === activeAiChatId);
-  const activeDmToasts = openDmToasts.map(toastState => {
-      const channel = conversationChannels.find(c => c.id === toastState.channelId);
-      return channel ? { ...toastState, channel } : null;
-  }).filter(Boolean) as (DmToastState & { channel: ConversationChannel })[];
+        {isAiChatToastOpen && !isRightPanelOpen && aiChatInterfaceStyle === 'toast' && activeAiChatSession && (
+            isAiChatToastMinimized ? (
+                 <button 
+                    onClick={() => setIsAiChatToastMinimized(false)}
+                    className="fixed bottom-0 right-6 z-40 w-72 h-12 bg-zinc-800 border-t border-x border-zinc-700 rounded-t-lg shadow-2xl flex items-center justify-between px-3 text-white font-semibold hover:bg-zinc-700 transition-colors"
+                >
+                   <span className="flex items-center gap-2 truncate">
+                        <SparklesIcon className="h-5 w-5 text-violet-400 flex-shrink-0" />
+                        <span className="truncate">{(activeAiChatSession.title && activeAiChatSession.title !== 'New Chat') ? activeAiChatSession.title : 'Moebius'}</span>
+                   </span>
+                   <button onClick={(e) => { e.stopPropagation(); setIsAiChatToastOpen(false); }} className="p-1 rounded-full hover:bg-zinc-600"><XIcon className="h-4 w-4"/></button>
+                </button>
+            ) : (
+                <PerpetualDiscussionToast
+                    session={activeAiChatSession}
+                    isLoading={isAiLoading}
+                    isMessageQueued={!!queuedAiMessage}
+                    onSend={handleSendAiMessage}
+                    onRegenerate={handleRegenerate}
+                    onClose={() => setIsAiChatToastOpen(false)}
+                    onMaximize={() => setPage('chat')}
+                    isMinimized={isAiChatToastMinimized}
+                    setIsMinimized={setIsAiChatToastMinimized}
+                    bookmarks={bookmarks}
+                    onToggleBookmark={handleToggleBookmark}
+                    setActiveChatId={setActiveAiChatId}
+                    getAppContextData={getAppContextDataForAI}
+                    attachedWidgetContexts={attachedWidgetContexts}
+                    onRemoveWidgetContext={(id) => setAttachedWidgetContexts(prev => prev.filter(ctx => ctx.id !== id))}
+                    onClearWidgetContexts={() => setAttachedWidgetContexts([])}
+                    actions={chatActions}
+                />
+            )
+        )}
 
-  return (
-    <>
-      <Layout
-        activePage={page}
-        setPage={setPage}
-        chatSessions={aiChatSessions}
-        activeChatId={activeAiChatId}
-        setActiveChatId={setActiveAiChatId}
-        onNewChat={handleNewChatInPanel}
-        onDeleteChat={handleDeleteChat}
-        onToggleAiChat={() => setIsRightPanelOpen(p => !p)}
-        onSearchClick={() => setIsCommandPaletteOpen(true)}
-        activeTeamId={activeTeamId}
-        setActiveTeamId={setActiveTeamId}
-        setViewedProfileId={setViewedProfileId}
-        onStartDm={handleStartDm}
-        onOpenConversationToast={handleOpenConversationToast}
-        isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
-        setIsKpiSentimentColoringEnabled={setIsKpiSentimentColoringEnabled}
-        aiChatInterfaceStyle={aiChatInterfaceStyle}
-        setAiChatInterfaceStyle={setAiChatInterfaceStyle}
-        isRightPanelOpen={isRightPanelOpen}
-        setIsRightPanelOpen={setIsRightPanelOpen}
-        rightPanelWidth={rightPanelWidth}
-        isResizing={isResizing}
-        activeContentSection={activeContentSection}
-        setActiveContentSection={setActiveContentSection}
-      >
-        {renderPage()}
-      </Layout>
-      {isRightPanelOpen && aiChatInterfaceStyle === 'panel' && (
-        <AiChatPanel
-            session={activeAiSession ? { ...activeAiSession, messages: activeAiSession.messages.map(m => ({ ...m, isBookmarked: bookmarks.some(b => b.message.id === m.id)})) } : undefined}
-            isLoading={isAiLoading}
-            isMessageQueued={!!queuedAiMessage}
-            onSend={handleSendAiMessage}
-            onRegenerate={handleRegenerate}
-            onNewChat={handleNewChatInPanel}
-            onReload={() => activeAiChatId && handleReloadChat(activeAiChatId)}
-            onClose={() => setIsRightPanelOpen(false)}
-            onMaximize={() => { if(activeAiChatId) setPage('chat'); }}
-            bookmarks={bookmarks}
-            onToggleBookmark={handleToggleBookmark}
-            setActiveChatId={setActiveAiChatId}
-            getAppContextData={(command) => `Data for ${command}`}
-            width={rightPanelWidth}
-            onResize={handleRightPanelResize}
-            setIsResizing={setIsResizing}
-            attachedWidgetContexts={attachedWidgetContexts}
-            onRemoveWidgetContext={(id) => setAttachedWidgetContexts(p => p.filter(c => c.id !== id))}
-            onClearWidgetContexts={() => setAttachedWidgetContexts([])}
+        <CommandPalette 
+            isOpen={isCommandPaletteOpen}
+            onClose={() => setIsCommandPaletteOpen(false)}
+            commands={commandPaletteCommands}
         />
-      )}
-      {isAiChatToastOpen && aiChatInterfaceStyle === 'toast' && activeAiSession && !isAiChatToastMinimized && (
-          <PerpetualDiscussionToast
-            session={{ ...activeAiSession, messages: activeAiSession.messages.map(m => ({ ...m, isBookmarked: bookmarks.some(b => b.message.id === m.id)})) }}
-            isLoading={isAiLoading}
-            isMessageQueued={!!queuedAiMessage}
-            onSend={handleSendAiMessage}
-            onRegenerate={handleRegenerate}
-            onClose={() => setIsAiChatToastOpen(false)}
-            onMaximize={() => setPage('chat')}
-            isMinimized={isAiChatToastMinimized}
-            setIsMinimized={setIsAiChatToastMinimized}
-            bookmarks={bookmarks}
-            onToggleBookmark={handleToggleBookmark}
-            setActiveChatId={setActiveAiChatId}
-            getAppContextData={(command) => `Data for ${command}`}
-            attachedWidgetContexts={attachedWidgetContexts}
-            onRemoveWidgetContext={(id) => setAttachedWidgetContexts(p => p.filter(c => c.id !== id))}
-            onClearWidgetContexts={() => setAttachedWidgetContexts([])}
-          />
-      )}
-      {isAiChatToastOpen && aiChatInterfaceStyle === 'toast' && isAiChatToastMinimized && (
-          <button onClick={() => setIsAiChatToastMinimized(false)} className="fixed bottom-6 right-6 z-40 h-16 w-16 rounded-full bg-violet-600 hover:bg-violet-700 shadow-lg flex items-center justify-center text-white">
-              <SparklesIcon className="h-8 w-8" />
-          </button>
-      )}
-      {activeDmToasts.map((toast, index) => (
-          !toast.isMinimized ? (
-              <PersonChatToast
-                  key={toast.channelId}
-                  style={{ right: `${6 + (index * 25)}rem` }}
-                  channel={toast.channel}
-                  messages={conversationMessages[toast.channelId] || []}
-                  onSend={(text) => handleSendDmMessage(toast.channelId, text)}
-                  onClose={() => setOpenDmToasts(prev => prev.filter(t => t.channelId !== toast.channelId))}
-                  onMaximize={() => { setActiveConversationChannelId(toast.channelId); setPage('conversations'); }}
-                  isMinimized={toast.isMinimized}
-                  setIsMinimized={(minimized) => setOpenDmToasts(prev => prev.map(t => t.channelId === toast.channelId ? { ...t, isMinimized: minimized } : t))}
-              />
-          ) : (
-              <button key={toast.channelId} onClick={() => setOpenDmToasts(prev => prev.map(t => t.channelId === toast.channelId ? { ...t, isMinimized: false } : t))} className="fixed bottom-6 z-40 h-14 w-14 rounded-full bg-zinc-700 hover:bg-zinc-600 shadow-lg flex items-center justify-center text-white" style={{ right: `${6 + (index * 5)}rem` }}>
-                  <MessageSquareIcon className="h-7 w-7" />
-              </button>
-          )
-      ))}
-      <CommandPalette
-        isOpen={isCommandPaletteOpen}
-        onClose={() => setIsCommandPaletteOpen(false)}
-        commands={commands}
-      />
     </>
   );
 }

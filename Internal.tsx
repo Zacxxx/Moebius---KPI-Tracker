@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import type { SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page } from './types';
+import type { SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page, WidgetContext } from './types';
 import { initialCapTableMetrics } from './data';
-import { Dashboard } from './components/Dashboard';
+import { Dashboard } from './Dashboard';
 import { UsersIcon, SmileIcon, PieChartIcon } from './components/Icons';
 import { PREMADE_WIDGETS } from './data-widgets';
 
@@ -38,10 +38,10 @@ interface InternalProps {
     page: Page;
     setPage: (page: Page) => void;
     isKpiSentimentColoringEnabled?: boolean;
-    onCiteWidget?: (instance: WidgetInstance, data: any) => void;
+    onAttachContext?: (context: WidgetContext) => void;
 }
 
-export default function Internal({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled, onCiteWidget }: InternalProps) {
+export default function Internal({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled, onAttachContext }: InternalProps) {
     const [sections, setSections] = useState<DashboardSection[]>([
         { id: 'kpis', title: 'Key Metrics' },
         { id: 'main', title: 'Dashboard Widgets' },
@@ -82,7 +82,7 @@ export default function Internal({ globalTimeConfig, setGlobalTimeConfig, page, 
             page={page}
             setPage={setPage}
             isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
-            onCiteWidget={onCiteWidget}
+            onAttachContext={onAttachContext}
         />
     );
 }

@@ -1,18 +1,16 @@
+
 import React, { useRef, useEffect, useState, useMemo } from 'react';
-import type { ChatSession, Message, Bookmark, WidgetContext } from './types';
+import type { ChatSession, Message, Bookmark, WidgetContext, Page } from './types';
 import { ChatMessage, TypingIndicator } from './components/MessageBubble';
 import { ChatInput } from './components/ChatInput';
-import { MessageSquareIcon, PlusIcon, PaperclipIcon, BookmarkIcon, ClipboardIcon, SettingsIcon, UsersIcon, GitBranchIcon, FileTextIcon, FolderIcon, CubeIcon, CheckSquareIcon, TargetIcon, FilterOffIcon } from './components/Icons';
-import { Button } from './components/ui/Button';
-import { ActionButton } from './components/chat/ActionButton';
-import { ContextWindowIndicator } from './components/chat/ContextWindowIndicator';
+import { MessageSquareIcon } from './components/Icons';
 
 
 interface ChatProps {
     session?: ChatSession & { messages: (Message & { isBookmarked?: boolean })[] };
     isLoading: boolean;
     isMessageQueued: boolean;
-    onSend: (message: string) => void;
+    onSend: (payload: { displayText: string, promptText: string }) => void;
     onRegenerate: (messageId: number) => void;
     bookmarks: Bookmark[];
     onToggleBookmark: (message: Message) => void;
@@ -21,11 +19,11 @@ interface ChatProps {
     attachedWidgetContexts: WidgetContext[];
     onRemoveWidgetContext: (id: string) => void;
     onClearWidgetContexts: () => void;
+    actions: { [key: string]: (arg?: any) => void };
 }
 
-export default function Chat({ session, isLoading, isMessageQueued, onSend, onRegenerate, bookmarks, onToggleBookmark, setActiveChatId, getAppContextData, attachedWidgetContexts, onRemoveWidgetContext, onClearWidgetContexts }: ChatProps) {
+export default function Chat({ session, isLoading, isMessageQueued, onSend, onRegenerate, bookmarks, onToggleBookmark, setActiveChatId, getAppContextData, attachedWidgetContexts, onRemoveWidgetContext, onClearWidgetContexts, actions }: ChatProps) {
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const [activePanel, setActivePanel] = useState<string | null>(null);
 
     const contextPercentage = useMemo(() => {
         if (!session) return 0;
@@ -42,21 +40,13 @@ export default function Chat({ session, isLoading, isMessageQueued, onSend, onRe
     useEffect(scrollToBottom, [session?.messages, isLoading]);
 
     return (
-        <div className="h-full flex flex-col bg-zinc-900/50">
-            <div className="px-3 h-12 border-b border-zinc-700/50 text-xs text-zinc-400 flex items-center justify-end gap-2 flex-wrap flex-shrink-0">
-                <div className="mr-auto">
-                    <ContextWindowIndicator percentage={contextPercentage} onClick={() => alert('Context manager clicked')} />
-                </div>
-                <Button variant="ghost" className="h-7 px-2 text-xs" onClick={() => alert('Participants clicked')}>
-                    <UsersIcon className="h-4 w-4 mr-1.5" /> Participants
-                </Button>
-                <Button variant="ghost" className="h-7 px-2 text-xs" onClick={() => alert('Parameters clicked')}>
-                    <SettingsIcon className="h-4 w-4 mr-1.5" /> Parameters
-                </Button>
-                <Button variant="ghost" className="h-7 px-2 text-xs" onClick={() => alert('Tasklist not implemented.')}>
-                    <ClipboardIcon className="h-4 w-4 mr-1.5" /> Tasklist
-                </Button>
-            </div>
+        <div className="h-full flex flex-col bg-zinc-900" style={{ margin: '-2rem' }}>
+            <header className="flex items-center justify-between h-16 px-6 border-b border-zinc-700/50 flex-shrink-0 bg-zinc-900/50">
+                <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-3">
+                    <MessageSquareIcon className="h-6 w-6 text-violet-400" />
+                    <span>{(session?.title && session.title !== 'New Chat') ? session.title : 'Moebius'}</span>
+                </h1>
+            </header>
             <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 space-y-6">
                 {!session ? (
                      <div className="h-full flex flex-col items-center justify-center text-center text-zinc-500">
@@ -86,6 +76,8 @@ export default function Chat({ session, isLoading, isMessageQueued, onSend, onRe
                     context="full"
                     bookmarks={bookmarks}
                     setActiveChatId={setActiveChatId}
+                    actions={actions}
+                    contextPercentage={contextPercentage}
                 />
             </div>
         </div>

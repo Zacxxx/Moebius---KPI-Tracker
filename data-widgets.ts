@@ -8,6 +8,14 @@ import { TableViewWidget } from './components/dashboard-widgets/HiringPipelineWi
 import ActivityFeed from './components/ActivityFeed';
 import { QuickActionsWidget } from './components/dashboard-widgets/QuickActionsWidget';
 import { ConfigurableKpiWidget } from './components/dashboard-widgets/ConfigurableKpiWidget';
+import {
+    SimulationControlsWidget,
+    SimulationKpiGridWidget,
+    SimulationArrChartWidget,
+    SimulationValuationChartWidget,
+    SimulationArpuChartWidget,
+    SimulationSnapshotWidget,
+} from './components/dashboard-widgets/SimulationWidgets';
 export { ALL_DATA_SOURCES } from './data';
 
 // Defines the blank, configurable widgets that can be added to a dashboard.
@@ -74,6 +82,48 @@ export const GENERIC_WIDGETS: GenericWidget[] = [
         description: 'A set of common action buttons.',
         component: QuickActionsWidget,
         defaultConfig: { title: 'Quick Actions', gridWidth: 1, gridHeight: 2 },
+    },
+    {
+        type: 'SIMULATION_CONTROLS',
+        name: 'Simulation Controls',
+        description: 'Controls for the Revenue & Valuation simulation.',
+        component: SimulationControlsWidget,
+        defaultConfig: { title: 'Parameters', gridWidth: 2, gridHeight: 4 },
+    },
+    {
+        type: 'SIMULATION_KPI_GRID',
+        name: 'Simulation KPI Grid',
+        description: 'KPIs for the Revenue & Valuation simulation.',
+        component: SimulationKpiGridWidget,
+        defaultConfig: { title: 'Simulation KPIs', gridWidth: 2, gridHeight: 4 },
+    },
+    {
+        type: 'SIMULATION_ARR_CHART',
+        name: 'Simulation ARR Chart',
+        description: 'ARR vs Users chart for the simulation.',
+        component: SimulationArrChartWidget,
+        defaultConfig: { title: 'ARR vs Users', gridWidth: 2, gridHeight: 4 },
+    },
+    {
+        type: 'SIMULATION_VALUATION_CHART',
+        name: 'Simulation Valuation Chart',
+        description: 'Valuation vs Users chart for the simulation.',
+        component: SimulationValuationChartWidget,
+        defaultConfig: { title: 'Valuation vs Users', gridWidth: 2, gridHeight: 4 },
+    },
+    {
+        type: 'SIMULATION_ARPU_CHART',
+        name: 'Simulation ARPU Chart',
+        description: 'Annual ARPU comparison for the simulation.',
+        component: SimulationArpuChartWidget,
+        defaultConfig: { title: 'Annual ARPU Comparison', gridWidth: 2, gridHeight: 3 },
+    },
+    {
+        type: 'SIMULATION_SNAPSHOT',
+        name: 'Simulation Snapshot',
+        description: 'A snapshot of ARR and Valuation for a set number of users.',
+        component: SimulationSnapshotWidget,
+        defaultConfig: { title: 'Snapshot', gridWidth: 2, gridHeight: 2, snapshotUsers: 10000 },
     },
 ];
 
@@ -177,7 +227,25 @@ export const PREMADE_WIDGETS: PremadeWidgetInfo[] = [
             widgetType: 'LIST_VIEW',
             config: { title: 'Low Stock Products', dataSourceKey: 'low_stock_products', gridWidth: 1, gridHeight: 4 },
         }
-    }
+    },
+    {
+        id: 'premade_sim_controls',
+        title: 'Simulation Controls',
+        description: 'Controls for the Revenue & Valuation simulation.',
+        instance: {
+            widgetType: 'SIMULATION_CONTROLS',
+            config: { title: 'Parameters', gridWidth: 2, gridHeight: 4 }
+        }
+    },
+    {
+        id: 'premade_sim_kpis',
+        title: 'Simulation KPIs',
+        description: 'KPIs for the Revenue & Valuation simulation.',
+        instance: {
+            widgetType: 'SIMULATION_KPI_GRID',
+            config: { title: 'Simulation KPIs', gridWidth: 2, gridHeight: 4 }
+        }
+    },
 ];
 
 // A map for easy component lookup

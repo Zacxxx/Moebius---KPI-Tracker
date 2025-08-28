@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { MegaphoneIcon, TrendingUpIcon, SearchIcon, UsersIcon } from './components/Icons';
-import type { ShowcaseKpi, SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page } from './types';
+import type { ShowcaseKpi, SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page, WidgetContext } from './types';
 import {
     initialProductMetrics,
     initialMarketingMetrics,
@@ -44,10 +44,10 @@ interface ExternalDashboardProps {
     page: Page;
     setPage: (page: Page) => void;
     isKpiSentimentColoringEnabled?: boolean;
-    onCiteWidget: (instance: WidgetInstance, data: any) => void;
+    onAttachContext?: (context: WidgetContext) => void;
 }
 
-export default function ExternalDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled, onCiteWidget }: ExternalDashboardProps) {
+export default function ExternalDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled, onAttachContext }: ExternalDashboardProps) {
     const [sections, setSections] = useState<DashboardSection[]>([
         { id: 'kpis', title: 'Key Metrics' },
         { id: 'main', title: 'Dashboard Widgets' },
@@ -105,7 +105,7 @@ export default function ExternalDashboard({ globalTimeConfig, setGlobalTimeConfi
         page={page}
         setPage={setPage}
         isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
-        onCiteWidget={onCiteWidget}
+        onAttachContext={onAttachContext}
     />
   );
 }

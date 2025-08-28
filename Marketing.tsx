@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { MegaphoneIcon, TrendingUpIcon, WalletIcon, UsersIcon, BarChartIcon } from './components/Icons';
-import type { SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page } from './types';
+import type { SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page, WidgetContext } from './types';
 import { initialMarketingMetrics } from './data';
-import { Dashboard } from './components/Dashboard';
+import { Dashboard } from './Dashboard';
 import { PREMADE_WIDGETS } from './data-widgets';
 
 
@@ -35,10 +35,10 @@ interface MarketingProps {
     page: Page;
     setPage: (page: Page) => void;
     isKpiSentimentColoringEnabled?: boolean;
-    onCiteWidget: (instance: WidgetInstance, data: any) => void;
+    onAttachContext: (context: WidgetContext) => void;
 }
 
-export default function Marketing({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled, onCiteWidget }: MarketingProps) {
+export default function Marketing({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled, onAttachContext }: MarketingProps) {
   const [sections, setSections] = useState<DashboardSection[]>([
       { id: 'kpis', title: 'Key Metrics' },
       { id: 'main', title: 'Dashboard Widgets' },
@@ -77,7 +77,7 @@ export default function Marketing({ globalTimeConfig, setGlobalTimeConfig, page,
         page={page}
         setPage={setPage}
         isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
-        onCiteWidget={onCiteWidget}
+        onAttachContext={onAttachContext}
     />
   );
 }

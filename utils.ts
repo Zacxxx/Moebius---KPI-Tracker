@@ -1,5 +1,5 @@
 
-import type { WidgetInstance, SelectableKpi } from './types';
+import type { WidgetInstance, SelectableKpi, Page, NavItemData } from './types';
 
 export const EURO = new Intl.NumberFormat("fr-FR", {
   style: "currency",
@@ -78,3 +78,19 @@ export function formatWidgetDataForAI(widgetInstance: WidgetInstance, widgetData
             }
     }
 }
+
+// Helper function to find the hierarchical path to a page
+export const findPath = (pageToFind: Page, items: NavItemData[]): NavItemData[] | null => {
+    for (const item of items) {
+        if (item.page === pageToFind) {
+            return [item];
+        }
+        if (item.subItems) {
+            const subPath = findPath(pageToFind, item.subItems);
+            if (subPath) {
+                return [item, ...subPath];
+            }
+        }
+    }
+    return null;
+};

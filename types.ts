@@ -1,5 +1,14 @@
+
 import type { Chat as GeminiChat } from '@google/genai';
 import React from 'react';
+
+export interface NavItemData {
+  icon?: React.FC<{className?: string}>;
+  label: string;
+  page: Page;
+  subItems?: NavItemData[];
+  isMenuOnly?: boolean;
+}
 
 export interface ColumnDef<T> {
   accessorKey: keyof T;
@@ -97,6 +106,7 @@ export interface Message {
     sender: 'user' | 'ai';
     timestamp: string;
     isBookmarked?: boolean;
+    promptText?: string;
 }
 
 export interface ChatSession {
@@ -253,6 +263,12 @@ export type GenericWidgetType =
   'TABLE_VIEW' |
   'ACTIVITY_FEED' |
   'STATIC_QUICK_ACTIONS' |
+  'SIMULATION_CONTROLS' |
+  'SIMULATION_KPI_GRID' |
+  'SIMULATION_ARR_CHART' |
+  'SIMULATION_VALUATION_CHART' |
+  'SIMULATION_ARPU_CHART' |
+  'SIMULATION_SNAPSHOT' |
   'KPI_VIEW';
 
 export type DataSourceKey =
@@ -298,6 +314,8 @@ export interface WidgetConfig {
     // For KPI_VIEW
     selectedKpiId?: number;
     selectedKpiSource?: string;
+    // For SIMULATION_SNAPSHOT
+    snapshotUsers?: number;
 }
 
 // Represents a widget placed on a dashboard
@@ -329,7 +347,7 @@ export interface PremadeWidgetInfo {
 export interface GenericWidgetProps {
   instance: WidgetInstance;
   onConfigure: () => void;
-  onConfigChange: (newConfig: Partial<WidgetConfig>) => void;
+  onConfigChange: (newConfig: Partial<WidgetInstance['config']>) => void;
   onCite?: () => void;
   // data is resolved in Dashboard.tsx and passed directly
   data?: any; 
@@ -344,8 +362,10 @@ export interface BaseWidgetConfigFormProps {
 }
 
 export interface WidgetContext {
-    id: string; // widget instance id
+    id: string; // widget instance id or a generated id for dashboard
     title: string;
     icon: React.FC<{ className?: string }>;
-    data: string;
+    data: string; // for single widgets, this is the formatted data string
+    type?: 'widget' | 'dashboard'; // new property
+    children?: WidgetContext[]; // new property for dashboard children
 }

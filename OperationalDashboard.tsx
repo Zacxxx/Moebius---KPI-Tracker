@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { TrendingUpIcon, ClockIcon, TrendingDownIcon } from './components/Icons';
 import { initialOperationalMetrics } from './data';
-import type { SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page } from './types';
+import type { SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page, WidgetContext } from './types';
 
 const iconMap: { [key: string]: React.FC<{ className?: string }> } = {
     'System Uptime': TrendingUpIcon,
@@ -22,10 +22,10 @@ interface OperationalDashboardProps {
     page: Page;
     setPage: (page: Page) => void;
     isKpiSentimentColoringEnabled?: boolean;
-    onCiteWidget: (instance: WidgetInstance, data: any) => void;
+    onAttachContext?: (context: WidgetContext) => void;
 }
 
-export default function OperationalDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled, onCiteWidget }: OperationalDashboardProps) {
+export default function OperationalDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled, onAttachContext }: OperationalDashboardProps) {
   const [sections, setSections] = useState<DashboardSection[]>([
     { id: 'kpis', title: 'Key Metrics' }
   ]);
@@ -62,7 +62,7 @@ export default function OperationalDashboard({ globalTimeConfig, setGlobalTimeCo
         page={page}
         setPage={setPage}
         isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
-        onCiteWidget={onCiteWidget}
+        onAttachContext={onAttachContext}
     />
   );
 }

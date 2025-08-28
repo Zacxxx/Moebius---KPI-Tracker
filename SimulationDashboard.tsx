@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { ClockIcon, TrendingDownIcon, TrendingUpIcon, PieChartIcon } from './components/Icons';
 import { initialRevenueStreams, initialExpenses } from './data';
-import type { KpiMetric, SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page } from './types';
+import type { KpiMetric, SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page, WidgetContext } from './types';
 import { fmtEuro } from './utils';
 
 // These KPIs are derived. For the dashboard, we'll create static versions based on the initial data.
@@ -52,10 +52,10 @@ interface SimulationDashboardProps {
     page: Page;
     setPage: (page: Page) => void;
     isKpiSentimentColoringEnabled?: boolean;
-    onCiteWidget: (instance: WidgetInstance, data: any) => void;
+    onAttachContext?: (context: WidgetContext) => void;
 }
 
-export default function SimulationDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled, onCiteWidget }: SimulationDashboardProps) {
+export default function SimulationDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled, onAttachContext }: SimulationDashboardProps) {
   const [sections, setSections] = useState<DashboardSection[]>([
       { id: 'kpis', title: 'Key Metrics' },
       { id: 'main', title: 'Dashboard Widgets' },
@@ -95,7 +95,7 @@ export default function SimulationDashboard({ globalTimeConfig, setGlobalTimeCon
         page={page}
         setPage={setPage}
         isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
-        onCiteWidget={onCiteWidget}
+        onAttachContext={onAttachContext}
     />
   );
 }

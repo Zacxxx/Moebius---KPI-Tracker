@@ -1,6 +1,9 @@
+
 import React, { useState, useMemo } from 'react';
-import { EditIcon } from './Icons';
-import type { SelectableKpi, WidgetInstance, DashboardSection, ShowcaseKpi, TimeConfig, Page } from '../types';
+// Fix: Added LibraryIcon, DatabaseIcon, TrendingUpIcon for context handling.
+import { EditIcon, MessageSquareIcon, LibraryIcon, DatabaseIcon, TrendingUpIcon } from './Icons';
+// Fix: Added WidgetContext to types for onAttachContext prop.
+import type { SelectableKpi, WidgetInstance, DashboardSection, ShowcaseKpi, TimeConfig, Page, WidgetContext, NavItemData } from '../types';
 import { Button } from './ui/Button';
 import { WidgetSelectionPanel } from './WidgetSelectionPanel';
 import { WIDGET_COMPONENT_MAP, ALL_DATA_SOURCES } from '../data-widgets';
@@ -10,13 +13,10 @@ import { BaseWidgetConfigForm } from './forms/BaseWidgetConfigForm';
 import { VersionSelector } from './ui/VersionSelector';
 import { TimeRangeControl } from './ui/TimeRangeControl';
 import { DashboardBreadcrumb } from './ui/DashboardBreadcrumb';
-import { allNavItems, navigationData, type NavItemData } from '../navigation';
+import { allNavItems, navigationData } from '../navigation';
 import { KpiChartModal } from './KpiChartModal';
-
-interface BreadcrumbSection {
-    title?: string;
-    items: { label: string; page: Page }[];
-}
+// Fix: Added formatWidgetDataForAI for creating context data.
+import { formatWidgetDataForAI, findPath } from '../utils';
 
 interface DashboardProps {
     title: string;
@@ -32,7 +32,8 @@ interface DashboardProps {
     page: Page;
     setPage: (page: Page) => void;
     isKpiSentimentColoringEnabled?: boolean;
-    onCiteWidget?: (instance: WidgetInstance, data: any) => void;
+    // Fix: Changed onCiteWidget to onAttachContext to match what parent components are passing.
+    onAttachContext?: (context: WidgetContext) => void;
 }
 
 const versions = [
@@ -55,82 +56,32 @@ export const Dashboard: React.FC<DashboardProps> = ({
     page,
     setPage,
     isKpiSentimentColoringEnabled,
-    onCiteWidget,
+    // Fix: Changed onCiteWidget to onAttachContext
+    onAttachContext,
 }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [configuringWidget, setConfiguringWidget] = useState<WidgetInstance | null>(null);
     const [activeVersion, setActiveVersion] = useState('live');
     const [viewingChartKpi, setViewingChartKpi] = useState<SelectableKpi | null>(null);
 
-    const breadcrumbItems = useMemo<BreadcrumbSection[]>(() => {
+    const breadcrumbItems = useMemo<NavItemData[]>(() => {
         const allDashboardsRoot = navigationData.platform[0].items.find(i => i.label === "Dashboards");
         if (!allDashboardsRoot || !allDashboardsRoot.subItems) return [];
-    
-        const breadcrumbSections: BreadcrumbSection[] = [];
-        const otherItems: { label: string; page: Page }[] = [];
-    
-        allDashboardsRoot.subItems.forEach(item => {
-            if (item.subItems) { // This is a category with sub-items, e.g., "Platform"
-                breadcrumbSections.push({
-                    title: item.label,
-                    items: item.subItems.map(sub => ({ label: sub.label, page: sub.page }))
-                });
-            } else { // This is a direct dashboard link
-                otherItems.push({ label: item.label, page: item.page });
-            }
-        });
-    
-        if (otherItems.length > 0) {
-            const untitledSection = breadcrumbSections.find(s => !s.title);
-            if (untitledSection) {
-                untitledSection.items.push(...otherItems);
-            } else {
-                breadcrumbSections.push({ items: otherItems });
-            }
-        }
-        
-        return breadcrumbSections;
+        // Return the hierarchical data directly
+        return allDashboardsRoot.subItems;
     }, []);
 
-    const activeDashboardTitle = useMemo(() => {
-        // This function will find the NavItemData for the given page.
-        const findItem = (pageToFind: Page, items: NavItemData[]): NavItemData | null => {
-            for (const item of items) {
-                if (item.page === pageToFind) return item;
-                if (item.subItems) {
-                    const found = findItem(pageToFind, item.subItems);
-                    if (found) return found;
-                }
-            }
-            return null;
-        };
-        
-        // This function will find the direct parent of a given item.
-        const findParent = (itemToFind: NavItemData, items: NavItemData[]): NavItemData | null => {
-            for (const item of items) {
-                if (item.subItems?.some(sub => sub.page === itemToFind.page)) {
-                    return item;
-                }
-                if (item.subItems) {
-                    const found = findParent(itemToFind, item.subItems);
-                    if (found) return found;
-                }
-            }
-            return null;
-        };
-        
-        const currentItem = findItem(page, allNavItems);
-        if (!currentItem) return title;
+    // Fix: Replaced incorrect `activeDashboardTitle` logic with `breadcrumbPath` to generate a path array for the breadcrumb component.
+    const breadcrumbPath = useMemo<string[]>(() => {
+        const pathItems = findPath(page, allNavItems);
     
-        // A dashboard page is one that ends with '-dashboard' or is 'dashboard'
-        const isDashboardPage = currentItem.page.endsWith('-dashboard') || currentItem.page === 'dashboard';
-        if (isDashboardPage) {
-            return currentItem.label;
-        }
+        if (!pathItems) return [title]; // Fallback to original title
     
-        // It's a sub-page, so find its dashboard parent.
-        const parent = findParent(currentItem, allNavItems);
-        return parent ? parent.label : currentItem.label;
+        // Find the 'Dashboards' item and start the path from its child
+        const dashboardsIndex = pathItems.findIndex(item => item.label === "Dashboards");
+        const relevantPath = dashboardsIndex !== -1 ? pathItems.slice(dashboardsIndex + 1) : pathItems;
+        
+        return relevantPath.map(item => item.label);
     }, [page, title]);
 
 
@@ -165,14 +116,73 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 return <BaseWidgetConfigForm {...props} widgetType={configuringWidget.widgetType} />;
         }
     };
+    
+    const getWidgetData = (widgetInstance: WidgetInstance) => {
+        const dataSourceKey = widgetInstance.config.dataSourceKey;
+        if (dataSourceKey) {
+            return ALL_DATA_SOURCES[dataSourceKey]?.data;
+        }
+        if (widgetInstance.widgetType === 'KPI_VIEW') {
+            const { selectedKpiId, selectedKpiSource } = widgetInstance.config;
+            return allKpisForModal.find(kpi => kpi.id === selectedKpiId && kpi.source === selectedKpiSource);
+        }
+        return undefined;
+    };
+
+    // Fix: Added logic to create and pass WidgetContext objects to the onAttachContext callback.
+    const handleCiteWidgetClick = (widgetInstance: WidgetInstance, data: any) => {
+        if (!onAttachContext) return;
+        const Icon = widgetInstance.widgetType === 'KPI_VIEW'
+            ? iconMap[(data as SelectableKpi)?.metric] || TrendingUpIcon
+            : DatabaseIcon;
+        
+        const context: WidgetContext = {
+            id: widgetInstance.id,
+            title: widgetInstance.config.title,
+            icon: Icon,
+            data: formatWidgetDataForAI(widgetInstance, data),
+            type: 'widget'
+        };
+        onAttachContext(context);
+    };
+
+    // Fix: Replaced incorrect handleCiteDashboardClick with one that creates a single dashboard context object.
+    const handleCiteDashboardClick = () => {
+        if (!onAttachContext) return;
+
+        const childContexts: WidgetContext[] = widgets.map(widgetInstance => {
+            const data = getWidgetData(widgetInstance);
+            const Icon = widgetInstance.widgetType === 'KPI_VIEW'
+                ? iconMap[(data as SelectableKpi)?.metric] || TrendingUpIcon
+                : DatabaseIcon;
+            return {
+                id: widgetInstance.id,
+                title: widgetInstance.config.title,
+                icon: Icon,
+                data: formatWidgetDataForAI(widgetInstance, data),
+                type: 'widget',
+            };
+        });
+
+        const dashboardContext: WidgetContext = {
+            id: `dashboard-${page}`,
+            title: `Dashboard: ${title}`,
+            icon: LibraryIcon,
+            type: 'dashboard',
+            data: `Context from ${widgets.length} widgets on the "${title}" dashboard.`,
+            children: childContexts,
+        };
+
+        onAttachContext(dashboardContext);
+    };
 
     return (
         <>
-            <div className="space-y-8">
-                <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 h-12">
+            <div className="-mt-4 sm:-mt-6 lg:-mt-8 -mx-4 sm:-mx-6 lg:-mx-8">
+                <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 py-4 px-4 sm:px-6 lg:px-8">
                     <div>
                          <DashboardBreadcrumb 
-                            title={activeDashboardTitle}
+                            path={breadcrumbPath}
                             items={breadcrumbItems}
                             activePage={page}
                             onSelect={setPage}
@@ -180,6 +190,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </div>
                      <div className="flex items-center gap-2 flex-wrap">
                         <TimeRangeControl timeConfig={globalTimeConfig} setTimeConfig={setGlobalTimeConfig} />
+                         {onAttachContext && (
+                            <div className="relative group">
+                                <Button variant="secondary" size="icon" className="h-8 w-8" onClick={handleCiteDashboardClick}>
+                                    <MessageSquareIcon className="h-4 w-4" />
+                                </Button>
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap bg-zinc-700 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                    Use in Conversation
+                                </div>
+                            </div>
+                        )}
                         <VersionSelector 
                             versions={versions}
                             activeVersion={activeVersion}
@@ -196,65 +216,69 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </div>
                 </header>
                 
-                {sections.map(section => {
-                    const sectionWidgets = widgets.filter(w => w.sectionId === section.id);
-                    if (sectionWidgets.length === 0 && !isEditing) return null;
+                <hr className="border-zinc-700/50" />
 
-                    return (
-                        <section key={section.id}>
-                            {section.id !== 'kpis' && (
-                                isEditing ? (
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <h2 className="text-xl font-semibold text-zinc-200">{section.title}</h2>
-                                        <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-700 text-zinc-400">Section</span>
-                                    </div>
-                                ) : (
-                                    <h2 className="text-xl font-semibold text-zinc-200 mb-4">{section.title}</h2>
-                                )
-                            )}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 auto-rows-[minmax(104px,auto)]">
-                                {sectionWidgets.map(widgetInstance => {
-                                    const WidgetComponent = WIDGET_COMPONENT_MAP[widgetInstance.widgetType];
-                                    if (!WidgetComponent) {
-                                        console.warn(`Widget component for type ${widgetInstance.widgetType} not found.`);
-                                        return null;
-                                    }
-                                    
-                                    const colSpan = widgetInstance.config.gridWidth || 1;
-                                    const rowSpan = widgetInstance.config.gridHeight || 1;
-                                    
-                                    const smColSpan = `sm:col-span-${Math.min(colSpan, 2)}`;
-                                    const mdColSpan = `md:col-span-${Math.min(colSpan, 4)}`;
+                <div className="space-y-8 p-4 sm:p-6 lg:p-8">
+                    {sections.map(section => {
+                        const sectionWidgets = widgets.filter(w => w.sectionId === section.id);
+                        if (sectionWidgets.length === 0 && !isEditing) return null;
 
-                                    const gridSpan = `col-span-1 ${smColSpan} ${mdColSpan} row-span-${rowSpan}`;
-                                    
-                                    const dataSourceKey = widgetInstance.config.dataSourceKey;
-                                    const data = dataSourceKey ? ALL_DATA_SOURCES[dataSourceKey]?.data : undefined;
-                                    
-                                    const componentProps: any = {
-                                        instance: widgetInstance,
-                                        data: data,
-                                        onConfigure: () => setConfiguringWidget(widgetInstance),
-                                        onConfigChange: (newConfig: Partial<WidgetInstance['config']>) => handleWidgetConfigChange(widgetInstance.id, newConfig),
-                                        allKpis: allKpisForModal,
-                                        iconMap: iconMap,
-                                        iconColorMap: iconColorMap,
-                                        globalTimeConfig: globalTimeConfig,
-                                        onOpenChart: setViewingChartKpi,
-                                        onCite: onCiteWidget ? () => onCiteWidget(widgetInstance, data) : undefined,
-                                        isKpiSentimentColoringEnabled: isKpiSentimentColoringEnabled,
-                                    };
-
-                                    return (
-                                        <div key={widgetInstance.id} className={gridSpan}>
-                                            <WidgetComponent {...componentProps} />
+                        return (
+                            <section key={section.id}>
+                                {section.id !== 'kpis' && (
+                                    isEditing ? (
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <h2 className="text-xl font-semibold text-zinc-200">{section.title}</h2>
+                                            <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-700 text-zinc-400">Section</span>
                                         </div>
+                                    ) : (
+                                        <h2 className="text-xl font-semibold text-zinc-200 mb-4">{section.title}</h2>
                                     )
-                                })}
-                            </div>
-                        </section>
-                    )
-                })}
+                                )}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 auto-rows-[minmax(104px,auto)]">
+                                    {sectionWidgets.map(widgetInstance => {
+                                        const WidgetComponent = WIDGET_COMPONENT_MAP[widgetInstance.widgetType];
+                                        if (!WidgetComponent) {
+                                            console.warn(`Widget component for type ${widgetInstance.widgetType} not found.`);
+                                            return null;
+                                        }
+                                        
+                                        const colSpan = widgetInstance.config.gridWidth || 1;
+                                        const rowSpan = widgetInstance.config.gridHeight || 1;
+                                        
+                                        const smColSpan = `sm:col-span-${Math.min(colSpan, 2)}`;
+                                        const mdColSpan = `md:col-span-${Math.min(colSpan, 4)}`;
+
+                                        const gridSpan = `col-span-1 ${smColSpan} ${mdColSpan} row-span-${rowSpan}`;
+                                        
+                                        const data = getWidgetData(widgetInstance);
+                                        
+                                        const componentProps: any = {
+                                            instance: widgetInstance,
+                                            data: data,
+                                            onConfigure: () => setConfiguringWidget(widgetInstance),
+                                            onConfigChange: (newConfig: Partial<WidgetInstance['config']>) => handleWidgetConfigChange(widgetInstance.id, newConfig),
+                                            allKpis: allKpisForModal,
+                                            iconMap: iconMap,
+                                            iconColorMap: iconColorMap,
+                                            globalTimeConfig: globalTimeConfig,
+                                            onOpenChart: setViewingChartKpi,
+                                            // Fix: Updated onCite prop to call the new handleCiteWidgetClick handler.
+                                            onCite: onAttachContext ? () => handleCiteWidgetClick(widgetInstance, data) : undefined,
+                                            isKpiSentimentColoringEnabled: isKpiSentimentColoringEnabled,
+                                        };
+
+                                        return (
+                                            <div key={widgetInstance.id} className={gridSpan}>
+                                                <WidgetComponent {...componentProps} />
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </section>
+                        )
+                    })}
+                </div>
             </div>
 
             {configuringWidget && (

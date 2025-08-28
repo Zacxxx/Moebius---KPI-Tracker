@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from 'react';
+
+import React, { useEffect, useRef, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/Card';
 import { Button } from './ui/Button';
 import { XIcon, SparklesIcon } from './Icons';
@@ -10,12 +11,15 @@ interface ConversationScreenProps {
     messages: Message[];
     isLoading: boolean;
     isMessageQueued: boolean;
-    onSend: (message: string) => void;
+    // Fix: Updated onSend prop to accept a payload object to match ChatInput's expectation.
+    onSend: (payload: { displayText: string; promptText: string; }) => void;
     onRegenerate: (messageId: number) => void;
     onClose: () => void;
     widgetContexts: WidgetContext[];
     onRemoveWidgetContext: (id: string) => void;
     onClearWidgetContexts: () => void;
+    // Fix: Add actions prop to be passed to ChatInput
+    actions: { [key: string]: (arg?: any) => void };
 }
 
 export const ConversationScreen: React.FC<ConversationScreenProps> = ({
@@ -28,8 +32,17 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
     widgetContexts,
     onRemoveWidgetContext,
     onClearWidgetContexts,
+    // Fix: Destructure actions from props
+    actions,
 }) => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // FIX: Calculate contextPercentage based on the messages prop.
+    const contextPercentage = useMemo(() => {
+        // Approximation of token usage. Assume 20k chars is max for a more dynamic visual.
+        const charCount = JSON.stringify(messages).length;
+        return Math.min(100, (charCount / 20000) * 100);
+    }, [messages]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -76,6 +89,10 @@ export const ConversationScreen: React.FC<ConversationScreenProps> = ({
                     context="full"
                     bookmarks={[]}
                     setActiveChatId={() => {}}
+                    // Fix: Pass actions prop to ChatInput
+                    actions={actions}
+                    // FIX: Pass the contextPercentage prop to the ChatInput component.
+                    contextPercentage={contextPercentage}
                 />
             </Card>
         </div>

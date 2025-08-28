@@ -1,13 +1,6 @@
-import type { Page, ContentSection } from './types';
-import { HomeIcon, LineChartIcon, MegaphoneIcon, SlidersIcon, UsersIcon, BriefcaseIcon, ShapesIcon, RocketIcon, ShoppingCartIcon, SparklesIcon, TagIcon, BarChartIcon, FolderIcon, FileTextIcon, CubeIcon, WifiIcon, LibraryIcon, LightningBoltIcon, TrendingUpIcon, CheckSquareIcon, TargetIcon } from './components/Icons';
 
-export type NavItemData = {
-  icon?: React.FC<{className?: string}>;
-  label: string;
-  page: Page;
-  subItems?: NavItemData[];
-  isMenuOnly?: boolean;
-}
+import type { Page, ContentSection, NavItemData } from './types';
+import { HomeIcon, LineChartIcon, MegaphoneIcon, SlidersIcon, UsersIcon, BriefcaseIcon, ShapesIcon, RocketIcon, ShoppingCartIcon, SparklesIcon, TagIcon, BarChartIcon, FolderIcon, FileTextIcon, CubeIcon, WifiIcon, LibraryIcon, LightningBoltIcon, TrendingUpIcon, CheckSquareIcon, TargetIcon, PieChartIcon, GaugeIcon, PackageIcon, GitBranchIcon } from './components/Icons';
 
 export type NavSection = {
   label?: string; // Optional header for the section
@@ -19,7 +12,6 @@ export type NavSection = {
 const platformNav: NavSection[] = [
     {
         items: [
-            { icon: HomeIcon, label: "Home", page: "platform-home" },
             {
                 icon: LibraryIcon,
                 label: "Dashboards",
@@ -31,7 +23,6 @@ const platformNav: NavSection[] = [
                         label: "Platform",
                         page: "dashboard",
                         subItems: [
-                            { icon: HomeIcon, label: "Home", page: "dashboard" },
                             {
                                 icon: RocketIcon,
                                 label: "Simulation",
@@ -132,7 +123,7 @@ const platformNav: NavSection[] = [
                 label: "Monitoring",
                 page: "monitoring-dashboard",
                 subItems: [
-                    { label: "Overview", page: "monitoring-dashboard" },
+                    { icon: PieChartIcon, label: "Overview", page: "monitoring-dashboard" },
                     { icon: UsersIcon, label: "Agents", page: "monitoring-agents" },
                     { icon: LightningBoltIcon, label: "Actions", page: "monitoring-actions" },
                     { icon: FileTextIcon, label: "Reports", page: "monitoring-reports" },
@@ -153,10 +144,10 @@ const platformNav: NavSection[] = [
                         label: "Generation",
                         page: "monitoring-generation",
                         subItems: [
-                            { label: "Metric", page: "monitoring-generation-metric" },
-                            { label: "Deliverables", page: "monitoring-generation-deliverables" },
-                            { label: "Workflows", page: "monitoring-generation-workflows" },
-                            { label: "Surveys", page: "monitoring-generation-surveys" },
+                            { icon: GaugeIcon, label: "Metric", page: "monitoring-generation-metric" },
+                            { icon: PackageIcon, label: "Deliverables", page: "monitoring-generation-deliverables" },
+                            { icon: GitBranchIcon, label: "Workflows", page: "monitoring-generation-workflows" },
+                            { icon: CheckSquareIcon, label: "Surveys", page: "monitoring-generation-surveys" },
                         ]
                     },
                     {
@@ -164,9 +155,9 @@ const platformNav: NavSection[] = [
                         label: "Entities",
                         page: "monitoring-entities-overview",
                         subItems: [
-                            { label: "Overview", page: "monitoring-entities-overview" },
-                            { label: "Manager", page: "monitoring-entities-manager" },
-                            { label: "Actions", page: "monitoring-entities-actions" },
+                            { icon: PieChartIcon, label: "Overview", page: "monitoring-entities-overview" },
+                            { icon: FolderIcon, label: "Manager", page: "monitoring-entities-manager" },
+                            { icon: LightningBoltIcon, label: "Actions", page: "monitoring-entities-actions" },
                         ]
                     }
                 ]

@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { TrendingUpIcon, UsersIcon, ShoppingCartIcon } from './components/Icons';
 import { initialKpiMetrics, initialEcommerceMetrics } from './data';
-import type { SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page } from './types';
+import type { SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page, WidgetContext } from './types';
 import { PREMADE_WIDGETS } from './data-widgets';
 
 const internalKpis = [
@@ -43,10 +43,10 @@ interface PlatformHomeProps {
     page: Page;
     setPage: (page: Page) => void;
     isKpiSentimentColoringEnabled?: boolean;
-    onCiteWidget?: (instance: WidgetInstance, data: any) => void;
+    onAttachContext?: (context: WidgetContext) => void;
 }
 
-export default function PlatformHome({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled, onCiteWidget }: PlatformHomeProps) {
+export default function PlatformHome({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled, onAttachContext }: PlatformHomeProps) {
     const [sections, setSections] = useState<DashboardSection[]>([
         { id: 'kpis', title: 'Platform KPIs' },
         { id: 'main', title: 'Overview' },
@@ -85,7 +85,7 @@ export default function PlatformHome({ globalTimeConfig, setGlobalTimeConfig, pa
             page={page}
             setPage={setPage}
             isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
-            onCiteWidget={onCiteWidget}
+            onAttachContext={onAttachContext}
         />
     );
 }

@@ -1,17 +1,17 @@
+
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import type { Message, ChatSession, Bookmark, WidgetContext } from '../types';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/Card';
 import { Button } from './ui/Button';
-import { XIcon, Maximize2Icon, MessageSquareIcon, PlusIcon, BookmarkIcon, ClipboardIcon, SettingsIcon, UsersIcon, RefreshCwIcon, GitBranchIcon, FileTextIcon, FolderIcon, CubeIcon, CheckSquareIcon, TargetIcon, FilterOffIcon } from './Icons';
+import { XIcon, Maximize2Icon, MessageSquareIcon, PlusIcon, RefreshCwIcon } from './Icons';
 import { ChatMessage, TypingIndicator } from './MessageBubble';
 import { ChatInput } from './ChatInput';
-import { ContextWindowIndicator } from './chat/ContextWindowIndicator';
 
 interface AiChatPanelProps {
     session?: ChatSession & { messages: (Message & { isBookmarked?: boolean })[] };
     isLoading: boolean;
     isMessageQueued: boolean;
-    onSend: (message: string) => void;
+    onSend: (payload: { displayText: string, promptText: string }) => void;
     onRegenerate: (messageId: number) => void;
     onNewChat: () => void;
     onReload: () => void;
@@ -27,6 +27,7 @@ interface AiChatPanelProps {
     attachedWidgetContexts: WidgetContext[];
     onRemoveWidgetContext: (id: string) => void;
     onClearWidgetContexts: () => void;
+    actions: { [key: string]: (arg?: any) => void };
 }
 
 export const AiChatPanel: React.FC<AiChatPanelProps> = ({
@@ -49,6 +50,7 @@ export const AiChatPanel: React.FC<AiChatPanelProps> = ({
     attachedWidgetContexts,
     onRemoveWidgetContext,
     onClearWidgetContexts,
+    actions
 }) => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -103,43 +105,24 @@ export const AiChatPanel: React.FC<AiChatPanelProps> = ({
             </div>
             <div className="flex flex-col h-full">
                 <div className="flex items-center justify-between h-16 px-4 border-b border-zinc-700/50 flex-shrink-0">
-                    <div className="flex items-center gap-2 text-lg font-bold text-white min-w-0">
-                        <button onClick={() => alert('Project manager not implemented yet.')} className="hover:text-zinc-300 transition-colors">
-                            ...
-                        </button>
-                        <span className="text-zinc-500">/</span>
-                        <button onClick={() => alert('Conversation manager not implemented yet.')} className="hover:text-zinc-300 transition-colors truncate">
-                            {session?.title || 'New Chat'}
-                        </button>
-                    </div>
-                    <div>
-                         <Button variant="ghost" size="icon" onClick={onNewChat} className="h-8 w-8" aria-label="New chat">
+                    <CardTitle className="flex items-center gap-2 text-base font-semibold truncate">
+                        <MessageSquareIcon className="h-5 w-5 text-violet-400 flex-shrink-0" />
+                        <span className="truncate">{(session?.title && session.title !== 'New Chat') ? session.title : 'Moebius'}</span>
+                    </CardTitle>
+                    <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" onClick={onNewChat} className="h-8 w-8" aria-label="New chat">
                             <PlusIcon className="h-4 w-4"/>
                         </Button>
-                         <Button variant="ghost" size="icon" onClick={onReload} className="h-8 w-8" aria-label="Reload chat">
+                        <Button variant="ghost" size="icon" onClick={onReload} className="h-8 w-8" aria-label="Reload chat">
                             <RefreshCwIcon className="h-4 w-4"/>
                         </Button>
-                         <Button variant="ghost" size="icon" onClick={onMaximize} className="h-8 w-8" aria-label="Maximize chat">
+                        <Button variant="ghost" size="icon" onClick={onMaximize} className="h-8 w-8" aria-label="Maximize chat">
                             <Maximize2Icon className="h-4 w-4"/>
                         </Button>
                         <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8" aria-label="Close chat panel">
                             <XIcon className="h-5 w-5"/>
                         </Button>
                     </div>
-                </div>
-                 <div className="px-3 h-12 border-b border-zinc-700/50 text-xs text-zinc-400 flex items-center justify-end gap-2 flex-wrap">
-                    <div className="mr-auto">
-                        <ContextWindowIndicator percentage={contextPercentage} onClick={() => alert('Context manager clicked')} />
-                    </div>
-                    <Button variant="ghost" className="h-7 px-2 text-xs" onClick={() => alert('Participants clicked')}>
-                        <UsersIcon className="h-4 w-4 mr-1.5" /> Participants
-                    </Button>
-                    <Button variant="ghost" className="h-7 px-2 text-xs" onClick={() => alert('Parameters clicked')}>
-                        <SettingsIcon className="h-4 w-4 mr-1.5" /> Parameters
-                    </Button>
-                    <Button variant="ghost" className="h-7 px-2 text-xs" onClick={() => alert('Tasklist not implemented.')}>
-                        <ClipboardIcon className="h-4 w-4 mr-1.5" /> Tasklist
-                    </Button>
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 pt-6 space-y-6">
                     {session ? (
@@ -171,6 +154,8 @@ export const AiChatPanel: React.FC<AiChatPanelProps> = ({
                         bookmarks={bookmarks}
                         setActiveChatId={setActiveChatId}
                         onMaximize={onMaximize}
+                        actions={actions}
+                        contextPercentage={contextPercentage}
                     />
                 </div>
             </div>

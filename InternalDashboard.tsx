@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { UsersIcon, SmileIcon, PieChartIcon } from './components/Icons';
 import { initialCapTableMetrics } from './data';
-import type { SelectableKpi, ShowcaseKpi, WidgetInstance, DashboardSection, TimeConfig, Page } from './types';
+import type { SelectableKpi, ShowcaseKpi, WidgetInstance, DashboardSection, TimeConfig, Page, WidgetContext } from './types';
 import { PREMADE_WIDGETS } from './data-widgets';
 
 // Let's create some static KPIs for the internal dashboard.
@@ -37,10 +37,10 @@ interface InternalDashboardProps {
     page: Page;
     setPage: (page: Page) => void;
     isKpiSentimentColoringEnabled?: boolean;
-    onCiteWidget: (instance: WidgetInstance, data: any) => void;
+    onAttachContext?: (context: WidgetContext) => void;
 }
 
-export default function InternalDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled, onCiteWidget }: InternalDashboardProps) {
+export default function InternalDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled, onAttachContext }: InternalDashboardProps) {
   const [sections, setSections] = useState<DashboardSection[]>([
       { id: 'kpis', title: 'Key Metrics' },
       { id: 'main', title: 'Dashboard Widgets' },
@@ -93,7 +93,7 @@ export default function InternalDashboard({ globalTimeConfig, setGlobalTimeConfi
         page={page}
         setPage={setPage}
         isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
-        onCiteWidget={onCiteWidget}
+        onAttachContext={onAttachContext}
     />
   );
 }

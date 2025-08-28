@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { UsersIcon, ClockIcon, TrendingUpIcon, PackageIcon } from './components/Icons';
 import { initialCoordinationMetrics } from './data';
-import type { SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page } from './types';
+import type { SelectableKpi, WidgetInstance, DashboardSection, TimeConfig, Page, WidgetContext } from './types';
 
 const iconMap: { [key: string]: React.FC<{ className?: string }> } = {
     'Active Contractors': UsersIcon,
@@ -17,10 +17,10 @@ interface CoordinationDashboardProps {
     page: Page;
     setPage: (page: Page) => void;
     isKpiSentimentColoringEnabled?: boolean;
-    onCiteWidget: (instance: WidgetInstance, data: any) => void;
+    onAttachContext?: (context: WidgetContext) => void;
 }
 
-export default function CoordinationDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled, onCiteWidget }: CoordinationDashboardProps) {
+export default function CoordinationDashboard({ globalTimeConfig, setGlobalTimeConfig, page, setPage, isKpiSentimentColoringEnabled, onAttachContext }: CoordinationDashboardProps) {
   const [sections, setSections] = useState<DashboardSection[]>([
     { id: 'kpis', title: 'Key Metrics' }
   ]);
@@ -56,7 +56,7 @@ export default function CoordinationDashboard({ globalTimeConfig, setGlobalTimeC
         page={page}
         setPage={setPage}
         isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled}
-        onCiteWidget={onCiteWidget}
+        onAttachContext={onAttachContext}
     />
   );
 }
