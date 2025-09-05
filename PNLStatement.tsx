@@ -1,35 +1,13 @@
 
 
+
 import React, { useMemo, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from './components/ui/Card';
-import { KpiWidget as SharedKpiWidget } from './components/KpiWidget'; // Renamed to avoid conflict
+import { KpiWidget } from './components/KpiWidget';
 import { TrendingUpIcon, PieChartIcon, ScaleIcon } from './components/Icons';
 import { fmtEuro, EURO } from './utils';
 import type { RevenueStream, ExpenseItem } from './types';
 import { initialRevenueStreams, initialExpenses } from './data';
-
-// A local, sentiment-aware version for this specific page
-const KpiWidget: React.FC<{ title: string; value: string; change: string; icon: React.FC<{ className?: string }>; iconColor: string; sentiment?: 'positive' | 'negative' | 'neutral'; isKpiSentimentColoringEnabled?: boolean; }> = 
-({ title, value, change, icon: Icon, iconColor, sentiment, isKpiSentimentColoringEnabled = true }) => {
-    const valueColor = isKpiSentimentColoringEnabled && sentiment === 'positive' ? 'text-emerald-400' : isKpiSentimentColoringEnabled && sentiment === 'negative' ? 'text-red-400' : 'text-white';
-    const changeColor = isKpiSentimentColoringEnabled && sentiment === 'positive' ? 'text-emerald-400/80' : isKpiSentimentColoringEnabled && sentiment === 'negative' ? 'text-red-400/80' : 'text-zinc-500';
-
-    return (
-        <Card className="h-full">
-            <div className="p-4 flex flex-col h-full">
-                <div className="flex justify-between items-start">
-                    <h3 className="text-sm font-medium text-zinc-400">{title}</h3>
-                    <Icon className={`h-5 w-5 ${iconColor}`} />
-                </div>
-                <div className="mt-auto text-left">
-                    <p className={`text-2xl font-bold ${valueColor}`}>{value}</p>
-                    <p className={`text-xs mt-1 ${changeColor}`}>{change}</p>
-                </div>
-            </div>
-        </Card>
-    );
-};
-
 
 export default function PNLStatement({ isKpiSentimentColoringEnabled }: { isKpiSentimentColoringEnabled?: boolean }) {
   const [revenueStreams] = useState<RevenueStream[]>(initialRevenueStreams);
@@ -76,10 +54,10 @@ export default function PNLStatement({ isKpiSentimentColoringEnabled }: { isKpiS
       <section>
         <h2 className="text-xl font-semibold text-zinc-200 mb-4">Key Margins</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-          <KpiWidget title="Gross Profit Margin" value={`${grossMargin.toFixed(1)}%`} change="Revenue - COGS" icon={PieChartIcon} iconColor="text-emerald-400" sentiment={grossMargin >= 0 ? 'positive' : 'negative'} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />
-          <KpiWidget title="Operating Margin" value={`${operatingMargin.toFixed(1)}%`} change="Profitability from operations" icon={ScaleIcon} iconColor={operatingMargin >= 0 ? "text-emerald-400" : "text-red-400"} sentiment={operatingMargin >= 0 ? 'positive' : 'negative'} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />
-          <KpiWidget title="Net Profit Margin" value={`${netProfitMargin.toFixed(1)}%`} change="After all expenses & taxes" icon={TrendingUpIcon} iconColor={netProfitMargin >= 0 ? "text-emerald-400" : "text-red-400"} sentiment={netProfitMargin >= 0 ? 'positive' : 'negative'} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />
-          <KpiWidget title="Net Income" value={fmtEuro(netIncome)} change="The bottom line" icon={TrendingUpIcon} iconColor={netIncome >= 0 ? "text-emerald-400" : "text-red-400"} sentiment={netIncome >= 0 ? 'positive' : 'negative'} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />
+          <KpiWidget title="Gross Profit Margin" value={`${grossMargin.toFixed(1)}%`} change="Revenue - COGS" icon={PieChartIcon} iconColor="text-emerald-400" isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />
+          <KpiWidget title="Operating Margin" value={`${operatingMargin.toFixed(1)}%`} change="Profitability from operations" icon={ScaleIcon} iconColor={operatingMargin >= 0 ? "text-emerald-400" : "text-red-400"} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />
+          <KpiWidget title="Net Profit Margin" value={`${netProfitMargin.toFixed(1)}%`} change="After all expenses & taxes" icon={TrendingUpIcon} iconColor={netProfitMargin >= 0 ? "text-emerald-400" : "text-red-400"} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />
+          <KpiWidget title="Net Income" value={fmtEuro(netIncome)} change="The bottom line" icon={TrendingUpIcon} iconColor={netIncome >= 0 ? "text-emerald-400" : "text-red-400"} isKpiSentimentColoringEnabled={isKpiSentimentColoringEnabled} />
         </div>
       </section>
 

@@ -1,5 +1,5 @@
-
-import type { WidgetInstance, SelectableKpi, Page, NavItemData } from './types';
+import type { WidgetInstance, SelectableMetric, Page, NavItemData, DataSourceKey, MetricFormat } from './types';
+import { ALL_DATA_SOURCES } from './data';
 
 export const EURO = new Intl.NumberFormat("fr-FR", {
   style: "currency",
@@ -38,9 +38,9 @@ export function pctDelta(now: number, base: number): number {
 export function formatWidgetDataForAI(widgetInstance: WidgetInstance, widgetData: any): string {
     const title = widgetInstance.config.title;
     switch (widgetInstance.widgetType) {
-        case 'KPI_VIEW': {
-            const kpi = widgetData as SelectableKpi;
-            return kpi ? `KPI titled "${title}" shows: Metric: ${kpi.metric}, Current Value: ${kpi.value}, Change: ${kpi.change}.` : `Data for KPI "${title}" is not available.`;
+        case 'METRIC_VIEW': {
+            const metric = widgetData as SelectableMetric;
+            return metric ? `Metric titled "${title}" shows: Metric: ${metric.metric}, Current Value: ${metric.value}, Change: ${metric.change}.` : `Data for Metric "${title}" is not available.`;
         }
         case 'TABLE_VIEW': {
             if (!widgetData || widgetData.length === 0) return `Table "${title}" is empty.`;
@@ -94,3 +94,56 @@ export const findPath = (pageToFind: Page, items: NavItemData[]): NavItemData[] 
     }
     return null;
 };
+
+export const evaluateMathExpression = (expression: string): number => {
+    // 1. Resolve data source aggregations (e.g., SUM(revenue_streams.mrr))
+    const resolvedExpression = expression.replace(/(SUM|AVG|COUNT)\(([\w_]+)\.([\w_]+)\)/g, (match, agg, table, column) => {
+        const dataSourceKey = table as DataSourceKey;
+        const dataSource = ALL_DATA_SOURCES[dataSourceKey];
+
+        if (!dataSource || !Array.isArray(dataSource.data)) {
+            throw new Error(`Data source "${table}" not found or is invalid.`);
+        }
+        
+        const data = dataSource.data;
+        const values = data.map(row => row[column]).filter(v => typeof v === 'number') as number[];
+
+        if (values.length === 0) return '0';
+
+        switch (agg.toUpperCase()) {
+            case 'SUM':
+                return String(values.reduce((a, b) => a + b, 0));
+            case 'AVG':
+                return String(values.reduce((a, b) => a + b, 0) / values.length);
+            case 'COUNT':
+                return String(data.length); // Count all rows in the dataset
+            default:
+                throw new Error(`Unsupported aggregation function "${agg}".`);
+        }
+    });
+
+    // 2. Safely evaluate the resulting arithmetic expression
+    // Sanitize to allow only numbers, operators, parentheses, and whitespace.
+    const sanitizedExpression = resolvedExpression.replace(/\s+/g, '');
+    if (!/^[0-9+\-*/().]+$/.test(sanitizedExpression)) {
+        throw new Error(`Invalid characters in expression: "${resolvedExpression}"`);
+    }
+
+    try {
+        // Using Function constructor is safer than eval() as it doesn't access local scope.
+        return new Function(`return ${sanitizedExpression}`)();
+    } catch (error) {
+        throw new Error(`Failed to evaluate expression: "${resolvedExpression}"`);
+    }
+};
+
+export const formatValue = (value: number, format?: MetricFormat) => {
+    if (isNaN(value)) return 'N/A';
+    switch (format) {
+        case 'currency': return fmtEuro(value);
+        case 'percent': return `${value.toFixed(1)}%`;
+        case 'number': return value.toLocaleString(undefined, { maximumFractionDigits: 0 });
+        case 'ratio': return value.toFixed(2);
+        default: return value.toLocaleString();
+    }
+}

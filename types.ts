@@ -1,4 +1,3 @@
-
 import type { Chat as GeminiChat } from '@google/genai';
 import React from 'react';
 
@@ -130,18 +129,18 @@ export interface HiringPipelineItem { id: number, role: string; department: stri
 export interface CrmDataItem { id: number, name: string; company: string; value: number; status: 'Proposal' | 'Negotiation' | 'Contacted' | 'Lead' | 'Closed - Won' | 'Closed - Lost'; contact: string; }
 export interface RequestDataItem { id: number; title: string; user: string; votes: number; status: 'Shipped' | 'In Progress' | 'Planned' | 'Under Review'; }
 
-type KpiFormat = 'currency' | 'percent' | 'number' | 'days' | 'hours' | 'ratio';
-type KpiAggregation = 'sum' | 'avg' | 'end_value';
+export type MetricFormat = 'currency' | 'percent' | 'number' | 'days' | 'hours' | 'ratio';
+type MetricAggregation = 'sum' | 'avg' | 'end_value';
 interface TimeSeries { date: string; value: number; }
 
-export interface KpiMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: KpiFormat; aggregation?: KpiAggregation; target?: number; inverse?: boolean; }
-export interface MarketingMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: KpiFormat; aggregation?: KpiAggregation; target?: number; inverse?: boolean; }
-export interface OperationalMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: KpiFormat; aggregation?: KpiAggregation; target?: number; inverse?: boolean; }
-export interface CustomerMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: KpiFormat; aggregation?: KpiAggregation; target?: number; inverse?: boolean; }
+export interface HomeMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: MetricFormat; aggregation?: MetricAggregation; target?: number; inverse?: boolean; }
+export interface MarketingMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: MetricFormat; aggregation?: MetricAggregation; target?: number; inverse?: boolean; }
+export interface OperationalMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: MetricFormat; aggregation?: MetricAggregation; target?: number; inverse?: boolean; }
+export interface CustomerMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: MetricFormat; aggregation?: MetricAggregation; target?: number; inverse?: boolean; }
 export interface FeedbackItem { id: number; score: number; comment: string; user: string; type: 'promoter' | 'passive' | 'detractor'; }
-export interface ProductMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: KpiFormat; aggregation?: KpiAggregation; target?: number; inverse?: boolean; }
-export interface CapTableMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: KpiFormat; aggregation?: KpiAggregation; target?: number; inverse?: boolean; }
-export interface CoordinationMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: KpiFormat; aggregation?: KpiAggregation; target?: number; inverse?: boolean; }
+export interface ProductMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: MetricFormat; aggregation?: MetricAggregation; target?: number; inverse?: boolean; }
+export interface CapTableMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: MetricFormat; aggregation?: MetricAggregation; target?: number; inverse?: boolean; }
+export interface CoordinationMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: MetricFormat; aggregation?: MetricAggregation; target?: number; inverse?: boolean; }
 export interface ActivityTextPart { text: string; strong?: boolean; }
 export interface ActivityItem {
   id: number;
@@ -222,14 +221,16 @@ export interface DmToastState {
 }
 
 // E-commerce types
-export interface EcommerceMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: KpiFormat; aggregation?: KpiAggregation; target?: number; inverse?: boolean; }
+export interface EcommerceMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: MetricFormat; aggregation?: MetricAggregation; target?: number; inverse?: boolean; }
 export interface OrderItem { id: number; customer: string; date: string; total: number; status: 'New' | 'Processing' | 'Shipped' | 'Delivered'; items: number; }
 export interface ProductItem { id: number; name: string; sku: string; stock: number; price: number; status: 'In Stock' | 'Low Stock' | 'Out of Stock'; }
 export interface PromotionItem { id: number; code: string; type: 'Percentage' | 'Fixed Amount'; value: number; status: 'Active' | 'Expired'; usageCount: number; }
 
 // New types for dynamic dashboard
-export type ShowcaseKpi = KpiMetric | CustomerMetric | OperationalMetric | ProductMetric | MarketingMetric | CapTableMetric | CoordinationMetric | EcommerceMetric;
-export type SelectableKpi = ShowcaseKpi & {
+// FIX: Added KpiMetric type definition
+export interface KpiMetric { id: number; metric: string; value: string; change: string; series?: TimeSeries[]; format?: MetricFormat; aggregation?: MetricAggregation; target?: number; inverse?: boolean; }
+export type ShowcaseMetric = HomeMetric | CustomerMetric | OperationalMetric | ProductMetric | MarketingMetric | CapTableMetric | CoordinationMetric | EcommerceMetric | KpiMetric;
+export type SelectableKpi = ShowcaseMetric & {
   source: string;
 };
 
@@ -352,7 +353,7 @@ export interface GenericWidgetProps {
   // data is resolved in Dashboard.tsx and passed directly
   data?: any; 
   globalTimeConfig?: TimeConfig;
-  isKpiSentimentColoringEnabled?: boolean;
+  isMetricSentimentColoringEnabled?: boolean;
 }
 
 export interface BaseWidgetConfigFormProps {

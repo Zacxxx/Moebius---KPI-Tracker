@@ -420,7 +420,7 @@ export const ALL_DATA_SOURCES: Record<DataSourceKey, { data: any[], schema?: Col
     'activity_feed_external': { data: initialExternalActivityFeed, section: 'External', name: 'External Activity Feed', compatibleWidgets: ['ACTIVITY_FEED'] },
 };
 
-export const getAllKpis = (): SelectableKpi[] => [
+export const getAllMetrics = (): SelectableKpi[] => [
     ...initialKpiMetrics.map(k => ({ ...k, source: 'Home' })),
     ...initialCustomerMetrics.map(k => ({ ...k, source: 'Customer' })),
     ...initialOperationalMetrics.map(k => ({ ...k, source: 'Operational' })),
